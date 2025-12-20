@@ -11,38 +11,41 @@ export default function BranchLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
+    // Wait for store to hydrate from localStorage
+    if (!_hasHydrated) {
+      console.log('🔥 Waiting for hydration...')
+      return
+    }
+
     console.log('🔥 Branch layout check:', { 
       isAuthenticated, 
       user, 
       userRole: user?.role,
+      _hasHydrated
     })
     
-    const timer = setTimeout(() => {
-      if (!isAuthenticated || !user) {
-        console.log('🔥 Not authenticated, redirecting to login')
-        router.push('/auth/login')
-        return
-      }
-      
-      if (user.role !== 'branch_manager') {
-        console.log('🔥 Wrong role for branch:', user.role)
-        router.push('/auth/login')
-        return
-      }
-      
-      console.log('🔥 Branch auth check passed')
-      setIsLoading(false)
-    }, 200)
+    if (!isAuthenticated || !user) {
+      console.log('🔥 Not authenticated, redirecting to login')
+      router.push('/auth/login')
+      return
+    }
     
-    return () => clearTimeout(timer)
-  }, [isAuthenticated, user, router])
+    if (user.role !== 'branch_manager') {
+      console.log('🔥 Wrong role for branch:', user.role)
+      router.push('/auth/login')
+      return
+    }
+    
+    console.log('🔥 Branch auth check passed')
+    setIsReady(true)
+  }, [isAuthenticated, user, router, _hasHydrated])
 
-  if (isLoading || !isAuthenticated || !user) {
+  if (!_hasHydrated || !isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

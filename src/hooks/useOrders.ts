@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { customerAPI, servicesAPI } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -23,9 +23,27 @@ interface CreateOrderData {
 }
 
 export function useOrders() {
+  const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [pricingLoading, setPricingLoading] = useState(false)
   const router = useRouter()
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await customerAPI.getOrders()
+      // Response structure: { success, data: { data: orders[], pagination: {...} }, message }
+      const ordersData = response.data.data?.data || response.data.data?.orders || []
+      setOrders(ordersData)
+    } catch (err: any) {
+      console.error('Error fetching orders:', err)
+      const message = err.response?.data?.message || 'Failed to fetch orders'
+      toast.error(message)
+      setOrders([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   const createOrder = async (orderData: CreateOrderData) => {
     try {
@@ -49,7 +67,7 @@ export function useOrders() {
     }
   }
 
-  const calculatePricing = async (items: OrderItem[], isExpress: boolean = false) => {
+  const calculatePricing = useCallback(async (items: OrderItem[], isExpress: boolean = false) => {
     try {
       setPricingLoading(true)
       const response = await servicesAPI.calculatePricing(items, isExpress)
@@ -62,7 +80,7 @@ export function useOrders() {
     } finally {
       setPricingLoading(false)
     }
-  }
+  }, [])
 
   const getTimeSlots = async () => {
     try {
@@ -91,6 +109,8 @@ export function useOrders() {
   }
 
   return {
+    orders,
+    fetchOrders,
     createOrder,
     calculatePricing,
     getTimeSlots,

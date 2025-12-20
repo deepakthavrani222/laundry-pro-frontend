@@ -13,7 +13,6 @@ import {
   Shield,
   Users,
   Star,
-  ArrowLeft,
   Phone,
   Mail,
   ChevronDown,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useState } from 'react'
+import PublicHeader from '@/components/layout/PublicHeader'
 
 // FAQ Component
 function FAQItem({ question, answer, isOpen, onToggle }: {
@@ -49,6 +49,160 @@ function FAQItem({ question, answer, isOpen, onToggle }: {
         <div className="px-6 pb-5">
           <p className="text-gray-600 leading-relaxed">{answer}</p>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Pricing Table Component with Category Tabs
+function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const [activeCategory, setActiveCategory] = useState('men')
+
+  const categories = [
+    { id: 'men', label: 'Men' },
+    { id: 'women', label: 'Women' },
+    { id: 'kids', label: 'Kids' },
+    { id: 'household', label: 'Household' },
+    { id: 'institutional', label: 'Institutional' },
+    { id: 'others', label: 'Others' },
+  ]
+
+  const pricingData: Record<string, Array<{ garment: string; dryCleaning: number; steamPress: number; starch: number; alteration: number }>> = {
+    men: [
+      { garment: 'T Shirt', dryCleaning: 90, steamPress: 30, starch: 40, alteration: 2 },
+      { garment: 'Jeans', dryCleaning: 120, steamPress: 40, starch: 50, alteration: 0 },
+      { garment: 'Pants', dryCleaning: 90, steamPress: 30, starch: 40, alteration: 0 },
+      { garment: 'Shirt', dryCleaning: 90, steamPress: 30, starch: 40, alteration: 0 },
+      { garment: 'Coat', dryCleaning: 210, steamPress: 60, starch: 80, alteration: 0 },
+      { garment: 'Jacket Half', dryCleaning: 130, steamPress: 40, starch: 50, alteration: 0 },
+      { garment: 'Jacket', dryCleaning: 170, steamPress: 50, starch: 70, alteration: 0 },
+      { garment: 'Blazer', dryCleaning: 210, steamPress: 60, starch: 80, alteration: 0 },
+      { garment: 'Suit 2 Pcs', dryCleaning: 300, steamPress: 90, starch: 120, alteration: 0 },
+      { garment: 'Suit 3 Pcs', dryCleaning: 380, steamPress: 110, starch: 150, alteration: 0 },
+      { garment: 'Overcoat', dryCleaning: 320, steamPress: 100, starch: 100, alteration: 0 },
+      { garment: 'Kurta', dryCleaning: 100, steamPress: 35, starch: 45, alteration: 0 },
+      { garment: 'Sherwani', dryCleaning: 450, steamPress: 150, starch: 180, alteration: 0 },
+    ],
+    women: [
+      { garment: 'Blouse', dryCleaning: 80, steamPress: 25, starch: 35, alteration: 0 },
+      { garment: 'Saree (Cotton)', dryCleaning: 100, steamPress: 40, starch: 50, alteration: 0 },
+      { garment: 'Saree (Silk)', dryCleaning: 150, steamPress: 60, starch: 70, alteration: 0 },
+      { garment: 'Saree (Designer)', dryCleaning: 250, steamPress: 100, starch: 120, alteration: 0 },
+      { garment: 'Salwar Suit', dryCleaning: 180, steamPress: 60, starch: 80, alteration: 0 },
+      { garment: 'Lehenga', dryCleaning: 400, steamPress: 150, starch: 180, alteration: 0 },
+      { garment: 'Dress', dryCleaning: 120, steamPress: 45, starch: 55, alteration: 0 },
+      { garment: 'Gown', dryCleaning: 200, steamPress: 80, starch: 100, alteration: 0 },
+      { garment: 'Kurti', dryCleaning: 90, steamPress: 30, starch: 40, alteration: 0 },
+      { garment: 'Dupatta', dryCleaning: 60, steamPress: 25, starch: 30, alteration: 0 },
+    ],
+    kids: [
+      { garment: 'T Shirt', dryCleaning: 60, steamPress: 20, starch: 25, alteration: 0 },
+      { garment: 'Shirt', dryCleaning: 60, steamPress: 20, starch: 25, alteration: 0 },
+      { garment: 'Pants', dryCleaning: 60, steamPress: 20, starch: 25, alteration: 0 },
+      { garment: 'Jeans', dryCleaning: 80, steamPress: 25, starch: 30, alteration: 0 },
+      { garment: 'Frock', dryCleaning: 90, steamPress: 30, starch: 35, alteration: 0 },
+      { garment: 'Jacket', dryCleaning: 100, steamPress: 35, starch: 40, alteration: 0 },
+      { garment: 'School Uniform', dryCleaning: 70, steamPress: 25, starch: 30, alteration: 0 },
+    ],
+    household: [
+      { garment: 'Bedsheet (Single)', dryCleaning: 120, steamPress: 40, starch: 50, alteration: 0 },
+      { garment: 'Bedsheet (Double)', dryCleaning: 180, steamPress: 60, starch: 70, alteration: 0 },
+      { garment: 'Pillow Cover', dryCleaning: 40, steamPress: 15, starch: 20, alteration: 0 },
+      { garment: 'Curtain (Small)', dryCleaning: 150, steamPress: 50, starch: 60, alteration: 0 },
+      { garment: 'Curtain (Large)', dryCleaning: 250, steamPress: 80, starch: 100, alteration: 0 },
+      { garment: 'Blanket (Single)', dryCleaning: 200, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Blanket (Double)', dryCleaning: 300, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Comforter', dryCleaning: 350, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Towel', dryCleaning: 50, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Table Cloth', dryCleaning: 100, steamPress: 35, starch: 45, alteration: 0 },
+    ],
+    institutional: [
+      { garment: 'Hotel Bedsheet', dryCleaning: 100, steamPress: 35, starch: 45, alteration: 0 },
+      { garment: 'Hotel Towel', dryCleaning: 40, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Restaurant Napkin', dryCleaning: 25, steamPress: 10, starch: 15, alteration: 0 },
+      { garment: 'Table Cloth', dryCleaning: 80, steamPress: 30, starch: 40, alteration: 0 },
+      { garment: 'Uniform', dryCleaning: 80, steamPress: 30, starch: 40, alteration: 0 },
+      { garment: 'Apron', dryCleaning: 50, steamPress: 20, starch: 25, alteration: 0 },
+    ],
+    others: [
+      { garment: 'Leather Jacket', dryCleaning: 500, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Woolen Sweater', dryCleaning: 150, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Tie', dryCleaning: 50, steamPress: 20, starch: 0, alteration: 0 },
+      { garment: 'Scarf', dryCleaning: 60, steamPress: 25, starch: 0, alteration: 0 },
+      { garment: 'Cap/Hat', dryCleaning: 80, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Bag (Small)', dryCleaning: 200, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Bag (Large)', dryCleaning: 350, steamPress: 0, starch: 0, alteration: 0 },
+      { garment: 'Soft Toy', dryCleaning: 150, steamPress: 0, starch: 0, alteration: 0 },
+    ],
+  }
+
+  return (
+    <div className="mb-16">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">Our Pricing</h2>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Transparent pricing for all our services. Select a category to view detailed pricing.
+        </p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Category Tabs - Left Side */}
+        <div className="lg:w-48 flex-shrink-0">
+          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+                className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                  activeCategory === category.id
+                    ? 'bg-teal-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pricing Table - Right Side */}
+        <div className="flex-1 overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="text-left py-4 px-6 font-semibold text-gray-700 border-b">Garment</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Dry Cleaning</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Steam Press</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Starch</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Alteration</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pricingData[activeCategory]?.map((item, index) => (
+                <tr 
+                  key={index} 
+                  className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                >
+                  <td className="py-4 px-6 text-gray-800">{item.garment}</td>
+                  <td className="py-4 px-4 text-center text-gray-600">{item.dryCleaning > 0 ? `₹${item.dryCleaning}` : '-'}</td>
+                  <td className="py-4 px-4 text-center text-gray-600">{item.steamPress > 0 ? `₹${item.steamPress}` : '-'}</td>
+                  <td className="py-4 px-4 text-center text-gray-600">{item.starch > 0 ? `₹${item.starch}` : '-'}</td>
+                  <td className="py-4 px-4 text-center text-gray-600">{item.alteration > 0 ? `₹${item.alteration}` : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Book Now Button */}
+      <div className="text-center mt-8">
+        <Link href={isAuthenticated ? "/customer/orders/new" : "/auth/register"}>
+          <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-8">
+            <Truck className="w-5 h-5 mr-2" />
+            Book Service Now
+          </Button>
+        </Link>
       </div>
     </div>
   )
@@ -108,68 +262,54 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-              <span className="text-gray-600 hover:text-teal-500">Back to Home</span>
-            </Link>
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-gray-800">LaundryPro</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <Link href="/customer/dashboard">
-                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
-                    My Dashboard
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/auth/login">
-                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
-                    Login
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold text-gray-800 mb-6">
-            Transparent <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-600">Pricing</span>
+      {/* Hero Section with Video Background */}
+      <section className="relative py-16 overflow-hidden">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          poster="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+        >
+          <source src="https://cdn.pixabay.com/video/2020/05/25/40130-424930032_large.mp4" type="video/mp4" />
+        </video>
+        
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/80 via-cyan-500/70 to-blue-500/80"></div>
+        
+        {/* Content */}
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h1 className="text-5xl font-bold text-white mb-6">
+            Transparent <span className="text-yellow-300">Pricing</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
             Quality laundry and dry cleaning services at competitive prices. 
             No hidden charges, no surprises - just honest, affordable pricing.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {isAuthenticated ? (
               <Link href="/customer/orders/new">
-                <Button size="lg" className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white">
+                <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
                   <Truck className="w-5 h-5 mr-2" />
                   Book Service Now
                 </Button>
               </Link>
             ) : (
               <Link href="/auth/register">
-                <Button size="lg" className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white">
+                <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
                   <Truck className="w-5 h-5 mr-2" />
                   Get Started
                 </Button>
               </Link>
             )}
-            <Link href="tel:+919876543210">
-              <Button size="lg" variant="outline" className="border-2 border-teal-500 text-teal-600 hover:bg-teal-50">
+            <Link href="https://wa.me/919876543210" target="_blank">
+              <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white">
                 <Phone className="w-5 h-5 mr-2" />
-                Call for Quote
+                Chat on WhatsApp
               </Button>
             </Link>
           </div>
@@ -179,359 +319,13 @@ export default function PricingPage() {
       {/* Main Pricing Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          {/* Service Categories */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            {/* Wash & Fold */}
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-8 border border-blue-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shirt className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Wash & Fold</h3>
-                <p className="text-gray-600">Professional washing and folding service</p>
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between items-center py-3 border-b border-blue-100">
-                  <span className="text-gray-700">Shirt/T-Shirt</span>
-                  <span className="font-semibold text-blue-600 text-lg">₹25</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-blue-100">
-                  <span className="text-gray-700">Jeans/Trousers</span>
-                  <span className="font-semibold text-blue-600 text-lg">₹35</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-blue-100">
-                  <span className="text-gray-700">Bedsheet (Single)</span>
-                  <span className="font-semibold text-blue-600 text-lg">₹40</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-blue-100">
-                  <span className="text-gray-700">Bedsheet (Double)</span>
-                  <span className="font-semibold text-blue-600 text-lg">₹60</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-blue-100">
-                  <span className="text-gray-700">Towel</span>
-                  <span className="font-semibold text-blue-600 text-lg">₹20</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-blue-100">
-                  <span className="text-gray-700">Pillow Cover</span>
-                  <span className="font-semibold text-blue-600 text-lg">₹15</span>
-                </div>
-              </div>
+          {/* Pricing Table with Category Tabs */}
+          <PricingTable isAuthenticated={isAuthenticated} />
 
-              <div className="bg-white rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-2 text-green-600 mb-2">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">What's Included:</span>
-                </div>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Professional washing with quality detergent</li>
-                  <li>• Fabric softener treatment</li>
-                  <li>• Neat folding & protective packaging</li>
-                  <li>• 48-hour delivery guarantee</li>
-                </ul>
-              </div>
-
-              {isAuthenticated ? (
-                <Link href="/customer/orders/new?service=wash-fold">
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white">
-                    <Truck className="w-4 h-4 mr-2" />
-                    Book Wash & Fold
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/auth/register">
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white">
-                    <Truck className="w-4 h-4 mr-2" />
-                    Get Started
-                  </Button>
-                </Link>
-              )}
-            </div>
-
-            {/* Dry Cleaning */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 border-2 border-purple-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 relative">
-              {/* Popular Badge */}
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                  Most Popular
-                </div>
-              </div>
-
-              <div className="text-center mb-6 mt-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Dry Cleaning</h3>
-                <p className="text-gray-600">Premium dry cleaning for delicate fabrics</p>
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between items-center py-3 border-b border-purple-100">
-                  <span className="text-gray-700">Formal Shirt</span>
-                  <span className="font-semibold text-purple-600 text-lg">₹60</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-purple-100">
-                  <span className="text-gray-700">Suit (2-piece)</span>
-                  <span className="font-semibold text-purple-600 text-lg">₹250</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-purple-100">
-                  <span className="text-gray-700">Saree (Cotton)</span>
-                  <span className="font-semibold text-purple-600 text-lg">₹100</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-purple-100">
-                  <span className="text-gray-700">Saree (Silk)</span>
-                  <span className="font-semibold text-purple-600 text-lg">₹150</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-purple-100">
-                  <span className="text-gray-700">Blazer/Jacket</span>
-                  <span className="font-semibold text-purple-600 text-lg">₹180</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-purple-100">
-                  <span className="text-gray-700">Dress/Gown</span>
-                  <span className="font-semibold text-purple-600 text-lg">₹120</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-2 text-green-600 mb-2">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Premium Features:</span>
-                </div>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Eco-friendly dry cleaning solvents</li>
-                  <li>• Advanced stain removal treatment</li>
-                  <li>• Professional pressing & finishing</li>
-                  <li>• Protective garment bags</li>
-                </ul>
-              </div>
-
-              {isAuthenticated ? (
-                <Link href="/customer/orders/new?service=dry-cleaning">
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Book Dry Cleaning
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/auth/register">
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Get Started
-                  </Button>
-                </Link>
-              )}
-            </div>
-
-            {/* Express Service */}
-            <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-8 border border-orange-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Express Service</h3>
-                <p className="text-gray-600">Same-day delivery for urgent needs</p>
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between items-center py-3 border-b border-orange-100">
-                  <span className="text-gray-700">Shirt (Express)</span>
-                  <span className="font-semibold text-orange-600 text-lg">₹45</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-orange-100">
-                  <span className="text-gray-700">Suit (Express)</span>
-                  <span className="font-semibold text-orange-600 text-lg">₹400</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-orange-100">
-                  <span className="text-gray-700">Jeans (Express)</span>
-                  <span className="font-semibold text-orange-600 text-lg">₹55</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-orange-100">
-                  <span className="text-gray-700">Saree (Express)</span>
-                  <span className="font-semibold text-orange-600 text-lg">₹200</span>
-                </div>
-                <div className="bg-orange-100 rounded-lg p-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-orange-800 font-medium">Express Charge</span>
-                    <span className="font-bold text-orange-600 text-lg">+₹50</span>
-                  </div>
-                  <p className="text-xs text-orange-700 mt-1">Applied to all express orders</p>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-2 text-green-600 mb-2">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Express Benefits:</span>
-                </div>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Same-day pickup & delivery</li>
-                  <li>• Priority processing queue</li>
-                  <li>• Real-time order tracking</li>
-                  <li>• 100% quality guarantee</li>
-                </ul>
-              </div>
-
-              {isAuthenticated ? (
-                <Link href="/customer/orders/new?service=express">
-                  <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                    <Zap className="w-4 h-4 mr-2" />
-                    Book Express
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/auth/register">
-                  <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                    <Zap className="w-4 h-4 mr-2" />
-                    Get Started
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* Additional Services */}
-          <div className="bg-gray-50 rounded-2xl p-8 mb-12">
-            <h3 className="text-3xl font-bold text-gray-800 text-center mb-8">Additional Services</h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="text-center bg-white rounded-xl p-6 hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Award className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-xl font-semibold text-gray-800 mb-3">Shoe Cleaning</h4>
-                <p className="text-gray-600 text-sm mb-4">Professional shoe care and polishing</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Leather Shoes</span>
-                    <span className="font-bold text-teal-600">₹150</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Sports Shoes</span>
-                    <span className="font-bold text-teal-600">₹100</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Formal Shoes</span>
-                    <span className="font-bold text-teal-600">₹120</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-center bg-white rounded-xl p-6 hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-xl font-semibold text-gray-800 mb-3">Curtain Cleaning</h4>
-                <p className="text-gray-600 text-sm mb-4">Deep cleaning for all curtain types</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Small (per panel)</span>
-                    <span className="font-bold text-blue-600">₹200</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Medium (per panel)</span>
-                    <span className="font-bold text-blue-600">₹300</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Large (per panel)</span>
-                    <span className="font-bold text-blue-600">₹500</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-center bg-white rounded-xl p-6 hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-xl font-semibold text-gray-800 mb-3">Carpet Cleaning</h4>
-                <p className="text-gray-600 text-sm mb-4">Deep steam cleaning service</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Small (up to 4x6)</span>
-                    <span className="font-bold text-purple-600">₹300</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Medium (up to 6x9)</span>
-                    <span className="font-bold text-purple-600">₹500</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Large (up to 9x12)</span>
-                    <span className="font-bold text-purple-600">₹800</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-center bg-white rounded-xl p-6 hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Star className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-xl font-semibold text-gray-800 mb-3">Alterations</h4>
-                <p className="text-gray-600 text-sm mb-4">Professional tailoring services</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Hemming</span>
-                    <span className="font-bold text-green-600">₹50</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Resizing</span>
-                    <span className="font-bold text-green-600">₹150</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Complex Alterations</span>
-                    <span className="font-bold text-green-600">₹300</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing Features */}
-          <div className="grid md:grid-cols-3 gap-8 text-center mb-12">
-            <div className="flex flex-col items-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Hidden Charges</h3>
-              <p className="text-gray-600">Transparent pricing with no surprise fees. What you see is what you pay.</p>
-            </div>
-            
-            <div className="flex flex-col items-center">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <CreditCard className="w-10 h-10 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Flexible Payment</h3>
-              <p className="text-gray-600">Pay online or cash on delivery. Multiple payment options available.</p>
-            </div>
-            
-            <div className="flex flex-col items-center">
-              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                <Award className="w-10 h-10 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Quality Guarantee</h3>
-              <p className="text-gray-600">100% satisfaction guaranteed or we'll redo your order for free.</p>
-            </div>
-          </div>
-
-          {/* Bulk Discount Info */}
-          <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl p-8 text-white text-center mb-12">
-            <h3 className="text-3xl font-bold mb-6">Bulk Order Discounts</h3>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white/10 rounded-xl p-6">
-                <div className="text-4xl font-bold mb-2">5%</div>
-                <div className="text-teal-100 text-lg">Orders above ₹500</div>
-                <p className="text-teal-200 text-sm mt-2">Perfect for weekly laundry</p>
-              </div>
-              <div className="bg-white/10 rounded-xl p-6">
-                <div className="text-4xl font-bold mb-2">10%</div>
-                <div className="text-teal-100 text-lg">Orders above ₹1000</div>
-                <p className="text-teal-200 text-sm mt-2">Great for family orders</p>
-              </div>
-              <div className="bg-white/10 rounded-xl p-6">
-                <div className="text-4xl font-bold mb-2">15%</div>
-                <div className="text-teal-100 text-lg">Orders above ₹2000</div>
-                <p className="text-teal-200 text-sm mt-2">Best value for bulk orders</p>
-              </div>
-            </div>
-            <p className="mt-6 text-teal-100">*Discounts applied automatically at checkout</p>
-          </div>
+          {/* Disclaimer */}
+          <p className="text-center text-gray-800 text-lg font-semibold mb-12">
+            *Prices may vary based on fabric type, stains, and special requirements. Final pricing will be confirmed at pickup.
+          </p>
 
           {/* FAQ Section */}
           <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-3xl p-8 lg:p-12">
@@ -610,7 +404,7 @@ export default function PricingPage() {
               </Link>
             )}
             <Link href="mailto:support@laundrypro.com">
-              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-teal-600">
+              <Button size="lg" className="bg-white/20 border-2 border-white text-white hover:bg-white hover:text-teal-600">
                 <Mail className="w-5 h-5 mr-2" />
                 Contact Us
               </Button>
@@ -633,7 +427,7 @@ export default function PricingPage() {
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
             <Link href="#" className="hover:text-white transition-colors">Contact</Link>
-            <Link href="#" className="hover:text-white transition-colors">Help</Link>
+            <Link href="/help" className="hover:text-white transition-colors">Help</Link>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-gray-400">
             <p>&copy; 2024 LaundryPro. All rights reserved.</p>

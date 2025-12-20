@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 export type UserRole = 'customer' | 'admin' | 'branch_manager' | 'support_agent' | 'center_admin'
 
@@ -17,51 +18,48 @@ interface AuthState {
   user: User | null
   token: string | null
   isAuthenticated: boolean
+  _hasHydrated: boolean
   setAuth: (user: User, token: string) => void
   logout: () => void
   updateUser: (user: Partial<User>) => void
+  setHasHydrated: (state: boolean) => void
 }
 
-// Simple store without persistence for now
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  setAuth: (user, token) => {
-    console.log('🔥 Setting auth in store:', { user, token })
-    
-    // Also save to localStorage manually
-    localStorage.setItem('laundry-auth', JSON.stringify({ user, token, isAuthenticated: true }))
-    
-    set({ user, token, isAuthenticated: true })
-    
-    // Verify the state was set
-    setTimeout(() => {
-      const currentState = get()
-      console.log('🔥 Auth state after setting:', currentState)
-      console.log('🔥 localStorage check:', localStorage.getItem('laundry-auth'))
-    }, 100)
-  },
-  logout: () => {
-    localStorage.removeItem('laundry-auth')
-    set({ user: null, token: null, isAuthenticated: false })
-  },
-  updateUser: (userData) => set((state) => ({
-    user: state.user ? { ...state.user, ...userData } : null
-  })),
-}))
-
-// Initialize from localStorage on app start
-if (typeof window !== 'undefined') {
-  const savedAuth = localStorage.getItem('laundry-auth')
-  if (savedAuth) {
-    try {
-      const { user, token, isAuthenticated } = JSON.parse(savedAuth)
-      console.log('🔥 Loading auth from localStorage:', { user, token, isAuthenticated })
-      useAuthStore.setState({ user, token, isAuthenticated })
-    } catch (error) {
-      console.error('Error loading auth from localStorage:', error)
-      localStorage.removeItem('laundry-auth')
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      _hasHydrated: false,
+      setAuth: (user, token) => {
+        console.log('🔥 Setting auth in store:', { user, token })
+        // Also save token separately for API compatibility
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', token)
+        }
+        set({ user, token, isAuthenticated: true })
+      },
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token')
+        }
+        set({ user: null, token: null, isAuthenticated: false })
+      },
+      updateUser: (userData) => set((state) => ({
+        user: state.user ? { ...state.user, ...userData } : null
+      })),
+      setHasHydrated: (state) => {
+        set({ _hasHydrated: state })
+      }
+    }),
+    {
+      name: 'laundry-auth',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        console.log('🔥 Auth store rehydrated:', state)
+        state?.setHasHydrated(true)
+      }
     }
-  }
-}
+  )
+)

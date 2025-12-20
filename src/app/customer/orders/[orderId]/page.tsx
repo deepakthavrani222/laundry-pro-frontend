@@ -143,12 +143,6 @@ export default function OrderDetailsPage() {
     }
   }, [orderId])
 
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success('Order placed successfully! 🎉')
-    }
-  }, [isSuccess])
-
   const fetchOrderDetails = async () => {
     try {
       setLoading(true)
@@ -257,7 +251,7 @@ export default function OrderDetailsPage() {
           <Link href="/customer/dashboard">
             <Button className="bg-teal-500 hover:bg-teal-600 text-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back
             </Button>
           </Link>
         </div>
@@ -277,7 +271,7 @@ export default function OrderDetailsPage() {
               <Link href="/customer/dashboard">
                 <Button variant="outline" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                  Back
                 </Button>
               </Link>
               <div>
