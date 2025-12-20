@@ -18,91 +18,84 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useAdminDashboard } from '@/hooks/useAdmin'
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
+  const { metrics, recentOrders, loading, error } = useAdminDashboard()
+
+  if (loading) {
+    return (
+      <div className="space-y-6 mt-16">
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 rounded-2xl mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-96 bg-gray-200 rounded-xl"></div>
+            <div className="h-96 bg-gray-200 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 mt-16">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+            <span className="text-red-800">Error loading dashboard: {error}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const stats = [
     {
       name: 'Total Orders',
-      value: '1,247',
+      value: metrics?.totalOrders?.toLocaleString() || '0',
       icon: ShoppingBag,
-      change: '+12% from last month',
+      change: `${metrics?.todayOrders || 0} today`,
       changeType: 'positive',
       color: 'from-blue-500 to-blue-600',
     },
     {
       name: 'Active Customers',
-      value: '892',
+      value: metrics?.activeCustomers?.toLocaleString() || '0',
       icon: Users,
-      change: '+8% from last month',
+      change: `${metrics?.totalCustomers || 0} total`,
       changeType: 'positive',
       color: 'from-green-500 to-emerald-600',
     },
     {
-      name: 'Revenue',
-      value: '₹2,45,680',
-      icon: DollarSign,
-      change: '+15% from last month',
-      changeType: 'positive',
-      color: 'from-purple-500 to-pink-600',
-    },
-    {
       name: 'Pending Orders',
-      value: '23',
+      value: metrics?.pendingOrders?.toLocaleString() || '0',
       icon: Clock,
-      change: 'Needs attention',
-      changeType: 'warning',
+      change: 'Need assignment',
+      changeType: metrics?.pendingOrders && metrics.pendingOrders > 0 ? 'warning' : 'positive',
       color: 'from-orange-500 to-red-600',
     },
-  ]
-
-  const recentOrders = [
     {
-      id: 'ORD-1247',
-      customer: 'John Doe',
-      items: 8,
-      status: 'pending',
-      statusText: 'Pending Assignment',
-      amount: 680,
-      date: '2024-01-19',
-      priority: 'high',
-    },
-    {
-      id: 'ORD-1246',
-      customer: 'Sarah Wilson',
-      items: 5,
-      status: 'in_progress',
-      statusText: 'In Progress',
-      amount: 450,
-      date: '2024-01-19',
-      priority: 'normal',
-    },
-    {
-      id: 'ORD-1245',
-      customer: 'Mike Johnson',
-      items: 12,
-      status: 'ready',
-      statusText: 'Ready for Delivery',
-      amount: 890,
-      date: '2024-01-18',
-      priority: 'normal',
-    },
-    {
-      id: 'ORD-1244',
-      customer: 'Emily Davis',
-      items: 3,
-      status: 'delivered',
-      statusText: 'Delivered',
-      amount: 320,
-      date: '2024-01-18',
-      priority: 'low',
+      name: 'Express Orders',
+      value: metrics?.expressOrders?.toLocaleString() || '0',
+      icon: TrendingUp,
+      change: 'Priority delivery',
+      changeType: 'warning',
+      color: 'from-purple-500 to-pink-600',
     },
   ]
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'placed':
       case 'pending': return 'text-orange-600 bg-orange-50'
+      case 'assigned_to_branch':
       case 'in_progress': return 'text-blue-600 bg-blue-50'
       case 'ready': return 'text-purple-600 bg-purple-50'
       case 'delivered': return 'text-green-600 bg-green-50'
@@ -110,13 +103,25 @@ export default function AdminDashboard() {
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'border-l-red-500'
-      case 'normal': return 'border-l-blue-500'
-      case 'low': return 'border-l-gray-300'
-      default: return 'border-l-gray-300'
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'placed': return 'Pending Assignment'
+      case 'assigned_to_branch': return 'Assigned to Branch'
+      case 'assigned_to_logistics_pickup': return 'Pickup Assigned'
+      case 'picked': return 'Picked Up'
+      case 'in_process': return 'In Progress'
+      case 'ready': return 'Ready for Delivery'
+      case 'assigned_to_logistics_delivery': return 'Delivery Assigned'
+      case 'out_for_delivery': return 'Out for Delivery'
+      case 'delivered': return 'Delivered'
+      default: return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
+  }
+
+  const getPriorityColor = (order: any) => {
+    if (order.isExpress) return 'border-l-red-500'
+    if (order.customer?.isVIP) return 'border-l-yellow-500'
+    return 'border-l-blue-500'
   }
 
   return (
@@ -173,29 +178,44 @@ export default function AdminDashboard() {
           </div>
 
           <div className="space-y-4">
-            {recentOrders.map((order) => (
+            {recentOrders && recentOrders.length > 0 ? recentOrders.map((order) => (
               <div
-                key={order.id}
-                className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border-l-4 ${getPriorityColor(order.priority)}`}
+                key={order._id}
+                className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border-l-4 ${getPriorityColor(order)}`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                     <Package className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-800">{order.id}</div>
-                    <div className="text-sm text-gray-500">{order.customer} • {order.items} items</div>
-                    <div className="text-xs text-gray-400">{order.date}</div>
+                    <div className="font-medium text-gray-800 flex items-center gap-2">
+                      {order.orderNumber}
+                      {order.isExpress && (
+                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">Express</span>
+                      )}
+                      {order.customer?.isVIP && (
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">VIP</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">{order.customer?.name} • {order.items?.length || 0} items</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} mb-2`}>
-                    {order.statusText}
+                    {getStatusText(order.status)}
                   </div>
-                  <div className="text-sm font-medium text-gray-800">₹{order.amount}</div>
+                  <div className="text-sm font-medium text-gray-800">₹{order.pricing?.total?.toLocaleString()}</div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No recent orders found</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -250,21 +270,35 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Alerts & Notifications</h2>
             <div className="space-y-3">
-              <div className="flex items-start p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 mr-3" />
-                <div>
-                  <div className="text-sm font-medium text-orange-800">23 Pending Orders</div>
-                  <div className="text-xs text-orange-600">Need branch assignment</div>
+              {metrics?.pendingOrders && metrics.pendingOrders > 0 && (
+                <div className="flex items-start p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 mr-3" />
+                  <div>
+                    <div className="text-sm font-medium text-orange-800">{metrics.pendingOrders} Pending Orders</div>
+                    <div className="text-xs text-orange-600">Need branch assignment</div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-start p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <Clock className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
-                <div>
-                  <div className="text-sm font-medium text-blue-800">5 Express Orders</div>
-                  <div className="text-xs text-blue-600">Due for delivery today</div>
+              {metrics?.expressOrders && metrics.expressOrders > 0 && (
+                <div className="flex items-start p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <Clock className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
+                  <div>
+                    <div className="text-sm font-medium text-blue-800">{metrics.expressOrders} Express Orders</div>
+                    <div className="text-xs text-blue-600">Priority handling required</div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {metrics?.pendingComplaints && metrics.pendingComplaints > 0 && (
+                <div className="flex items-start p-3 bg-red-50 rounded-lg border border-red-200">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3" />
+                  <div>
+                    <div className="text-sm font-medium text-red-800">{metrics.pendingComplaints} Pending Complaints</div>
+                    <div className="text-xs text-red-600">Need immediate attention</div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-start p-3 bg-green-50 rounded-lg border border-green-200">
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 mr-3" />
@@ -279,21 +313,21 @@ export default function AdminDashboard() {
           {/* Performance Summary */}
           <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">This Month</h3>
+              <h3 className="text-lg font-bold">System Overview</h3>
               <TrendingUp className="w-6 h-6" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-purple-100">Orders Processed</span>
-                <span className="font-bold">1,247</span>
+                <span className="text-purple-100">Total Orders</span>
+                <span className="font-bold">{metrics?.totalOrders?.toLocaleString() || '0'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-purple-100">Revenue Generated</span>
-                <span className="font-bold">₹2,45,680</span>
+                <span className="text-purple-100">Active Customers</span>
+                <span className="font-bold">{metrics?.activeCustomers?.toLocaleString() || '0'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-purple-100">Customer Satisfaction</span>
-                <span className="font-bold">4.8/5</span>
+                <span className="text-purple-100">Active Branches</span>
+                <span className="font-bold">{metrics?.totalBranches?.toLocaleString() || '0'}</span>
               </div>
             </div>
           </div>

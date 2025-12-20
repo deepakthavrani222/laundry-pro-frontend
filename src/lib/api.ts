@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
+import { useCenterAdminStore } from '@/store/centerAdminStore'
 import toast from 'react-hot-toast'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
@@ -15,9 +16,20 @@ export const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    // Check if it's a center-admin route - use center admin token
+    const isCenterAdminRoute = config.url?.includes('center-admin')
+    
+    if (isCenterAdminRoute) {
+      const centerAdminToken = useCenterAdminStore.getState().token
+      if (centerAdminToken) {
+        config.headers.Authorization = `Bearer ${centerAdminToken}`
+      }
+    } else {
+      // Use regular auth token for other routes
+      const token = useAuthStore.getState().token
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
     return config
   },
@@ -31,11 +43,31 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const message = error.response?.data?.message || 'Something went wrong'
+    const requestUrl = error.config?.url || ''
+    const isCenterAdminRoute = requestUrl.includes('center-admin')
     
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      toast.error('Session expired. Please login again.')
-      window.location.href = '/auth/login'
+      // Check if store is hydrated before showing session expired
+      const authStore = useAuthStore.getState()
+      const centerAdminStore = useCenterAdminStore.getState()
+      
+      if (isCenterAdminRoute) {
+        // Only show session expired if user was actually logged in
+        if (centerAdminStore.token) {
+          centerAdminStore.logout()
+          toast.error('Session expired. Please login again.')
+          window.location.href = '/center-admin/login'
+        }
+      } else {
+        // Only show session expired if user was actually logged in
+        if (authStore.token && authStore._hasHydrated) {
+          authStore.logout()
+          toast.error('Session expired. Please login again.')
+          window.location.href = '/auth/login'
+        }
+      }
+    } else if (error.response?.status === 403) {
+      toast.error(message)
     } else if (error.response?.status >= 400) {
       toast.error(message)
     }

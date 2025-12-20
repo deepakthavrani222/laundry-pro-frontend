@@ -13,7 +13,8 @@ import {
   Settings,
   HelpCircle,
   RefreshCw,
-  UserCheck
+  UserCheck,
+  MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,12 +24,13 @@ const navigation = [
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Branches', href: '/admin/branches', icon: Building2 },
   { name: 'Logistics', href: '/admin/logistics', icon: Truck },
+  { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare },
   { name: 'Refunds', href: '/admin/refunds', icon: RefreshCw },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  { name: 'Staff Management', href: '/admin/staff', icon: UserCheck },
+  { name: 'Staff', href: '/admin/staff', icon: UserCheck },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
-  { name: 'Support', href: '/admin/support', icon: HelpCircle },
+  { name: 'Help', href: '/admin/support', icon: HelpCircle },
 ]
 
 export function AdminSidebar() {

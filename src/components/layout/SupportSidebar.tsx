@@ -28,9 +28,9 @@ export function SupportSidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="hidden lg:flex lg:flex-shrink-0">
+    <div className="hidden lg:flex lg:flex-shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-40">
       <div className="flex flex-col w-64 bg-white border-r border-gray-200 pt-16 pb-4 overflow-y-auto">
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           <nav className="flex-1 px-4 space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href
