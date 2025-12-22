@@ -64,10 +64,7 @@ export default function CenterAdminLogin() {
         setSuccess('Verification code sent to your email')
       } else {
         // No MFA required - login successful
-        localStorage.setItem('centerAdminToken', data.token)
-        localStorage.setItem('centerAdmin', JSON.stringify(data.admin))
-        
-        // Update Zustand store
+        // Update Zustand store (this will persist to localStorage automatically)
         setToken(data.token)
         setAdmin(data.admin)
         if (data.session) {
@@ -111,10 +108,7 @@ export default function CenterAdminLogin() {
       }
 
       // MFA verification successful
-      localStorage.setItem('centerAdminToken', data.token)
-      localStorage.setItem('centerAdmin', JSON.stringify(data.admin))
-      
-      // Update Zustand store
+      // Update Zustand store (this will persist to localStorage automatically)
       setToken(data.token)
       setAdmin(data.admin)
       if (data.session) {

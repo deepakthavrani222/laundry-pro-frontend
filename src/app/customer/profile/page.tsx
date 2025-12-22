@@ -20,7 +20,7 @@ import toast from 'react-hot-toast'
 import { api } from '@/lib/api'
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuthStore()
+  const { user, updateUser } = useAuthStore()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -32,7 +32,7 @@ export default function ProfilePage() {
     try {
       setSaving(true)
       const response = await api.put('/auth/profile', formData)
-      setUser(response.data.data.user)
+      updateUser(response.data.data.user)
       toast.success('Profile updated successfully')
       setEditing(false)
     } catch (error: any) {

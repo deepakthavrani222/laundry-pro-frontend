@@ -1110,6 +1110,55 @@ class CenterAdminAPI {
     
     return this.handleResponse(response)
   }
+
+  // Notification Management
+  async getNotifications(params?: {
+    page?: number
+    limit?: number
+    unreadOnly?: boolean
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      if (params.page) searchParams.append('page', params.page.toString())
+      if (params.limit) searchParams.append('limit', params.limit.toString())
+      if (params.unreadOnly) searchParams.append('unreadOnly', 'true')
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/center-admin/auth/notifications?${searchParams}`,
+      { headers: this.getAuthHeaders() }
+    )
+    
+    return this.handleResponse(response)
+  }
+
+  async getNotificationUnreadCount() {
+    const response = await fetch(
+      `${API_BASE_URL}/center-admin/auth/notifications/unread-count`,
+      { headers: this.getAuthHeaders() }
+    )
+    
+    return this.handleResponse(response)
+  }
+
+  async markNotificationsAsRead(notificationIds: string[]) {
+    const response = await fetch(`${API_BASE_URL}/center-admin/auth/notifications/mark-read`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ notificationIds })
+    })
+    
+    return this.handleResponse(response)
+  }
+
+  async markAllNotificationsAsRead() {
+    const response = await fetch(`${API_BASE_URL}/center-admin/auth/notifications/mark-all-read`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders()
+    })
+    
+    return this.handleResponse(response)
+  }
 }
 
 export const centerAdminApi = new CenterAdminAPI()

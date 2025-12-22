@@ -1,81 +1,179 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuthStore } from '@/store/authStore'
 import { 
-  Home, 
-  ShoppingBag, 
-  MapPin, 
-  Bell, 
-  User, 
-  CreditCard,
-  Star,
+  LayoutDashboard,
+  ShoppingBag,
+  MapPin,
+  User,
   HelpCircle,
-  Plus
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Plus,
+  Home,
+  Menu,
+  X,
+  Headphones
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Dashboard', href: '/customer/dashboard', icon: Home },
-  { name: 'New Order', href: '/customer/orders/new', icon: Plus },
+  { name: 'Dashboard', href: '/customer/dashboard', icon: LayoutDashboard },
   { name: 'My Orders', href: '/customer/orders', icon: ShoppingBag },
+  { name: 'New Order', href: '/customer/orders/new', icon: Plus },
   { name: 'Addresses', href: '/customer/addresses', icon: MapPin },
-  { name: 'Notifications', href: '/customer/notifications', icon: Bell },
+  { name: 'Support', href: '/customer/support', icon: Headphones },
   { name: 'Profile', href: '/customer/profile', icon: User },
-  { name: 'Payments', href: '/customer/payments', icon: CreditCard },
-  { name: 'Reviews', href: '/customer/reviews', icon: Star },
-  { name: 'Help & Support', href: '/customer/support', icon: HelpCircle },
 ]
 
-export function CustomerSidebar() {
+interface CustomerSidebarProps {
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+  collapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
+}
+
+export default function CustomerSidebar({ 
+  mobileOpen, 
+  onMobileClose,
+  collapsed = false,
+  onCollapsedChange
+}: CustomerSidebarProps) {
   const pathname = usePathname()
+  const { user, logout } = useAuthStore()
+
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/'
+  }
+
+  const handleNavClick = () => {
+    if (onMobileClose) {
+      onMobileClose()
+    }
+  }
+
+  const toggleCollapsed = () => {
+    if (onCollapsedChange) {
+      onCollapsedChange(!collapsed)
+    }
+  }
 
   return (
-    <div className="hidden lg:flex lg:flex-shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-40">
-      <div className="flex flex-col w-64 bg-white border-r border-gray-200 pt-16 pb-4 overflow-y-auto">
-        <div className="flex-1 flex flex-col min-h-0">
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-                    isActive
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      'mr-3 h-5 w-5 flex-shrink-0',
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'
-                    )}
-                  />
-                  <span className="truncate">{item.name}</span>
-                </Link>
-              )
-            })}
-          </nav>
-          
-          {/* Quick Actions */}
-          <div className="px-4 mt-6 flex-shrink-0">
-            <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-800 mb-2">Quick Order</h3>
-              <p className="text-xs text-gray-600 mb-3">Schedule a pickup in just 2 clicks</p>
-              <Link
-                href="/customer/orders/new"
-                className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 transition-all duration-200"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                New Order
-              </Link>
+    <>
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-xl transition-all duration-300 flex flex-col
+        ${collapsed ? 'w-16' : 'w-64'}
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+      
+      {/* Header */}
+      <div className="flex-shrink-0 flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        {!collapsed && (
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">LaundryPro</h1>
+            </div>
+          </Link>
+        )}
+        
+        <button
+          onClick={toggleCollapsed}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          {collapsed ? (
+            <ChevronRight className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronLeft className="w-5 h-5 text-gray-500" />
+          )}
+        </button>
+      </div>
+
+      {/* User Info */}
+      {!collapsed && user && (
+        <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-medium text-sm">
+                {user.name?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.name}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {user.email}
+              </p>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto min-h-0">
+        {navigation.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          const Icon = item.icon
+          
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={handleNavClick}
+              className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
+                isActive
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/30'
+                  : 'text-gray-700 hover:bg-teal-50'
+              }`}
+            >
+              <Icon className={`flex-shrink-0 w-5 h-5 ${
+                collapsed ? 'mx-auto' : 'mr-3'
+              } ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-teal-500'}`} />
+              {!collapsed && item.name}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Back to Home & Logout */}
+      <div className="flex-shrink-0 border-t border-gray-200 p-2 space-y-1">
+        <Link
+          href="/"
+          onClick={handleNavClick}
+          className={`group flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-xl hover:bg-gray-100 transition-colors ${
+            collapsed ? 'justify-center' : ''
+          }`}
+        >
+          <Home className={`flex-shrink-0 w-5 h-5 ${collapsed ? '' : 'mr-3'} text-gray-400 group-hover:text-teal-500`} />
+          {!collapsed && 'Back to Home'}
+        </Link>
+        <button
+          onClick={handleLogout}
+          className={`group flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-xl hover:bg-red-50 hover:text-red-600 transition-colors ${
+            collapsed ? 'justify-center' : ''
+          }`}
+        >
+          <LogOut className={`flex-shrink-0 w-5 h-5 ${collapsed ? '' : 'mr-3'} text-gray-400 group-hover:text-red-500`} />
+          {!collapsed && 'Sign Out'}
+        </button>
       </div>
     </div>
+    </>
   )
 }

@@ -41,66 +41,43 @@ export default function StatsCards({ data, loading }: StatsCardsProps) {
       change: data.growth.orders,
       changeText: `+${data.periodStats.orders} this period`,
       icon: ShoppingBag,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      textColor: 'text-blue-600'
+      gradient: 'from-blue-500 to-indigo-600',
+      shadow: 'shadow-blue-500/30'
     },
     {
       name: 'Total Revenue',
       value: `₹${data.totalRevenue.toLocaleString()}`,
       change: data.growth.revenue,
-      changeText: `+₹${data.periodStats.revenue.toLocaleString()} this period`,
+      changeText: `+₹${data.periodStats.revenue.toLocaleString()}`,
       icon: DollarSign,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      textColor: 'text-green-600'
+      gradient: 'from-emerald-500 to-teal-600',
+      shadow: 'shadow-emerald-500/30'
     },
     {
       name: 'Total Customers',
       value: data.totalCustomers.toLocaleString(),
       change: data.growth.customers,
-      changeText: `+${data.periodStats.customers} this period`,
+      changeText: `+${data.periodStats.customers} new`,
       icon: Users,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-600'
+      gradient: 'from-purple-500 to-pink-600',
+      shadow: 'shadow-purple-500/30'
     },
     {
       name: 'Active Branches',
       value: data.activeBranches.toString(),
       change: 0,
-      changeText: 'Operational branches',
+      changeText: 'Operational',
       icon: Building2,
-      color: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50',
-      textColor: 'text-orange-600'
+      gradient: 'from-amber-500 to-orange-600',
+      shadow: 'shadow-amber-500/30'
     }
   ]
-
-  const getChangeIcon = (change: number) => {
-    if (change > 0) return TrendingUp
-    if (change < 0) return TrendingDown
-    return Minus
-  }
-
-  const getChangeColor = (change: number) => {
-    if (change > 0) return 'text-green-600'
-    if (change < 0) return 'text-red-600'
-    return 'text-gray-500'
-  }
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-            </div>
-            <div className="h-8 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded"></div>
-          </div>
+          <div key={index} className="h-36 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl animate-pulse"></div>
         ))}
       </div>
     )
@@ -110,40 +87,46 @@ export default function StatsCards({ data, loading }: StatsCardsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat) => {
         const Icon = stat.icon
-        const ChangeIcon = getChangeIcon(stat.change)
-        const changeColor = getChangeColor(stat.change)
         
         return (
           <div
             key={stat.name}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            className={`group relative overflow-hidden bg-gradient-to-br ${stat.gradient} rounded-2xl p-6 text-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${stat.shadow}`}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
-                <Icon className="w-6 h-6 text-white" />
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Icon className="w-7 h-7 text-white" />
+                </div>
+                {stat.change !== 0 && (
+                  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg">
+                    {stat.change > 0 ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {stat.change > 0 ? '+' : ''}{stat.change.toFixed(1)}%
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className={`p-2 ${stat.bgColor} rounded-lg`}>
-                <ChangeIcon className={`w-4 h-4 ${changeColor}`} />
+              
+              <div className="text-3xl font-bold mb-1">
+                {stat.value}
               </div>
-            </div>
-            
-            <div className="text-2xl font-bold text-gray-900 mb-1">
-              {stat.value}
-            </div>
-            
-            <div className="text-sm text-gray-600 mb-2">
-              {stat.name}
-            </div>
-            
-            <div className="flex items-center space-x-1">
-              {stat.change !== 0 && (
-                <span className={`text-sm font-medium ${changeColor}`}>
-                  {stat.change > 0 ? '+' : ''}{stat.change.toFixed(1)}%
-                </span>
-              )}
-              <span className="text-xs text-gray-500">
+              
+              <div className="text-sm font-medium text-white/90 mb-1">
+                {stat.name}
+              </div>
+              
+              <div className="text-xs text-white/70">
                 {stat.changeText}
-              </span>
+              </div>
             </div>
           </div>
         )

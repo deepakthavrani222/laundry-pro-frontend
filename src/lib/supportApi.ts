@@ -2,16 +2,25 @@ const API_BASE_URL = 'http://localhost:5000/api'
 
 class SupportAPI {
   private getAuthHeaders() {
-    const authData = localStorage.getItem('laundry-auth')
     let token = null
-    if (authData) {
-      try {
-        const parsed = JSON.parse(authData)
-        token = parsed.token
-      } catch (e) {
-        console.error('Error parsing auth data:', e)
+    
+    // First try direct token (set by authStore)
+    token = localStorage.getItem('token')
+    
+    // Fallback: try Zustand persist format
+    if (!token) {
+      const authData = localStorage.getItem('laundry-auth')
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          // Zustand persist stores state inside { state: {...}, version: 0 }
+          token = parsed.state?.token || parsed.token
+        } catch (e) {
+          console.error('Error parsing auth data:', e)
+        }
       }
     }
+    
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` })
@@ -143,6 +152,36 @@ class SupportAPI {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  // Customers
+  async getCustomers(params?: {
+    page?: number
+    limit?: number
+    search?: string
+    isVIP?: boolean
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/support/customers?${searchParams}`,
+      { headers: this.getAuthHeaders() }
+    )
+    return this.handleResponse(response)
+  }
+
+  async getCustomer(customerId: string) {
+    const response = await fetch(`${API_BASE_URL}/support/customers/${customerId}`, {
+      headers: this.getAuthHeaders()
     })
     return this.handleResponse(response)
   }

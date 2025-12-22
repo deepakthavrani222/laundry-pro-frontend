@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { authAPI } from '@/lib/api'
@@ -17,7 +17,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const setAuth = useAuthStore((state) => state.setAuth)
+  
+  // Get redirect URL from query params
+  const redirectUrl = searchParams.get('redirect')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,7 +42,16 @@ export default function LoginPage() {
       setAuth(user, token)
       toast.success('Login successful!')
 
-      // Redirect based on user role
+      // If there's a redirect URL, use it (for customers only)
+      if (redirectUrl && user.role === 'customer') {
+        console.log('🔥 Redirecting to:', redirectUrl)
+        setTimeout(() => {
+          router.push(redirectUrl)
+        }, 100)
+        return
+      }
+
+      // Otherwise, redirect based on user role
       const roleRoutes = {
         customer: '/', // Customers go to homepage
         admin: '/admin/dashboard',

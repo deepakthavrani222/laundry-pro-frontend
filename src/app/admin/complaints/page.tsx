@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { 
   MessageSquare, 
   Search, 
-  Filter,
   Eye,
   UserPlus,
   CheckCircle,
@@ -15,10 +14,11 @@ import {
   User,
   Calendar,
   Package,
-  MoreHorizontal,
-  XCircle
+  XCircle,
+  X
 } from 'lucide-react'
 import { useAdminComplaints, useSupportAgents } from '@/hooks/useAdmin'
+import toast from 'react-hot-toast'
 
 const statusOptions = [
   { value: '', label: 'All Status' },
@@ -59,7 +59,8 @@ export default function AdminComplaintsPage() {
   })
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showResolveModal, setShowResolveModal] = useState(false)
-  const [selectedComplaint, setSelectedComplaint] = useState<string>('')
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null)
   const [selectedAgent, setSelectedAgent] = useState('')
   const [resolution, setResolution] = useState('')
 
@@ -70,27 +71,32 @@ export default function AdminComplaintsPage() {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
   }
 
+  const handleViewComplaint = (complaint: any) => {
+    setSelectedComplaint(complaint)
+    setShowViewModal(true)
+  }
+
   const handleAssign = async () => {
-    if (!selectedAgent) return
+    if (!selectedAgent || !selectedComplaint) return
     try {
-      await assignComplaint(selectedComplaint, selectedAgent)
+      await assignComplaint(selectedComplaint._id, selectedAgent)
       setShowAssignModal(false)
       setSelectedAgent('')
-      alert('Complaint assigned successfully!')
-    } catch (error) {
-      alert(`Failed to assign: ${error}`)
+      toast.success('Complaint assigned successfully!')
+    } catch (error: any) {
+      toast.error(`Failed to assign: ${error.message}`)
     }
   }
 
   const handleResolve = async () => {
-    if (!resolution) return
+    if (!resolution || !selectedComplaint) return
     try {
-      await updateStatus(selectedComplaint, 'resolved', resolution)
+      await updateStatus(selectedComplaint._id, 'resolved', resolution)
       setShowResolveModal(false)
       setResolution('')
-      alert('Complaint resolved successfully!')
-    } catch (error) {
-      alert(`Failed to resolve: ${error}`)
+      toast.success('Complaint resolved successfully!')
+    } catch (error: any) {
+      toast.error(`Failed to resolve: ${error.message}`)
     }
   }
 
@@ -268,7 +274,7 @@ export default function AdminComplaintsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">
-            Complaints ({pagination.total})
+            Complaints {pagination.total > 0 ? `(${pagination.total})` : ''}
           </h2>
         </div>
         
@@ -345,7 +351,11 @@ export default function AdminComplaintsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewComplaint(complaint)}
+                      >
                         <Eye className="w-4 h-4 mr-1" />
                         View
                       </Button>
@@ -355,7 +365,7 @@ export default function AdminComplaintsPage() {
                           size="sm" 
                           className="bg-blue-500 hover:bg-blue-600 text-white"
                           onClick={() => {
-                            setSelectedComplaint(complaint._id)
+                            setSelectedComplaint(complaint)
                             setShowAssignModal(true)
                           }}
                         >
@@ -369,7 +379,7 @@ export default function AdminComplaintsPage() {
                           size="sm" 
                           className="bg-green-500 hover:bg-green-600 text-white"
                           onClick={() => {
-                            setSelectedComplaint(complaint._id)
+                            setSelectedComplaint(complaint)
                             setShowResolveModal(true)
                           }}
                         >
@@ -377,10 +387,6 @@ export default function AdminComplaintsPage() {
                           Resolve
                         </Button>
                       )}
-                      
-                      <Button variant="outline" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -504,6 +510,175 @@ export default function AdminComplaintsPage() {
                   Cancel
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Complaint Modal */}
+      {showViewModal && selectedComplaint && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold">Complaint Details</h3>
+              <button
+                onClick={() => {
+                  setShowViewModal(false)
+                  setSelectedComplaint(null)
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Ticket Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Ticket Number</p>
+                  <p className="font-semibold">{selectedComplaint.ticketNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedComplaint.status)}`}>
+                    {selectedComplaint.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Priority</p>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(selectedComplaint.priority)}`}>
+                    {selectedComplaint.priority.charAt(0).toUpperCase() + selectedComplaint.priority.slice(1)}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Category</p>
+                  <p className="font-medium">{selectedComplaint.category?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Title & Description */}
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Title</p>
+                <p className="font-semibold text-lg">{selectedComplaint.title}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Description</p>
+                <p className="bg-gray-50 p-3 rounded-lg">{selectedComplaint.description}</p>
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Customer Information
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Name:</span>
+                    <span className="ml-2 font-medium">{selectedComplaint.raisedBy?.name || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Email:</span>
+                    <span className="ml-2 font-medium">{selectedComplaint.raisedBy?.email || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Info */}
+              {selectedComplaint.relatedOrder && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Related Order
+                  </h4>
+                  <div className="text-sm">
+                    <span className="text-gray-500">Order Number:</span>
+                    <span className="ml-2 font-medium">{selectedComplaint.relatedOrder.orderNumber}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Assignment Info */}
+              {selectedComplaint.assignedTo && (
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-purple-800 mb-2 flex items-center">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Assigned To
+                  </h4>
+                  <div className="text-sm">
+                    <span className="text-gray-500">Agent:</span>
+                    <span className="ml-2 font-medium">{selectedComplaint.assignedTo.name}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div>
+                <h4 className="font-medium text-gray-800 mb-2 flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Timeline
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Created:</span>
+                    <span>{new Date(selectedComplaint.createdAt).toLocaleString('en-IN')}</span>
+                  </div>
+                  {selectedComplaint.updatedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Last Updated:</span>
+                      <span>{new Date(selectedComplaint.updatedAt).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Resolution */}
+              {selectedComplaint.resolution && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Resolution
+                  </h4>
+                  <p className="text-sm">{selectedComplaint.resolution}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              {(selectedComplaint.status === 'open' || !selectedComplaint.assignedTo) && (
+                <Button
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => {
+                    setShowViewModal(false)
+                    setShowAssignModal(true)
+                  }}
+                >
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  Assign
+                </Button>
+              )}
+              {selectedComplaint.status === 'in_progress' && (
+                <Button
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => {
+                    setShowViewModal(false)
+                    setShowResolveModal(true)
+                  }}
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Resolve
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowViewModal(false)
+                  setSelectedComplaint(null)
+                }}
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>

@@ -50,6 +50,13 @@ export default function PublicHeader() {
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
+                {/* Dashboard Button */}
+                <Link href="/customer/dashboard">
+                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
                 <div className="relative group">
                   <button className="flex items-center space-x-2 text-gray-700 hover:text-teal-500 py-2">
                     <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
@@ -62,6 +69,10 @@ export default function PublicHeader() {
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="py-2">
+                      <Link href="/customer/dashboard" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50">
+                        <User className="w-4 h-4 mr-3" />
+                        Dashboard
+                      </Link>
                       <Link href="/customer/orders" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50">
                         <ShoppingBag className="w-4 h-4 mr-3" />
                         My Orders
@@ -90,11 +101,18 @@ export default function PublicHeader() {
                 </div>
               </div>
             ) : (
-              <Link href="/auth/login">
-                <Button className="bg-teal-500 hover:bg-teal-600 text-white">
-                  Schedule Free Pickup
-                </Button>
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link href="/auth/login">
+                  <Button variant="outline" className="border-teal-500 text-teal-500 hover:bg-teal-50">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>

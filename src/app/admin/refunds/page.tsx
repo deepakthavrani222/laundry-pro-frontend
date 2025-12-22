@@ -15,11 +15,12 @@ import {
   User,
   Calendar,
   Package,
-  MoreHorizontal,
   ArrowUpRight,
-  CreditCard
+  CreditCard,
+  X
 } from 'lucide-react'
 import { useAdminRefunds } from '@/hooks/useAdmin'
+import toast from 'react-hot-toast'
 
 const statusOptions = [
   { value: '', label: 'All Status' },
@@ -41,7 +42,8 @@ export default function AdminRefundsPage() {
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
-  const [selectedRefund, setSelectedRefund] = useState<string>('')
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [selectedRefund, setSelectedRefund] = useState<any>(null)
   const [approvalNotes, setApprovalNotes] = useState('')
   const [rejectionReason, setRejectionReason] = useState('')
   const [escalationReason, setEscalationReason] = useState('')
@@ -63,46 +65,51 @@ export default function AdminRefundsPage() {
 
   const handleApprove = async () => {
     try {
-      await approveRefund(selectedRefund, approvalNotes)
+      await approveRefund(selectedRefund._id, approvalNotes)
       setShowApproveModal(false)
       setApprovalNotes('')
-      alert('Refund approved successfully!')
+      toast.success('Refund approved successfully!')
     } catch (error: any) {
-      alert(`Failed to approve: ${error.message}`)
+      toast.error(`Failed to approve: ${error.message}`)
     }
   }
 
   const handleReject = async () => {
     if (!rejectionReason) return
     try {
-      await rejectRefund(selectedRefund, rejectionReason)
+      await rejectRefund(selectedRefund._id, rejectionReason)
       setShowRejectModal(false)
       setRejectionReason('')
-      alert('Refund rejected successfully!')
-    } catch (error) {
-      alert(`Failed to reject: ${error}`)
+      toast.success('Refund rejected successfully!')
+    } catch (error: any) {
+      toast.error(`Failed to reject: ${error.message}`)
     }
   }
 
   const handleEscalate = async () => {
     if (!escalationReason) return
     try {
-      await escalateRefund(selectedRefund, escalationReason)
+      await escalateRefund(selectedRefund._id, escalationReason)
       setShowEscalateModal(false)
       setEscalationReason('')
-      alert('Refund escalated to Center Admin successfully!')
-    } catch (error) {
-      alert(`Failed to escalate: ${error}`)
+      toast.success('Refund escalated to Center Admin successfully!')
+    } catch (error: any) {
+      toast.error(`Failed to escalate: ${error.message}`)
     }
   }
 
   const handleProcess = async (refundId: string) => {
     try {
       await processRefund(refundId)
-      alert('Refund processed successfully!')
-    } catch (error) {
-      alert(`Failed to process: ${error}`)
+      toast.success('Refund processed successfully!')
+    } catch (error: any) {
+      toast.error(`Failed to process: ${error.message}`)
     }
+  }
+
+  const handleViewRefund = (refund: any) => {
+    setSelectedRefund(refund)
+    setShowViewModal(true)
   }
 
   const getStatusColor = (status: string) => {
@@ -352,8 +359,12 @@ export default function AdminRefundsPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewRefund(refund)}
+                      >
                         <Eye className="w-4 h-4 mr-1" />
                         View
                       </Button>
@@ -365,7 +376,7 @@ export default function AdminRefundsPage() {
                               size="sm" 
                               className="bg-green-500 hover:bg-green-600 text-white"
                               onClick={() => {
-                                setSelectedRefund(refund._id)
+                                setSelectedRefund(refund)
                                 setShowApproveModal(true)
                               }}
                             >
@@ -377,7 +388,7 @@ export default function AdminRefundsPage() {
                               size="sm" 
                               className="bg-orange-500 hover:bg-orange-600 text-white"
                               onClick={() => {
-                                setSelectedRefund(refund._id)
+                                setSelectedRefund(refund)
                                 setShowEscalateModal(true)
                               }}
                             >
@@ -389,9 +400,9 @@ export default function AdminRefundsPage() {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            className="text-red-600 border-red-300 hover:bg-red-50"
                             onClick={() => {
-                              setSelectedRefund(refund._id)
+                              setSelectedRefund(refund)
                               setShowRejectModal(true)
                             }}
                           >
@@ -411,10 +422,6 @@ export default function AdminRefundsPage() {
                           Process
                         </Button>
                       )}
-                      
-                      <Button variant="outline" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -580,6 +587,153 @@ export default function AdminRefundsPage() {
                   Cancel
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Refund Modal */}
+      {showViewModal && selectedRefund && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold">Refund Details</h3>
+              <button
+                onClick={() => {
+                  setShowViewModal(false)
+                  setSelectedRefund(null)
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Refund Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Refund Number</p>
+                  <p className="font-semibold">{selectedRefund.refundNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedRefund.status)}`}>
+                    {selectedRefund.status.charAt(0).toUpperCase() + selectedRefund.status.slice(1)}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Amount</p>
+                  <p className="text-xl font-bold text-green-600">₹{selectedRefund.amount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Type</p>
+                  <p className="font-medium">{selectedRefund.type}</p>
+                </div>
+              </div>
+
+              {/* Reason */}
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Reason</p>
+                <p className="bg-gray-50 p-3 rounded-lg">{selectedRefund.reason}</p>
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Customer Information
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Name:</span>
+                    <span className="ml-2 font-medium">{selectedRefund.customer?.name || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Email:</span>
+                    <span className="ml-2 font-medium">{selectedRefund.customer?.email || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Phone:</span>
+                    <span className="ml-2 font-medium">{selectedRefund.customer?.phone || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Info */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                  <Package className="w-4 h-4 mr-2" />
+                  Order Information
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Order Number:</span>
+                    <span className="ml-2 font-medium">{selectedRefund.order?.orderNumber || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Order Total:</span>
+                    <span className="ml-2 font-medium">₹{selectedRefund.order?.pricing?.total?.toLocaleString() || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div>
+                <h4 className="font-medium text-gray-800 mb-2 flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Timeline
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Requested:</span>
+                    <span>{new Date(selectedRefund.createdAt).toLocaleString('en-IN')}</span>
+                  </div>
+                  {selectedRefund.approvedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Approved:</span>
+                      <span>{new Date(selectedRefund.approvedAt).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {selectedRefund.processedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Processed:</span>
+                      <span>{new Date(selectedRefund.processedAt).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Escalation Info */}
+              {selectedRefund.isEscalated && (
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-red-800 mb-2 flex items-center">
+                    <ArrowUpRight className="w-4 h-4 mr-2" />
+                    Escalation Details
+                  </h4>
+                  <p className="text-sm">{selectedRefund.escalationReason || 'Escalated to Center Admin'}</p>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedRefund.notes && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Notes</p>
+                  <p className="bg-gray-50 p-3 rounded-lg text-sm">{selectedRefund.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowViewModal(false)
+                  setSelectedRefund(null)
+                }}
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>

@@ -3,7 +3,8 @@
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import PublicHeader from '@/components/layout/PublicHeader'
+import CustomerSidebar from '@/components/layout/CustomerSidebar'
+import CustomerHeader from '@/components/layout/CustomerHeader'
 
 export default function CustomerLayout({
   children,
@@ -13,6 +14,8 @@ export default function CustomerLayout({
   const { isAuthenticated, user } = useAuthStore()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     // Wait a bit for store to initialize
@@ -44,11 +47,26 @@ export default function CustomerLayout({
     )
   }
 
-  // Layout with header for customer pages
   return (
     <div className="min-h-screen bg-gray-50">
-      <PublicHeader />
-      <main>{children}</main>
+      {/* Sidebar */}
+      <CustomerSidebar 
+        mobileOpen={mobileMenuOpen} 
+        onMobileClose={() => setMobileMenuOpen(false)}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
+      />
+      
+      {/* Main Content */}
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
+        {/* Header */}
+        <CustomerHeader onMenuClick={() => setMobileMenuOpen(true)} />
+        
+        {/* Page Content */}
+        <main className="p-4 lg:p-6">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
