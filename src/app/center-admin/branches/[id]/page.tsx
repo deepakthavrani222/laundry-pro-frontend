@@ -143,8 +143,10 @@ export default function BranchDetailPage() {
             {branch.isActive ? 'Active' : 'Inactive'}
           </span>
           <Button variant="outline">
-            <Edit className="w-4 h-4 mr-2" />
-            Edit Branch
+            <Link href={`/center-admin/branches/${params.id}/edit`} className="flex items-center">
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Branch
+            </Link>
           </Button>
         </div>
       </div>

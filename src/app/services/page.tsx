@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Smartphone,
   WashingMachine,
-  ShirtIcon
+  ShirtIcon,
+  User
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useState, useEffect, useRef } from 'react'
@@ -312,7 +313,7 @@ export default function ServicesPage() {
                   </Button>
                 </Link>
               ) : (
-                <Link href="/auth/register">
+                <Link href="/auth/login?redirect=/customer/orders/new">
                   <Button size="lg" className="bg-gray-800 hover:bg-gray-900 text-white">
                     <Truck className="w-5 h-5 mr-2" />
                     Schedule Free Pickup
@@ -377,7 +378,7 @@ export default function ServicesPage() {
                       </Button>
                     </Link>
                   ) : (
-                    <Link href="/auth/register">
+                    <Link href="/auth/login?redirect=/customer/orders/new">
                       <Button className="w-full bg-gray-800 hover:bg-gray-900 text-white">
                         Book Now
                         <ArrowRight className="w-4 h-4 ml-2" />
@@ -447,7 +448,7 @@ export default function ServicesPage() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/auth/register">
+              <Link href="/auth/login?redirect=/customer/orders/new">
                 <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
                   <Truck className="w-5 h-5 mr-2" />
                   Get Started

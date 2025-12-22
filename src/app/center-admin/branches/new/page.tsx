@@ -15,9 +15,12 @@ import {
   Save,
   X,
   Plus,
-  Trash2
+  Trash2,
+  Navigation,
+  Loader2
 } from 'lucide-react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 interface ServiceArea {
   pincode: string
@@ -42,6 +45,12 @@ export default function NewBranchPage() {
       pincode: '',
       landmark: ''
     },
+    // Coordinates for distance-based delivery
+    coordinates: {
+      latitude: null as number | null,
+      longitude: null as number | null
+    },
+    serviceableRadius: 20,
     contact: {
       phone: '',
       email: '',
@@ -72,6 +81,48 @@ export default function NewBranchPage() {
 
   const [errors, setErrors] = useState<any>({})
   const [activeTab, setActiveTab] = useState('basic')
+  const [geocodingLoading, setGeocodingLoading] = useState(false)
+
+  // Function to get coordinates from address
+  const getCoordinatesFromAddress = async () => {
+    const { addressLine1, city, state, pincode } = formData.address
+    
+    if (!addressLine1 || !city || !pincode) {
+      toast.error('Please fill address, city and pincode first')
+      return
+    }
+
+    const fullAddress = `${addressLine1}, ${city}, ${state}, ${pincode}, India`
+    
+    setGeocodingLoading(true)
+    try {
+      // Use backend API for geocoding (more secure - API key stays on server)
+      const response = await fetch('http://localhost:5000/api/delivery/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: fullAddress })
+      })
+      const data = await response.json()
+      
+      if (data.success && data.data.lat && data.data.lng) {
+        setFormData({
+          ...formData,
+          coordinates: {
+            latitude: data.data.lat,
+            longitude: data.data.lng
+          }
+        })
+        toast.success('Coordinates fetched successfully!')
+      } else {
+        toast.error(data.message || 'Could not find coordinates for this address')
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      toast.error('Failed to fetch coordinates')
+    } finally {
+      setGeocodingLoading(false)
+    }
+  }
 
   const validateForm = () => {
     const newErrors: any = {}
@@ -373,6 +424,99 @@ export default function NewBranchPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Coordinates for Distance-Based Delivery */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  📍 Location Coordinates (for Distance-Based Delivery)
+                </h3>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-purple-700">
+                    Coordinates are required for calculating distance-based delivery charges. 
+                    Click "Get Coordinates" after filling the address to auto-fetch, or enter manually.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.coordinates.latitude || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        coordinates: { ...formData.coordinates, latitude: parseFloat(e.target.value) || null }
+                      })}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="e.g., 26.9124"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.coordinates.longitude || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        coordinates: { ...formData.coordinates, longitude: parseFloat(e.target.value) || null }
+                      })}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="e.g., 75.7873"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Serviceable Radius (km)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.serviceableRadius}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        serviceableRadius: parseInt(e.target.value) || 20
+                      })}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={getCoordinatesFromAddress}
+                  disabled={geocodingLoading}
+                  className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {geocodingLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Fetching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-4 h-4" />
+                      <span>Get Coordinates from Address</span>
+                    </>
+                  )}
+                </button>
+
+                {formData.coordinates.latitude && formData.coordinates.longitude && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700">
+                      ✅ Coordinates set: {formData.coordinates.latitude.toFixed(6)}, {formData.coordinates.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Contact */}

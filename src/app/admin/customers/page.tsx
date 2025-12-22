@@ -276,23 +276,23 @@ export default function AdminCustomersPage() {
           ) : (
             customers.map((customer) => (
               <div key={customer._id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-start space-x-4">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  <div className="flex items-start space-x-4 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-semibold">
-                        {customer.name.split(' ').map(n => n[0]).join('')}
+                        {customer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h3 className="text-lg font-semibold text-gray-800">{customer.name}</h3>
                         {customer.isVIP && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             <Crown className="w-3 h-3 mr-1" />
                             VIP
                           </span>
                         )}
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                           customer.isActive 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
@@ -301,39 +301,35 @@ export default function AdminCustomersPage() {
                         </span>
                       </div>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Mail className="w-4 h-4 mr-1" />
-                          {customer.email}
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <span className="flex items-center truncate">
+                            <Mail className="w-4 h-4 mr-1 flex-shrink-0 text-gray-400" />
+                            <span className="truncate">{customer.email}</span>
+                          </span>
+                          <span className="flex items-center">
+                            <Phone className="w-4 h-4 mr-1 flex-shrink-0 text-gray-400" />
+                            {customer.phone}
+                          </span>
                         </div>
-                        <div className="flex items-center">
-                          <Phone className="w-4 h-4 mr-1" />
-                          {customer.phone}
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Joined {new Date(customer.createdAt).toLocaleDateString('en-IN')}
-                        </div>
-                      </div>
-                      
-                      <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">Orders:</span>
-                          <span className="ml-1 font-medium">{customer.stats?.totalOrders || 0}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Spent:</span>
-                          <span className="ml-1 font-medium">₹{customer.stats?.totalSpent?.toLocaleString() || '0'}</span>
+                        <div className="flex items-center gap-4 flex-wrap text-gray-500">
+                          <span className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                            Joined {new Date(customer.createdAt).toLocaleDateString('en-IN')}
+                          </span>
+                          <span>Orders: <strong className="text-gray-700">{customer.stats?.totalOrders || 0}</strong></span>
+                          <span>Spent: <strong className="text-gray-700">₹{customer.stats?.totalSpent?.toLocaleString() || '0'}</strong></span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleViewProfile(customer)}
+                      className="whitespace-nowrap"
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       View Profile
@@ -342,12 +338,12 @@ export default function AdminCustomersPage() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className={customer.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}
+                      className={`whitespace-nowrap ${customer.isActive ? "text-red-600 border-red-300 hover:bg-red-50" : "text-green-600 border-green-300 hover:bg-green-50"}`}
                       onClick={() => handleToggleStatus(customer._id, customer.name, customer.isActive)}
                       disabled={loadingAction === `status-${customer._id}`}
                     >
                       {loadingAction === `status-${customer._id}` ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : customer.isActive ? (
                         <>
                           <UserX className="w-4 h-4 mr-1" />
@@ -364,12 +360,12 @@ export default function AdminCustomersPage() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className={customer.isVIP ? "text-gray-600 border-gray-600 hover:bg-gray-50" : "text-yellow-600 border-yellow-600 hover:bg-yellow-50"}
+                      className={`whitespace-nowrap ${customer.isVIP ? "text-gray-600 border-gray-300 hover:bg-gray-50" : "text-yellow-600 border-yellow-300 hover:bg-yellow-50"}`}
                       onClick={() => handleToggleVIP(customer._id, customer.name, customer.isVIP)}
                       disabled={loadingAction === `vip-${customer._id}`}
                     >
                       {loadingAction === `vip-${customer._id}` ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
                           <Crown className="w-4 h-4 mr-1" />

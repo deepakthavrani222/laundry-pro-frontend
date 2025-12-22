@@ -1,354 +1,139 @@
-'use client'
+import { useState, useEffect, useCallback } from 'react'
+import api from '@/lib/api'
 
-import { useState, useEffect } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
-
-export interface AnalyticsOverview {
-  analyticsStats: {
-    total: number
-    byType: Record<string, {
-      total: number
-      completed: number
-      completionRate: number
-    }>
-    completionRate: number
-  }
-  customerMetrics: {
-    totalCustomers: number
-    newCustomers: number
-    activeCustomers: number
-    retentionRate: number
-    growth: number
-  }
-  revenueMetrics: {
-    totalRevenue: number
-    totalTransactions: number
-    averageOrderValue: number
-    growth: number
-  }
-  orderMetrics: {
-    totalOrders: number
-    completedOrders: number
-    cancelledOrders: number
-    completionRate: number
-    cancellationRate: number
-  }
-  branchMetrics: {
-    totalBranches: number
-    activeBranches: number
-    totalBranchRevenue: number
-    averageRevenuePerBranch: number
-    topPerformingBranches: Array<{
-      _id: string
-      revenue: number
-      orders: number
-    }>
-  }
+interface WeeklyOrderData {
+  name: string
+  date: string
+  orders: number
+  revenue: number
 }
 
-export interface Analytics {
-  _id: string
-  analyticsId: string
-  type: string
-  periodType: string
-  startDate: string
-  endDate: string
+interface OrderStatusData {
+  name: string
+  value: number
+  color: string
   status: string
-  createdBy: {
-    _id: string
+}
+
+interface RevenueData {
+  daily: Array<{
     name: string
-    email: string
-  }
-  createdAt: string
-  updatedAt: string
-  keyMetrics?: Record<string, number>
-  insights?: Array<{
-    category: string
-    insight: string
-    impact: 'low' | 'medium' | 'high'
-    actionable: boolean
-    recommendedActions: string[]
+    date: string
+    revenue: number
+    orders: number
   }>
-  forecasts?: Array<{
-    metric: string
-    period: string
-    predictedValue: number
-    confidenceInterval: {
-      lower: number
-      upper: number
-    }
-    methodology: string
-  }>
-  cohortData?: Array<{
-    cohortMonth: string
-    cohortSize: number
-    retentionRates: Array<{
-      period: number
-      activeUsers: number
-      retentionRate: number
-    }>
-  }>
-  branchPerformance?: Array<{
-    branchId: string
-    branchName: string
-    period: string
-    totalRevenue: number
-    totalOrders: number
-    completedOrders: number
-    orderCompletionRate: number
-    averageOrderValue: number
-    revenueRank: number
-  }>
-  expansionAnalysis?: Array<{
-    analysisId: string
-    targetLocation: {
-      city: string
-      area?: string
-      pincode?: string
-    }
-    marketData: {
-      populationDensity?: number
-      averageIncome?: number
-      competitorCount?: number
-      marketSaturation?: number
-      demandEstimate?: number
-    }
-    projections: {
-      setupCost: number
-      monthlyOperatingCost: number
-      breakEvenMonths: number
-      roi12Months: number
-      roi24Months: number
-      projectedMonthlyRevenue: Array<{
-        month: number
-        revenue: number
-        orders: number
-        customers: number
-      }>
-    }
-    overallRiskScore: number
-    recommendation: {
-      decision: 'highly_recommended' | 'recommended' | 'conditional' | 'not_recommended'
-      confidence: number
-      reasoning: string
-      conditions: string[]
-      timeline: string
-    }
-  }>
+  totalRevenue: number
+  totalOrders: number
+  averageOrderValue: number
 }
 
-export function useAnalyticsOverview(timeframe: string = '30d') {
-  const [overview, setOverview] = useState<AnalyticsOverview | null>(null)
+interface HourlyOrderData {
+  hour: string
+  orders: number
+  revenue: number
+}
+
+interface ServiceDistributionData {
+  name: string
+  value: number
+  revenue: number
+  color: string
+}
+
+export function useAdminAnalytics() {
+  const [weeklyOrders, setWeeklyOrders] = useState<WeeklyOrderData[]>([])
+  const [orderStatus, setOrderStatus] = useState<OrderStatusData[]>([])
+  const [revenueData, setRevenueData] = useState<RevenueData | null>(null)
+  const [serviceDistribution, setServiceDistribution] = useState<ServiceDistributionData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchOverview = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getAnalyticsOverview(timeframe)
-      setOverview(response.data.overview)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch analytics overview')
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  useEffect(() => {
-    fetchOverview()
-  }, [timeframe])
+      const [weeklyRes, statusRes, revenueRes, serviceRes] = await Promise.all([
+        api.get('/admin/analytics/weekly-orders'),
+        api.get('/admin/analytics/order-status'),
+        api.get('/admin/analytics/revenue'),
+        api.get('/admin/analytics/service-distribution')
+      ])
 
-  return {
-    overview,
-    loading,
-    error,
-    refetch: fetchOverview
-  }
-}
-
-export function useAnalytics(params?: {
-  page?: number
-  limit?: number
-  type?: string
-  status?: string
-  startDate?: string
-  endDate?: string
-  search?: string
-  sortBy?: string
-  sortOrder?: string
-}) {
-  const [analytics, setAnalytics] = useState<Analytics[]>([])
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pages: 1,
-    total: 0,
-    limit: 20
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await centerAdminApi.getAnalytics(params)
-      setAnalytics(response.data.analytics)
-      setPagination(response.data.pagination)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch analytics')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAnalytics()
-  }, [JSON.stringify(params)])
-
-  return {
-    analytics,
-    pagination,
-    loading,
-    error,
-    refetch: fetchAnalytics
-  }
-}
-
-export function useAnalyticsById(analyticsId: string) {
-  const [analytics, setAnalytics] = useState<Analytics | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchAnalytics = async () => {
-    if (!analyticsId) return
-
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await centerAdminApi.getAnalyticsById(analyticsId)
-      setAnalytics(response.data.analytics)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch analytics')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAnalytics()
-  }, [analyticsId])
-
-  return {
-    analytics,
-    loading,
-    error,
-    refetch: fetchAnalytics
-  }
-}
-
-export function useAnalyticsGeneration() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const generateCustomerRetentionAnalysis = async (data: {
-    startDate: string
-    endDate: string
-    filters?: any
-  }) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await centerAdminApi.generateCustomerRetentionAnalysis(data)
-      return response.data.analytics
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate customer retention analysis'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const generateBranchPerformanceAnalysis = async (data: {
-    startDate: string
-    endDate: string
-    filters?: any
-  }) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await centerAdminApi.generateBranchPerformanceAnalysis(data)
-      return response.data.analytics
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate branch performance analysis'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const generateRevenueForecast = async (data: {
-    startDate: string
-    endDate: string
-    forecastHorizon?: number
-    methodology?: string
-    filters?: any
-  }) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await centerAdminApi.generateRevenueForecast(data)
-      return response.data.analytics
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate revenue forecast'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const generateExpansionAnalysis = async (data: {
-    targetLocation: {
-      city: string
-      area?: string
-      pincode?: string
-      coordinates?: {
-        latitude: number
-        longitude: number
+      if (weeklyRes.data.success) {
+        setWeeklyOrders(weeklyRes.data.data)
       }
-    }
-    marketData: {
-      populationDensity?: number
-      averageIncome?: number
-      competitorCount?: number
-      marketSaturation?: number
-      demandEstimate?: number
-      seasonalityFactor?: number
-    }
-  }) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await centerAdminApi.generateExpansionAnalysis(data)
-      return response.data.analytics
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate expansion analysis'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      if (statusRes.data.success) {
+        setOrderStatus(statusRes.data.data)
+      }
+      if (revenueRes.data.success) {
+        setRevenueData(revenueRes.data.data)
+      }
+      if (serviceRes.data.success) {
+        setServiceDistribution(serviceRes.data.data)
+      }
+    } catch (err: any) {
+      console.error('Error fetching analytics:', err)
+      setError(err.response?.data?.message || 'Failed to fetch analytics')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   return {
+    weeklyOrders,
+    orderStatus,
+    revenueData,
+    serviceDistribution,
     loading,
     error,
-    generateCustomerRetentionAnalysis,
-    generateBranchPerformanceAnalysis,
-    generateRevenueForecast,
-    generateExpansionAnalysis
+    refetch: fetchAnalytics
+  }
+}
+
+export function useBranchAnalytics() {
+  const [hourlyOrders, setHourlyOrders] = useState<HourlyOrderData[]>([])
+  const [orderStatus, setOrderStatus] = useState<OrderStatusData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const [hourlyRes, statusRes] = await Promise.all([
+        api.get('/admin/analytics/hourly-orders'),
+        api.get('/admin/analytics/order-status')
+      ])
+
+      if (hourlyRes.data.success) {
+        setHourlyOrders(hourlyRes.data.data)
+      }
+      if (statusRes.data.success) {
+        setOrderStatus(statusRes.data.data)
+      }
+    } catch (err: any) {
+      console.error('Error fetching branch analytics:', err)
+      setError(err.response?.data?.message || 'Failed to fetch analytics')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
+
+  return {
+    hourlyOrders,
+    orderStatus,
+    loading,
+    error,
+    refetch: fetchAnalytics
   }
 }

@@ -57,6 +57,12 @@ interface Order {
     deliveryCharge?: number
     discount?: number
   }
+  deliveryDetails?: {
+    distance?: number
+    deliveryCharge?: number
+    isFallbackPricing?: boolean
+    calculatedAt?: string
+  }
   isExpress: boolean
   createdAt: string
   pickupDate: string
@@ -154,12 +160,60 @@ export default function AdminOrdersPage() {
     setLoadingAction(`status-${orderId}`)
     try {
       await updateStatus(orderId, newStatus)
-      toast.success(`Order status updated to ${getStatusText(newStatus)}`)
+      
+      // Show detailed status message with completed and remaining stages
+      const statusMessage = getStatusProgressMessage(newStatus)
+      toast.success(
+        (t) => (
+          <div className="flex flex-col gap-1">
+            <div className="font-semibold">✅ {getStatusText(newStatus)}</div>
+            <div className="text-xs text-gray-600">{statusMessage.completed}</div>
+            {statusMessage.remaining && (
+              <div className="text-xs text-amber-600">⏳ {statusMessage.remaining}</div>
+            )}
+          </div>
+        ),
+        { duration: 4000 }
+      )
       setOpenMenuId(null)
     } catch (error: any) {
       toast.error(error.message || 'Failed to update status')
     } finally {
       setLoadingAction(null)
+    }
+  }
+
+  const getStatusProgressMessage = (status: string) => {
+    const allStages = [
+      { key: 'placed', label: 'Order Placed' },
+      { key: 'in_process', label: 'Processing' },
+      { key: 'ready', label: 'Ready for Delivery' },
+      { key: 'out_for_delivery', label: 'Out for Delivery' },
+      { key: 'delivered', label: 'Delivered' }
+    ]
+    
+    const currentIndex = allStages.findIndex(s => s.key === status)
+    
+    if (status === 'cancelled') {
+      return {
+        completed: 'Order has been cancelled',
+        remaining: null
+      }
+    }
+    
+    if (currentIndex === -1) {
+      return {
+        completed: 'Status updated',
+        remaining: null
+      }
+    }
+    
+    const completedStages = allStages.slice(0, currentIndex + 1).map(s => s.label)
+    const remainingStages = allStages.slice(currentIndex + 1).map(s => s.label)
+    
+    return {
+      completed: `Done: ${completedStages.join(' → ')}`,
+      remaining: remainingStages.length > 0 ? `Next: ${remainingStages.join(' → ')}` : null
     }
   }
 
@@ -186,9 +240,14 @@ export default function AdminOrdersPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'placed': return AlertCircle
+      case 'placed': return Clock
       case 'assigned_to_branch': return Building2
-      case 'in_process': return Clock
+      case 'assigned_to_logistics_pickup': return Truck
+      case 'picked': return Package
+      case 'in_process': return RefreshCw
+      case 'ready': return CheckCircle
+      case 'assigned_to_logistics_delivery': return Truck
+      case 'out_for_delivery': return Truck
       case 'delivered': return CheckCircle
       case 'cancelled': return XCircle
       default: return Package
@@ -197,9 +256,14 @@ export default function AdminOrdersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'placed': return 'text-orange-600 bg-orange-50 border-orange-200'
+      case 'placed': return 'text-amber-600 bg-amber-50 border-amber-200'
       case 'assigned_to_branch': return 'text-blue-600 bg-blue-50 border-blue-200'
+      case 'assigned_to_logistics_pickup': return 'text-indigo-600 bg-indigo-50 border-indigo-200'
+      case 'picked': return 'text-cyan-600 bg-cyan-50 border-cyan-200'
       case 'in_process': return 'text-purple-600 bg-purple-50 border-purple-200'
+      case 'ready': return 'text-teal-600 bg-teal-50 border-teal-200'
+      case 'assigned_to_logistics_delivery': return 'text-violet-600 bg-violet-50 border-violet-200'
+      case 'out_for_delivery': return 'text-orange-600 bg-orange-50 border-orange-200'
       case 'delivered': return 'text-green-600 bg-green-50 border-green-200'
       case 'cancelled': return 'text-red-600 bg-red-50 border-red-200'
       default: return 'text-gray-600 bg-gray-50 border-gray-200'
@@ -208,13 +272,13 @@ export default function AdminOrdersPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'placed': return 'Pending Assignment'
-      case 'assigned_to_branch': return 'Assigned to Branch'
-      case 'assigned_to_logistics_pickup': return 'Pickup Assigned'
+      case 'placed': return 'Order Placed'
+      case 'assigned_to_branch': return 'At Branch'
+      case 'assigned_to_logistics_pickup': return 'Pickup Scheduled'
       case 'picked': return 'Picked Up'
-      case 'in_process': return 'In Progress'
-      case 'ready': return 'Ready for Delivery'
-      case 'assigned_to_logistics_delivery': return 'Delivery Assigned'
+      case 'in_process': return 'Processing'
+      case 'ready': return 'Ready'
+      case 'assigned_to_logistics_delivery': return 'Delivery Scheduled'
       case 'out_for_delivery': return 'Out for Delivery'
       case 'delivered': return 'Delivered'
       case 'cancelled': return 'Cancelled'
@@ -230,7 +294,7 @@ export default function AdminOrdersPage() {
 
   const getNextStatuses = (currentStatus: string) => {
     const statusFlow: Record<string, string[]> = {
-      'placed': ['assigned_to_branch', 'cancelled'],
+      'placed': ['in_process', 'cancelled'],
       'assigned_to_branch': ['in_process', 'cancelled'],
       'in_process': ['ready', 'cancelled'],
       'ready': ['out_for_delivery', 'cancelled'],
@@ -261,7 +325,7 @@ export default function AdminOrdersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Order Management</h1>
-          <p className="text-gray-600">Manage and assign orders to branches and logistics partners</p>
+          <p className="text-gray-600">Manage orders and assign logistics partners for pickup/delivery</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetch()}>
@@ -387,9 +451,9 @@ export default function AdminOrdersPage() {
                         <Eye className="w-4 h-4 mr-1" />View
                       </Button>
                       
-                      {order.status === 'placed' && (
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleAssignOrder(order._id, 'branch')}>
-                          <Building2 className="w-4 h-4 mr-1" />Assign Branch
+                      {(order.status === 'placed' || order.status === 'assigned_to_branch' || order.status === 'ready') && (
+                        <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => handleAssignOrder(order._id, 'logistics')}>
+                          <Truck className="w-4 h-4 mr-1" />Assign Logistics
                         </Button>
                       )}
                       
@@ -406,13 +470,7 @@ export default function AdminOrdersPage() {
                                 <Eye className="w-4 h-4 mr-2" />View Details
                               </button>
                               
-                              {order.status === 'placed' && (
-                                <button onClick={() => handleAssignOrder(order._id, 'branch')} className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                  <Building2 className="w-4 h-4 mr-2" />Assign to Branch
-                                </button>
-                              )}
-                              
-                              {(order.status === 'assigned_to_branch' || order.status === 'ready') && (
+                              {(order.status === 'placed' || order.status === 'assigned_to_branch' || order.status === 'ready') && (
                                 <button onClick={() => handleAssignOrder(order._id, 'logistics')} className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center">
                                   <Truck className="w-4 h-4 mr-2" />Assign Logistics
                                 </button>
@@ -422,7 +480,7 @@ export default function AdminOrdersPage() {
                                 <>
                                   <div className="border-t border-gray-100 my-1"></div>
                                   <div className="px-4 py-1 text-xs text-gray-500">Update Status</div>
-                                  {nextStatuses.map(status => (
+                                  {nextStatuses.filter(s => s !== 'assigned_to_branch').map(status => (
                                     <button key={status} onClick={() => handleUpdateStatus(order._id, status)} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center ${status === 'cancelled' ? 'text-red-600' : 'text-gray-700'}`}>
                                       {status === 'cancelled' ? <Ban className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
                                       {getStatusText(status)}
@@ -473,7 +531,7 @@ export default function AdminOrdersPage() {
 
             <div className="p-6 space-y-6">
               {/* Status & Badges */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedOrder.status)}`}>
                   {getStatusText(selectedOrder.status)}
                 </span>
@@ -488,6 +546,61 @@ export default function AdminOrdersPage() {
                   </span>
                 )}
               </div>
+
+              {/* Status Timeline */}
+              {selectedOrder.status !== 'cancelled' && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Order Progress</h4>
+                  <div className="flex items-center justify-between">
+                    {[
+                      { key: 'placed', label: 'Placed', icon: Clock },
+                      { key: 'in_process', label: 'Processing', icon: RefreshCw },
+                      { key: 'ready', label: 'Ready', icon: CheckCircle },
+                      { key: 'out_for_delivery', label: 'Out for Delivery', icon: Truck },
+                      { key: 'delivered', label: 'Delivered', icon: CheckCircle }
+                    ].map((stage, index, arr) => {
+                      const stageIndex = arr.findIndex(s => s.key === selectedOrder.status)
+                      const isCompleted = index <= stageIndex
+                      const isCurrent = index === stageIndex
+                      const StageIcon = stage.icon
+                      
+                      return (
+                        <div key={stage.key} className="flex flex-col items-center flex-1">
+                          <div className="flex items-center w-full">
+                            {index > 0 && (
+                              <div className={`flex-1 h-1 ${index <= stageIndex ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            )}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              isCompleted 
+                                ? isCurrent 
+                                  ? 'bg-blue-500 text-white ring-4 ring-blue-200' 
+                                  : 'bg-green-500 text-white'
+                                : 'bg-gray-300 text-gray-500'
+                            }`}>
+                              <StageIcon className="w-4 h-4" />
+                            </div>
+                            {index < arr.length - 1 && (
+                              <div className={`flex-1 h-1 ${index < stageIndex ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            )}
+                          </div>
+                          <span className={`text-xs mt-2 text-center ${isCurrent ? 'font-semibold text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'}`}>
+                            {stage.label}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedOrder.status === 'cancelled' && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <XCircle className="w-5 h-5" />
+                    <span className="font-semibold">Order Cancelled</span>
+                  </div>
+                </div>
+              )}
 
               {/* Customer Info */}
               <div>
@@ -550,7 +663,36 @@ export default function AdminOrdersPage() {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between py-2"><span className="text-gray-600">Items</span><span>{selectedOrder.items?.length || 0} items</span></div>
                   {selectedOrder.pricing?.subtotal && <div className="flex justify-between py-2"><span className="text-gray-600">Subtotal</span><span>₹{selectedOrder.pricing.subtotal.toLocaleString()}</span></div>}
-                  {selectedOrder.pricing?.deliveryCharge && <div className="flex justify-between py-2"><span className="text-gray-600">Delivery</span><span>₹{selectedOrder.pricing.deliveryCharge}</span></div>}
+                  
+                  {/* Delivery Details with Distance */}
+                  {(selectedOrder.deliveryDetails?.distance || selectedOrder.pricing?.deliveryCharge) && (
+                    <div className="py-2 border-t border-gray-200 mt-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Truck className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-600">Delivery</span>
+                          {selectedOrder.deliveryDetails?.distance && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              {selectedOrder.deliveryDetails.distance} km
+                            </span>
+                          )}
+                        </div>
+                        <span>
+                          {(selectedOrder.deliveryDetails?.deliveryCharge || selectedOrder.pricing?.deliveryCharge) === 0 
+                            ? <span className="text-green-600 font-medium">FREE</span>
+                            : `₹${selectedOrder.deliveryDetails?.deliveryCharge || selectedOrder.pricing?.deliveryCharge}`
+                          }
+                        </span>
+                      </div>
+                      {selectedOrder.deliveryDetails?.isFallbackPricing && (
+                        <div className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Flat rate applied (distance unavailable)
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {selectedOrder.pricing?.discount && <div className="flex justify-between py-2 text-green-600"><span>Discount</span><span>-₹{selectedOrder.pricing.discount}</span></div>}
                   <div className="flex justify-between py-2 border-t border-gray-200 font-bold text-lg"><span>Total</span><span>₹{selectedOrder.pricing?.total?.toLocaleString()}</span></div>
                 </div>
@@ -558,9 +700,9 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-              {selectedOrder.status === 'placed' && (
-                <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => { handleAssignOrder(selectedOrder._id, 'branch'); setShowViewModal(false) }}>
-                  <Building2 className="w-4 h-4 mr-2" />Assign to Branch
+              {(selectedOrder.status === 'placed' || selectedOrder.status === 'assigned_to_branch' || selectedOrder.status === 'ready') && (
+                <Button className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => { handleAssignOrder(selectedOrder._id, 'logistics'); setShowViewModal(false) }}>
+                  <Truck className="w-4 h-4 mr-2" />Assign Logistics
                 </Button>
               )}
               <Button variant="outline" onClick={() => setShowViewModal(false)}>Close</Button>

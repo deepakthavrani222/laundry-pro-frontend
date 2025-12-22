@@ -70,7 +70,7 @@ function HeroCarousel({
       discount: '20%',
       primaryButton: isAuthenticated
         ? { text: 'Book New Order', icon: Truck, href: '/customer/orders/new' }
-        : { text: 'Schedule Free Pickup', icon: Truck, href: '/auth/register' },
+        : { text: 'Schedule Free Pickup', icon: Truck, href: '/auth/login?redirect=/customer/orders/new' },
       secondaryButton: { text: 'Chat on WhatsApp', icon: Phone, href: '#' },
     },
     {
@@ -93,7 +93,7 @@ function HeroCarousel({
             icon: Sparkles,
             href: '/customer/orders/new',
           }
-        : { text: 'Book Dry Cleaning', icon: Sparkles, href: '/auth/register' },
+        : { text: 'Book Dry Cleaning', icon: Sparkles, href: '/auth/login?redirect=/customer/orders/new' },
       secondaryButton: { text: 'View Services', icon: ArrowRight, href: '#services' },
     },
   ]
@@ -536,7 +536,7 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
             </h2>
             
             {/* Button */}
-            <Link href={isAuthenticated ? "/customer/orders/new" : "/auth/register"}>
+            <Link href={isAuthenticated ? "/customer/orders/new" : "/auth/login?redirect=/customer/orders/new"}>
               <Button 
                 className="rounded-full font-bold transition-all duration-300 ease-out bg-gray-700 hover:bg-gray-800 text-white"
                 style={{
@@ -660,6 +660,13 @@ export default function HomePage() {
               
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
+                  {/* Dashboard Button */}
+                  <Link href="/customer/dashboard">
+                    <Button className="bg-teal-500 hover:bg-teal-600 text-white">
+                      <User className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
                   <div className="relative group">
                     <button className="flex items-center space-x-2 text-gray-700 hover:text-teal-500 py-2">
                       <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
@@ -672,6 +679,10 @@ export default function HomePage() {
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                       <div className="py-2">
+                        <Link href="/customer/dashboard" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50">
+                          <User className="w-4 h-4 mr-3" />
+                          Dashboard
+                        </Link>
                         <Link href="/customer/orders" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50">
                           <ShoppingBag className="w-4 h-4 mr-3" />
                           My Orders
@@ -700,11 +711,18 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : (
-                <Link href="/auth/login">
-                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
-                    Schedule Free Pickup
-                  </Button>
-                </Link>
+                <div className="flex items-center space-x-3">
+                  <Link href="/auth/login">
+                    <Button variant="outline" className="border-teal-500 text-teal-600 hover:bg-teal-50">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link href="/auth/register">
+                    <Button className="bg-teal-500 hover:bg-teal-600 text-white">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -927,7 +945,7 @@ export default function HomePage() {
                       </Button>
                     </Link>
                   ) : (
-                    <Link href="/auth/register">
+                    <Link href="/auth/login?redirect=/customer/orders/new">
                       <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white w-full sm:w-auto shadow-lg">
                         <Truck className="w-5 h-5 mr-2" />
                         Schedule Free Pickup
@@ -968,7 +986,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Wash & Fold</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Fresh, clean, neatly folded clothes.<br />Perfect for everyday wear.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=wash_fold" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=wash_fold" : "/auth/login?redirect=/customer/orders/new?service=wash_fold"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -982,7 +1000,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Wash & Iron</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Clean, crisp, wrinkle-free garments.<br />Ready to wear daily.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=wash_iron" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=wash_iron" : "/auth/login?redirect=/customer/orders/new?service=wash_iron"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -996,7 +1014,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Premium Laundry</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Gentle care for special fabrics.<br />Extra attention to detail.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_laundry" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_laundry" : "/auth/login?redirect=/customer/orders/new?service=premium_laundry"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -1010,7 +1028,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Dry Clean</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Delicate care for formal wear.<br />Suits, blazers & more.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=dry_clean" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=dry_clean" : "/auth/login?redirect=/customer/orders/new?service=dry_clean"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -1024,7 +1042,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Steam Press</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Smooth, polished finish with steam.<br />Professional ironing service.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=steam_press" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=steam_press" : "/auth/login?redirect=/customer/orders/new?service=steam_press"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -1038,7 +1056,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Starching</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Perfect, lasting stiffness for clothes.<br />Ideal for cottons & sarees.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=starching" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=starching" : "/auth/login?redirect=/customer/orders/new?service=starching"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -1052,7 +1070,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Premium Steam Press</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Extra-fine, careful press service.<br />For premium outfits only.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_steam_press" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_steam_press" : "/auth/login?redirect=/customer/orders/new?service=premium_steam_press"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -1066,7 +1084,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Premium Dry Clean</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Luxury care for branded items.<br />Designer clothing experts.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_dry_clean" : "/auth/register"}>
+              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_dry_clean" : "/auth/login?redirect=/customer/orders/new?service=premium_dry_clean"}>
                 <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                   Book Now
                 </Button>
@@ -1084,16 +1102,18 @@ export default function HomePage() {
                   </Button>
                 </Link>
               ) : (
-                <Link href="/auth/register">
+                <Link href="/auth/login?redirect=/customer/orders/new">
                   <Button className="bg-gray-700 hover:bg-gray-800 text-white">
                     <Truck className="w-5 h-5 mr-2" />
                     Schedule Free Pickup
                   </Button>
                 </Link>
               )}
-              <Button variant="outline" className="border-teal-500 text-teal-500 hover:bg-teal-50">
-                Chat on WhatsApp
-              </Button>
+              <Link href="https://wa.me/919876543210" target="_blank">
+                <Button variant="outline" className="border-teal-500 text-teal-500 hover:bg-teal-50">
+                  Chat on WhatsApp
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -1192,7 +1212,7 @@ export default function HomePage() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/auth/register">
+              <Link href="/auth/login?redirect=/customer/orders/new">
                 <Button size="lg" className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                   <Truck className="w-5 h-5 mr-2" />
                   Get Started Now

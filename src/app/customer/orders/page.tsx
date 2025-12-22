@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { 
@@ -35,9 +36,18 @@ const statusConfig: Record<string, { color: string; icon: any; text: string }> =
 }
 
 export default function OrdersPage() {
+  const searchParams = useSearchParams()
   const { orders, loading, fetchOrders } = useOrders()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+
+  // Read search query from URL on mount
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search')
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchOrders()

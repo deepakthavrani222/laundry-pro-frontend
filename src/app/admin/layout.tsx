@@ -1,10 +1,42 @@
 'use client'
 
-import { AdminSidebar } from '@/components/layout/AdminSidebar'
-import { AdminNavbar } from '@/components/layout/AdminNavbar'
+import {
+  AdminSidebar,
+  AdminSidebarProvider,
+  useAdminSidebar,
+} from '@/components/layout/AdminSidebar'
+import AdminHeader from '@/components/layout/AdminHeader'
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
+
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isCollapsed } = useAdminSidebar()
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <AdminSidebar />
+
+      {/* Main Content */}
+      <div
+        className={cn(
+          'transition-all duration-300',
+          isCollapsed ? 'lg:pl-16' : 'lg:pl-64'
+        )}
+      >
+        {/* Header */}
+        <AdminHeader />
+
+        {/* Page Content */}
+        <main className="p-4 lg:p-6">
+          <div className="max-w-full">{children}</div>
+        </main>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminLayout({
   children,
@@ -16,29 +48,20 @@ export default function AdminLayout({
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    console.log('🔥 Admin layout check:', { 
-      isAuthenticated, 
-      user, 
-      userRole: user?.role,
-    })
-    
     const timer = setTimeout(() => {
       if (!isAuthenticated || !user) {
-        console.log('🔥 Not authenticated, redirecting to login')
         router.push('/auth/login')
         return
       }
-      
+
       if (user.role !== 'admin') {
-        console.log('🔥 Wrong role for admin:', user.role)
         router.push('/auth/login')
         return
       }
-      
-      console.log('🔥 Admin auth check passed')
+
       setIsLoading(false)
     }, 200)
-    
+
     return () => clearTimeout(timer)
   }, [isAuthenticated, user, router])
 
@@ -54,16 +77,8 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar />
-      <div className="flex">
-        <AdminSidebar />
-        <main className="flex-1 lg:ml-64 p-4 lg:p-6 overflow-x-auto">
-          <div className="max-w-full">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+    <AdminSidebarProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminSidebarProvider>
   )
 }

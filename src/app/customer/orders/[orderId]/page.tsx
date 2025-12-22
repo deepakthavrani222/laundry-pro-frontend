@@ -42,6 +42,12 @@ interface OrderDetails {
   actualDeliveryDate?: string
   items: any[]
   pricing: any
+  deliveryDetails?: {
+    distance?: number
+    deliveryCharge?: number
+    isFallbackPricing?: boolean
+    calculatedAt?: string
+  }
   paymentMethod: string
   paymentStatus: string
   isExpress: boolean
@@ -512,9 +518,28 @@ export default function OrderDetailsPage() {
                 )}
                 
                 {order.pricing.deliveryCharge > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery Charge</span>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">Delivery Charge</span>
+                      {order.deliveryDetails?.distance && (
+                        <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+                          {order.deliveryDetails.distance} km
+                        </span>
+                      )}
+                    </div>
                     <span className="font-medium">₹{order.pricing.deliveryCharge}</span>
+                  </div>
+                )}
+                
+                {order.pricing.deliveryCharge === 0 && order.deliveryDetails?.distance && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">Delivery</span>
+                      <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+                        {order.deliveryDetails.distance} km
+                      </span>
+                    </div>
+                    <span className="font-medium text-green-600">FREE</span>
                   </div>
                 )}
                 

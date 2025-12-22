@@ -21,12 +21,33 @@ import {
   X,
   Check,
   Phone,
-  CheckCircle
+  CheckCircle,
+  Building2
 } from 'lucide-react'
 import { useAddresses } from '@/hooks/useAddresses'
 import { useOrders } from '@/hooks/useOrders'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
+
+interface Branch {
+  _id: string
+  name: string
+  code: string
+  address: {
+    addressLine1?: string
+    city?: string
+    pincode?: string
+  }
+  phone?: string
+}
+
+interface DeliveryInfo {
+  distance: number | null
+  deliveryCharge: number
+  isServiceable: boolean
+  isFallback: boolean
+  message: string
+}
 
 const serviceTypes = [
   { id: 'wash_fold', name: 'Wash & Fold', icon: Shirt, price: 30, description: 'Fresh, clean, neatly folded clothes', color: 'blue' },
@@ -39,82 +60,15 @@ const serviceTypes = [
   { id: 'premium_dry_clean', name: 'Premium Dry Clean', icon: Sparkles, price: 120, description: 'Luxury care for branded clothing', color: 'indigo' },
 ]
 
-const itemTypesByService: Record<string, Array<{ id: string; name: string; basePrice: number }>> = {
-  'wash_fold': [
-    { id: 'mens_shirt', name: "Men's Shirt", basePrice: 25 },
-    { id: 'womens_shirt', name: "Women's Shirt", basePrice: 25 },
-    { id: 'tshirt', name: 'T-Shirt', basePrice: 20 },
-    { id: 'trousers', name: 'Trousers/Pants', basePrice: 30 },
-    { id: 'jeans', name: 'Jeans', basePrice: 35 },
-    { id: 'bedsheet_single', name: 'Bed Sheet (Single)', basePrice: 40 },
-    { id: 'bedsheet_double', name: 'Bed Sheet (Double)', basePrice: 60 },
-    { id: 'towel', name: 'Towel', basePrice: 20 },
-    { id: 'pillow_cover', name: 'Pillow Cover', basePrice: 15 },
-  ],
-  'wash_iron': [
-    { id: 'mens_shirt', name: "Men's Shirt", basePrice: 35 },
-    { id: 'womens_shirt', name: "Women's Shirt", basePrice: 35 },
-    { id: 'tshirt', name: 'T-Shirt', basePrice: 25 },
-    { id: 'trousers', name: 'Trousers/Pants', basePrice: 40 },
-    { id: 'jeans', name: 'Jeans', basePrice: 45 },
-    { id: 'dress', name: 'Dress', basePrice: 50 },
-    { id: 'kurti', name: 'Kurti', basePrice: 40 },
-  ],
-  'premium_laundry': [
-    { id: 'silk_shirt', name: 'Silk Shirt', basePrice: 80 },
-    { id: 'silk_saree', name: 'Silk Saree', basePrice: 150 },
-    { id: 'woolen_sweater', name: 'Woolen Sweater', basePrice: 100 },
-    { id: 'cashmere', name: 'Cashmere Item', basePrice: 200 },
-    { id: 'linen_shirt', name: 'Linen Shirt', basePrice: 70 },
-    { id: 'designer_dress', name: 'Designer Dress', basePrice: 180 },
-  ],
-  'dry_clean': [
-    { id: 'formal_shirt', name: 'Formal Shirt', basePrice: 60 },
-    { id: 'suit_2piece', name: 'Suit (2-piece)', basePrice: 250 },
-    { id: 'blazer', name: 'Blazer/Jacket', basePrice: 180 },
-    { id: 'saree_cotton', name: 'Saree (Cotton)', basePrice: 100 },
-    { id: 'saree_silk', name: 'Saree (Silk)', basePrice: 150 },
-    { id: 'dress_gown', name: 'Dress/Gown', basePrice: 120 },
-    { id: 'curtains', name: 'Curtains (per panel)', basePrice: 200 },
-    { id: 'coat', name: 'Coat/Overcoat', basePrice: 220 },
-  ],
-  'steam_press': [
-    { id: 'shirt_press', name: 'Shirt', basePrice: 15 },
-    { id: 'trousers_press', name: 'Trousers', basePrice: 20 },
-    { id: 'saree_press', name: 'Saree', basePrice: 40 },
-    { id: 'suit_press', name: 'Suit (2-piece)', basePrice: 60 },
-    { id: 'dress_press', name: 'Dress', basePrice: 30 },
-    { id: 'kurti_press', name: 'Kurti', basePrice: 20 },
-  ],
-  'starching': [
-    { id: 'cotton_shirt_starch', name: 'Cotton Shirt', basePrice: 25 },
-    { id: 'cotton_saree_starch', name: 'Cotton Saree', basePrice: 50 },
-    { id: 'dhoti_starch', name: 'Dhoti', basePrice: 30 },
-    { id: 'kurta_starch', name: 'Kurta', basePrice: 30 },
-    { id: 'bedsheet_starch', name: 'Bed Sheet', basePrice: 45 },
-  ],
-  'premium_steam_press': [
-    { id: 'silk_saree_press', name: 'Silk Saree', basePrice: 80 },
-    { id: 'designer_suit_press', name: 'Designer Suit', basePrice: 100 },
-    { id: 'lehenga_press', name: 'Lehenga', basePrice: 150 },
-    { id: 'sherwani_press', name: 'Sherwani', basePrice: 120 },
-    { id: 'wedding_dress_press', name: 'Wedding Dress', basePrice: 200 },
-  ],
-  'premium_dry_clean': [
-    { id: 'designer_suit', name: 'Designer Suit', basePrice: 400 },
-    { id: 'bridal_lehenga', name: 'Bridal Lehenga', basePrice: 800 },
-    { id: 'sherwani', name: 'Sherwani', basePrice: 500 },
-    { id: 'designer_saree', name: 'Designer Saree', basePrice: 350 },
-    { id: 'luxury_coat', name: 'Luxury Coat', basePrice: 450 },
-    { id: 'evening_gown', name: 'Evening Gown', basePrice: 400 },
-  ],
-}
+// Service items will be fetched from database
+type ServiceItem = { id: string; name: string; basePrice: number }
 
 const STEPS = [
   { id: 1, title: 'Select Items' },
-  { id: 2, title: 'Address' },
-  { id: 3, title: 'Schedule' },
-  { id: 4, title: 'Confirm' },
+  { id: 2, title: 'Select Branch' },
+  { id: 3, title: 'Address' },
+  { id: 4, title: 'Schedule' },
+  { id: 5, title: 'Confirm' },
 ]
 
 export default function NewOrderPage() {
@@ -130,8 +84,21 @@ export default function NewOrderPage() {
   // Step state
   const [currentStep, setCurrentStep] = useState(1)
   
+  // Service items from database
+  const [serviceItems, setServiceItems] = useState<Record<string, ServiceItem[]>>({})
+  const [itemsLoading, setItemsLoading] = useState(true)
+  
+  // Branches
+  const [branches, setBranches] = useState<Branch[]>([])
+  const [branchesLoading, setBranchesLoading] = useState(true)
+  const [selectedBranchId, setSelectedBranchId] = useState('')
+  
+  // Distance-based delivery
+  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | null>(null)
+  const [deliveryLoading, setDeliveryLoading] = useState(false)
+  
   // Form state
-  const [selectedService, setSelectedService] = useState('wash-fold')
+  const [selectedService, setSelectedService] = useState('wash_fold')
   const [items, setItems] = useState<{ [key: string]: number }>({})
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('')
@@ -164,6 +131,48 @@ export default function NewOrderPage() {
     }
   }, [serviceParam])
 
+  // Fetch service items from database
+  useEffect(() => {
+    const fetchServiceItems = async () => {
+      try {
+        setItemsLoading(true)
+        const response = await fetch('http://localhost:5000/api/service-items')
+        const data = await response.json()
+        if (data.success) {
+          setServiceItems(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch service items:', error)
+      } finally {
+        setItemsLoading(false)
+      }
+    }
+    fetchServiceItems()
+  }, [])
+
+  // Fetch branches
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        setBranchesLoading(true)
+        const response = await fetch('http://localhost:5000/api/services/branches')
+        const data = await response.json()
+        if (data.success) {
+          setBranches(data.data.branches || [])
+          // Auto-select first branch if available
+          if (data.data.branches?.length > 0 && !selectedBranchId) {
+            setSelectedBranchId(data.data.branches[0]._id)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch branches:', error)
+      } finally {
+        setBranchesLoading(false)
+      }
+    }
+    fetchBranches()
+  }, [])
+
   // Load time slots
   useEffect(() => {
     const loadTimeSlots = async () => {
@@ -189,6 +198,49 @@ export default function NewOrderPage() {
       }
     }
   }, [addresses, pickupAddressId, deliveryAddressId])
+
+  // Calculate distance when branch and address are selected
+  useEffect(() => {
+    const calculateDeliveryDistance = async () => {
+      if (!selectedBranchId || !pickupAddressId) {
+        setDeliveryInfo(null)
+        return
+      }
+
+      const selectedAddress = addresses.find(a => a._id === pickupAddressId)
+      if (!selectedAddress) return
+
+      setDeliveryLoading(true)
+      try {
+        const response = await fetch('http://localhost:5000/api/delivery/calculate-distance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pickupAddress: {
+              addressLine1: selectedAddress.addressLine1,
+              addressLine2: selectedAddress.addressLine2,
+              landmark: selectedAddress.landmark,
+              city: selectedAddress.city,
+              pincode: selectedAddress.pincode
+            },
+            branchId: selectedBranchId,
+            isExpress
+          })
+        })
+        const data = await response.json()
+        if (data.success) {
+          setDeliveryInfo(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to calculate distance:', error)
+        setDeliveryInfo(null)
+      } finally {
+        setDeliveryLoading(false)
+      }
+    }
+
+    calculateDeliveryDistance()
+  }, [selectedBranchId, pickupAddressId, addresses, isExpress])
 
   // Calculate pricing when items change
   useEffect(() => {
@@ -227,7 +279,7 @@ export default function NewOrderPage() {
   }
 
   const getCurrentItemTypes = () => {
-    return itemTypesByService[selectedService] || []
+    return serviceItems[selectedService] || []
   }
 
   const getTotalItems = () => {
@@ -285,7 +337,14 @@ export default function NewOrderPage() {
       pickupTimeSlot: selectedTimeSlot,
       paymentMethod,
       isExpress,
-      specialInstructions
+      specialInstructions,
+      branchId: selectedBranchId,
+      // Include delivery details from distance calculation
+      deliveryDetails: deliveryInfo ? {
+        distance: deliveryInfo.distance,
+        deliveryCharge: deliveryInfo.deliveryCharge,
+        isFallbackPricing: deliveryInfo.isFallback
+      } : undefined
     }
 
     try {
@@ -302,10 +361,13 @@ export default function NewOrderPage() {
       case 1:
         return getTotalItems() > 0
       case 2:
-        return pickupAddressId && deliveryAddressId
+        // Must select branch and area must be serviceable (or no delivery info yet)
+        return selectedBranchId !== '' && (!deliveryInfo || deliveryInfo.isServiceable)
       case 3:
-        return selectedDate && selectedTimeSlot
+        return pickupAddressId && deliveryAddressId
       case 4:
+        return selectedDate && selectedTimeSlot
+      case 5:
         return true
       default:
         return false
@@ -313,9 +375,9 @@ export default function NewOrderPage() {
   }
 
   const nextStep = () => {
-    if (canProceed() && currentStep < 4) {
+    if (canProceed() && currentStep < 5) {
       setCurrentStep(currentStep + 1)
-    } else if (currentStep === 4) {
+    } else if (currentStep === 5) {
       handleSubmit()
     }
   }
@@ -446,34 +508,45 @@ export default function NewOrderPage() {
               </div>
 
               {/* Items */}
-              <div className="space-y-3">
-                {getCurrentItemTypes().map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <h3 className="font-medium text-gray-800">{item.name}</h3>
-                      <p className="text-sm text-gray-500">₹{item.basePrice}</p>
+              {itemsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+                  <span className="ml-2 text-gray-500">Loading items...</span>
+                </div>
+              ) : getCurrentItemTypes().length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No items available for this service
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {getCurrentItemTypes().map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-800">{item.name}</h3>
+                        <p className="text-sm text-gray-500">₹{item.basePrice}</p>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          type="button"
+                          onClick={() => updateItemQuantity(item.id, -1)}
+                          className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          disabled={!items[item.id]}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center font-medium">{items[item.id] || 0}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateItemQuantity(item.id, 1)}
+                          className="w-8 h-8 rounded-full bg-teal-500 hover:bg-teal-600 text-white flex items-center justify-center"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        type="button"
-                        onClick={() => updateItemQuantity(item.id, -1)}
-                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-                        disabled={!items[item.id]}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-medium">{items[item.id] || 0}</span>
-                      <button
-                        type="button"
-                        onClick={() => updateItemQuantity(item.id, 1)}
-                        className="w-8 h-8 rounded-full bg-teal-500 hover:bg-teal-600 text-white flex items-center justify-center"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {getTotalItems() > 0 && (
                 <div className="mt-4 p-3 bg-teal-50 rounded-lg">
@@ -493,8 +566,125 @@ export default function NewOrderPage() {
           )}
 
 
-          {/* Step 2: Address */}
+          {/* Step 2: Select Branch */}
           {currentStep === 2 && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Select a branch near you for pickup and delivery
+              </p>
+              
+              {branchesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+                  <span className="ml-2 text-gray-500">Loading branches...</span>
+                </div>
+              ) : branches.length === 0 ? (
+                <div className="text-center py-8">
+                  <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No branches available</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {branches.map((branch) => (
+                    <div
+                      key={branch._id}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        selectedBranchId === branch._id
+                          ? 'border-teal-500 bg-teal-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedBranchId(branch._id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Building2 className="w-4 h-4 text-teal-600" />
+                            <span className="font-medium text-gray-800">{branch.name}</span>
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                              {branch.code}
+                            </span>
+                          </div>
+                          {branch.phone && (
+                            <div className="flex items-center text-sm text-gray-500 mb-1">
+                              <Phone className="w-3 h-3 mr-1" />
+                              {branch.phone}
+                            </div>
+                          )}
+                          {branch.address && (
+                            <p className="text-sm text-gray-600">
+                              {branch.address.addressLine1}{branch.address.city ? `, ${branch.address.city}` : ''}{branch.address.pincode ? ` - ${branch.address.pincode}` : ''}
+                            </p>
+                          )}
+                        </div>
+                        {selectedBranchId === branch._id && (
+                          <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Distance & Delivery Charge Info */}
+              {selectedBranchId && (
+                <div className="mt-4">
+                  {deliveryLoading ? (
+                    <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin text-teal-500 mr-2" />
+                      <span className="text-sm text-gray-500">Calculating delivery charge...</span>
+                    </div>
+                  ) : deliveryInfo ? (
+                    <div className={`p-4 rounded-lg ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
+                      {deliveryInfo.isServiceable ? (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center">
+                              <Truck className="w-4 h-4 text-teal-600 mr-2" />
+                              <span className="font-medium text-gray-800">Delivery Charge</span>
+                            </div>
+                            <span className="font-bold text-teal-600">
+                              {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
+                            </span>
+                          </div>
+                          {deliveryInfo.distance && (
+                            <div className="text-sm text-gray-600">
+                              📍 Distance: {deliveryInfo.distance} km
+                            </div>
+                          )}
+                          <div className="text-sm text-teal-600 mt-1">
+                            {deliveryInfo.message}
+                          </div>
+                          {deliveryInfo.isFallback && (
+                            <div className="text-xs text-amber-600 mt-1">
+                              ⚠️ Flat rate applied (distance calculation unavailable)
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-center">
+                          <div className="text-red-600 font-medium mb-1">❌ Area Not Serviceable</div>
+                          <div className="text-sm text-red-500">{deliveryInfo.message}</div>
+                        </div>
+                      )}
+                    </div>
+                  ) : pickupAddressId ? (
+                    <div className="p-4 bg-amber-50 rounded-lg text-sm text-amber-700">
+                      ⚠️ Could not calculate delivery charge. Please ensure your address is complete.
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500">
+                      💡 Add an address in the next step to see delivery charges
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Address */}
+          {currentStep === 3 && (
             <div className="space-y-4">
               {addressesLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -566,16 +756,36 @@ export default function NewOrderPage() {
             </div>
           )}
 
-          {/* Step 3: Schedule */}
-          {currentStep === 3 && (
+          {/* Step 4: Schedule */}
+          {currentStep === 4 && (
             <div className="space-y-6">
+              {/* Selected Branch Summary */}
+              {selectedBranchId && (
+                <div className="p-4 bg-teal-50 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center">
+                      <Building2 className="w-4 h-4 text-teal-600 mr-2" />
+                      <span className="font-medium text-gray-800">
+                        {branches.find(b => b._id === selectedBranchId)?.name}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => setCurrentStep(2)}
+                      className="text-sm text-teal-600 hover:underline"
+                    >
+                      Change Branch
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Selected Address Summary */}
               {getSelectedAddress() && (
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-medium text-gray-800">{getSelectedAddress()?.name}</span>
                     <button 
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => setCurrentStep(3)}
                       className="text-sm text-teal-600 hover:underline"
                     >
                       Change Address
@@ -642,8 +852,8 @@ export default function NewOrderPage() {
           )}
 
 
-          {/* Step 4: Confirm */}
-          {currentStep === 4 && (
+          {/* Step 5: Confirm */}
+          {currentStep === 5 && (
             <div className="space-y-4">
               {/* Order Summary */}
               <div className="space-y-3">
@@ -662,6 +872,18 @@ export default function NewOrderPage() {
                         </div>
                       )
                     })}
+                </div>
+
+                {/* Branch */}
+                <div className="p-4 bg-teal-50 rounded-lg">
+                  <div className="text-sm text-gray-500 mb-1">Selected Branch</div>
+                  <div className="font-medium text-gray-800 flex items-center">
+                    <Building2 className="w-4 h-4 mr-2 text-teal-600" />
+                    {branches.find(b => b._id === selectedBranchId)?.name}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {branches.find(b => b._id === selectedBranchId)?.address?.city}
+                  </div>
                 </div>
 
                 {/* Address */}
@@ -722,10 +944,15 @@ export default function NewOrderPage() {
                       <span className="text-gray-600">Subtotal</span>
                       <span>₹{calculatedPricing.orderTotal.subtotal}</span>
                     </div>
-                    {calculatedPricing.orderTotal.deliveryCharge > 0 && (
+                    {/* Distance-based delivery charge */}
+                    {deliveryInfo && deliveryInfo.isServiceable && (
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Delivery</span>
-                        <span>₹{calculatedPricing.orderTotal.deliveryCharge}</span>
+                        <span className="text-gray-600">
+                          Delivery {deliveryInfo.distance ? `(${deliveryInfo.distance} km)` : ''}
+                        </span>
+                        <span className={deliveryInfo.deliveryCharge === 0 ? 'text-green-600' : ''}>
+                          {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
+                        </span>
                       </div>
                     )}
                     {calculatedPricing.orderTotal.tax > 0 && (
@@ -737,7 +964,9 @@ export default function NewOrderPage() {
                     <hr className="my-2 border-teal-200" />
                     <div className="flex justify-between font-bold">
                       <span>Total</span>
-                      <span className="text-teal-600">₹{getCalculatedTotal()}</span>
+                      <span className="text-teal-600">
+                        ₹{getCalculatedTotal() + (deliveryInfo?.deliveryCharge || 0)}
+                      </span>
                     </div>
                   </div>
                 )}

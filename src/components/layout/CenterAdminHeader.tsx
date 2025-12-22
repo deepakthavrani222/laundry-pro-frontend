@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCenterAdminStore } from '@/store/centerAdminStore'
 import { centerAdminApi } from '@/lib/centerAdminApi'
 import { 
@@ -12,39 +12,108 @@ import {
   Shield, 
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Package,
+  DollarSign,
+  MessageSquare,
+  Clock
 } from 'lucide-react'
+import Link from 'next/link'
+import toast from 'react-hot-toast'
+
+interface Notification {
+  _id: string
+  title: string
+  message: string
+  type: string
+  isRead: boolean
+  createdAt: string
+  data?: any
+}
 
 export default function CenterAdminHeader() {
   const { admin, logout } = useCenterAdminStore()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [notifications] = useState([
-    {
-      id: 1,
-      type: 'security',
-      title: 'Suspicious Login Detected',
-      message: '5 failed login attempts from IP 192.168.1.100',
-      time: '2 minutes ago',
-      unread: true
-    },
-    {
-      id: 2,
-      type: 'business',
-      title: 'High Value Order',
-      message: 'Order #ORD-12345 worth ₹8,500 requires review',
-      time: '15 minutes ago',
-      unread: true
-    },
-    {
-      id: 3,
-      type: 'system',
-      title: 'System Update Complete',
-      message: 'All services are running normally',
-      time: '1 hour ago',
-      unread: false
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await centerAdminApi.getNotificationUnreadCount()
+      if (response.success) {
+        setUnreadCount(response.data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.log('Could not fetch unread count')
     }
-  ])
+  }
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await centerAdminApi.getNotifications({ limit: 10 })
+      if (response.success) {
+        setNotifications(response.data.notifications || [])
+        setUnreadCount(response.data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.log('Could not fetch notifications')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (showNotifications) {
+      fetchNotifications()
+    }
+  }, [showNotifications])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleMarkAsRead = async (notificationIds: string[]) => {
+    try {
+      await centerAdminApi.markNotificationsAsRead(notificationIds)
+      setNotifications(prev => 
+        prev.map(n => notificationIds.includes(n._id) ? { ...n, isRead: true } : n)
+      )
+      setUnreadCount(prev => Math.max(0, prev - notificationIds.length))
+    } catch (error) {
+      console.log('Could not mark as read')
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await centerAdminApi.markAllNotificationsAsRead()
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+      setUnreadCount(0)
+      toast.success('All notifications marked as read')
+    } catch (error) {
+      toast.error('Failed to mark all as read')
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -57,7 +126,51 @@ export default function CenterAdminHeader() {
     }
   }
 
-  const unreadCount = notifications.filter(n => n.unread).length
+  const formatTime = (date: string) => {
+    const d = new Date(date)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'ORDER_PLACED':
+      case 'ORDER_ASSIGNED':
+        return <Package className="w-4 h-4 text-blue-600" />
+      case 'REFUND_REQUEST':
+        return <DollarSign className="w-4 h-4 text-orange-600" />
+      case 'NEW_COMPLAINT':
+        return <MessageSquare className="w-4 h-4 text-red-600" />
+      case 'security':
+        return <AlertTriangle className="w-4 h-4 text-red-600" />
+      default:
+        return <Bell className="w-4 h-4 text-purple-600" />
+    }
+  }
+
+  const getNotificationBg = (type: string) => {
+    switch (type) {
+      case 'ORDER_PLACED':
+      case 'ORDER_ASSIGNED':
+        return 'bg-blue-100'
+      case 'REFUND_REQUEST':
+        return 'bg-orange-100'
+      case 'NEW_COMPLAINT':
+      case 'security':
+        return 'bg-red-100'
+      default:
+        return 'bg-purple-100'
+    }
+  }
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -85,7 +198,7 @@ export default function CenterAdminHeader() {
             </button>
 
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
@@ -93,7 +206,7 @@ export default function CenterAdminHeader() {
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadCount}
+                    {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
               </button>
@@ -101,59 +214,84 @@ export default function CenterAdminHeader() {
               {/* Notifications Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                  <div className="p-4 border-b border-gray-200">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-purple-600 font-medium">{unreadCount} new</span>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 ${
-                          notification.unread ? 'bg-blue-50' : ''
-                        }`}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                            notification.type === 'security' ? 'bg-red-100' :
-                            notification.type === 'business' ? 'bg-yellow-100' : 'bg-green-100'
-                          }`}>
-                            {notification.type === 'security' ? (
-                              <AlertTriangle className="w-4 h-4 text-red-600" />
-                            ) : notification.type === 'business' ? (
-                              <Bell className="w-4 h-4 text-yellow-600" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                    {loading ? (
+                      <div className="text-center py-8 px-4">
+                        <div className="animate-spin w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                        <p className="text-gray-500 text-sm">Loading...</p>
+                      </div>
+                    ) : notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification._id}
+                          onClick={() => {
+                            if (!notification.isRead) {
+                              handleMarkAsRead([notification._id])
+                            }
+                          }}
+                          className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                            !notification.isRead ? 'bg-purple-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${getNotificationBg(notification.type)}`}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${!notification.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                {notification.title}
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                {formatTime(notification.createdAt)}
+                              </p>
+                            </div>
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0 mt-2" />
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {notification.time}
-                            </p>
-                          </div>
-                          {notification.unread && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
-                          )}
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 px-4">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Bell className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 text-sm">No notifications yet</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                   <div className="p-4 border-t border-gray-200">
-                    <button className="w-full text-center text-sm text-purple-600 hover:text-purple-700 font-medium">
+                    <Link
+                      href="/center-admin/notifications"
+                      onClick={() => setShowNotifications(false)}
+                      className="block w-full text-center text-sm text-purple-600 hover:text-purple-700 font-medium"
+                    >
                       View All Notifications
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Profile Menu */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"

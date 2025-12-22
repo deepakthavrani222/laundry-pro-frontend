@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Crown,
   Tag,
-  Truck
+  Truck,
+  Package
 } from 'lucide-react'
 
 const navigation = [
@@ -53,6 +54,12 @@ const navigation = [
     href: '/center-admin/orders',
     icon: ShoppingBag,
     permission: 'orders'
+  },
+  {
+    name: 'Service Items',
+    href: '/center-admin/service-items',
+    icon: Package,
+    permission: 'settings'
   },
   {
     name: 'Finances',
@@ -118,12 +125,12 @@ export default function CenterAdminSidebar() {
       <div className="lg:hidden fixed inset-0 z-40 bg-gray-600 bg-opacity-75" />
       
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-xl transition-all duration-300 ${
+      <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-xl transition-all duration-300 flex flex-col ${
         collapsed ? 'w-16' : 'w-64'
       } lg:translate-x-0`}>
         
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div className="flex-shrink-0 flex items-center justify-between h-16 px-4 border-b border-gray-200">
           {!collapsed && (
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
@@ -150,7 +157,7 @@ export default function CenterAdminSidebar() {
 
         {/* Admin Info */}
         {!collapsed && admin && (
-          <div className="p-4 border-b border-gray-200">
+          <div className="flex-shrink-0 p-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-medium text-sm">
@@ -180,7 +187,7 @@ export default function CenterAdminSidebar() {
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto min-h-0">
           {navigation.map((item) => {
             if (!hasPermission(item.permission)) return null
             
@@ -207,7 +214,7 @@ export default function CenterAdminSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-2">
+        <div className="flex-shrink-0 border-t border-gray-200 p-2">
           <button
             onClick={handleLogout}
             className={`group flex items-center w-full px-2 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors ${

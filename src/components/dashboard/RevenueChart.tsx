@@ -38,7 +38,7 @@ interface RevenueChartProps {
 const COLORS = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#6366F1']
 
 export default function RevenueChart({ data, loading }: RevenueChartProps) {
-  const [chartType, setChartType] = useState<'area' | 'bar' | 'pie'>('area')
+  const [chartType, setChartType] = useState<'area' | 'bar' | 'pie'>('bar')
   const [timeRange, setTimeRange] = useState('7d')
 
   // Format daily data for charts
@@ -196,6 +196,12 @@ export default function RevenueChart({ data, loading }: RevenueChartProps) {
 
           {chartType === 'bar' && (
             <BarChart data={dailyChartData}>
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#8B5CF6" />
+                  <stop offset="100%" stopColor="#EC4899" />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 
                 dataKey="date" 
@@ -218,8 +224,8 @@ export default function RevenueChart({ data, loading }: RevenueChartProps) {
               />
               <Bar 
                 dataKey="revenue" 
-                fill="#8B5CF6"
-                radius={[4, 4, 0, 0]}
+                fill="url(#barGradient)"
+                radius={[6, 6, 0, 0]}
               />
             </BarChart>
           )}
