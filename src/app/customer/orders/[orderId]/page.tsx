@@ -399,13 +399,31 @@ export default function OrderDetailsPage() {
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Order Items</h2>
               
               <div className="space-y-4">
-                {order.items.map((item, index) => (
+                {order.items.map((item, index) => {
+                  // Extract clean item name from format like "Kota101 Chamko Saree Mji5owds"
+                  const rawName = item.itemType || item.name || 'Item'
+                  const words = rawName.split(' ')
+                  
+                  // Filter out words that look like IDs (contain both letters and numbers)
+                  const cleanWords = words.filter(word => {
+                    // Keep word if it's purely alphabetic (no numbers mixed in)
+                    const hasLetters = /[a-zA-Z]/.test(word)
+                    const hasNumbers = /\d/.test(word)
+                    // Remove if it has both letters AND numbers (like Kota101, Mji5owds)
+                    return !(hasLetters && hasNumbers)
+                  })
+                  
+                  const cleanItemName = cleanWords.length > 0 
+                    ? cleanWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+                    : rawName.replace(/_/g, ' ')
+                  
+                  return (
                   <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-800">{item.itemType.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</h4>
+                      <h4 className="font-medium text-gray-800">{cleanItemName}</h4>
                       <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                        <span>Service: {item.service.replace(/_/g, ' ')}</span>
-                        <span>Category: {item.category}</span>
+                        <span>Service: {(item.service || '').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
+                        <span>Category: {(item.category || '').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                         <span>Qty: {item.quantity}</span>
                       </div>
                       {item.specialInstructions && (
@@ -417,7 +435,8 @@ export default function OrderDetailsPage() {
                       <p className="text-sm text-gray-500">₹{item.unitPrice} each</p>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
 
               {order.specialInstructions && (

@@ -160,55 +160,47 @@ export default function AdminCustomersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Customers</p>
-              <p className="text-2xl font-bold text-gray-800">{pagination.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-blue-100">Total Customers</p>
+            <p className="text-3xl font-bold">{pagination.total}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Customers</p>
-              <p className="text-2xl font-bold text-green-600">
-                {customers.filter(c => c.isActive).length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <UserCheck className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-emerald-100">Active Customers</p>
+            <p className="text-3xl font-bold">{customers.filter(c => c.isActive).length}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">VIP Customers</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {customers.filter(c => c.isVIP).length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Crown className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-amber-100">VIP Customers</p>
+            <p className="text-3xl font-bold">{customers.filter(c => c.isVIP).length}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">This Page</p>
-              <p className="text-2xl font-bold text-purple-600">{customers.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-purple-100">This Page</p>
+            <p className="text-3xl font-bold">{customers.length}</p>
           </div>
         </div>
       </div>

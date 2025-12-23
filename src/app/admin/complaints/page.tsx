@@ -170,57 +170,47 @@ export default function AdminComplaintsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Complaints</p>
-              <p className="text-2xl font-bold text-gray-800">{pagination.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <MessageSquare className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-blue-100">Total Complaints</p>
+            <p className="text-3xl font-bold">{pagination.total}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Open</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {complaints.filter(c => c.status === 'open').length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <AlertCircle className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-amber-100">Open</p>
+            <p className="text-3xl font-bold">{complaints.filter(c => c.status === 'open').length}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">In Progress</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {complaints.filter(c => c.status === 'in_progress').length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Clock className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-purple-100">In Progress</p>
+            <p className="text-3xl font-bold">{complaints.filter(c => c.status === 'in_progress').length}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Resolved</p>
-              <p className="text-2xl font-bold text-green-600">
-                {complaints.filter(c => c.status === 'resolved').length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-emerald-100">Resolved</p>
+            <p className="text-3xl font-bold">{complaints.filter(c => c.status === 'resolved').length}</p>
           </div>
         </div>
       </div>

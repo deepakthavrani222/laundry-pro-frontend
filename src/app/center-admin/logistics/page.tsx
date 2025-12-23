@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { 
-  Truck, Plus, Search, Edit, Trash2, Eye, ToggleLeft, ToggleRight,
-  Phone, Mail, MapPin, IndianRupee, CheckCircle, XCircle, Download,
-  FileText, Calendar, Filter, Share2, Printer
+  Truck, Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight,
+  Phone, Mail, IndianRupee
 } from 'lucide-react'
 
 interface LogisticsPartner {
@@ -19,18 +18,6 @@ interface LogisticsPartner {
   createdAt: string
 }
 
-interface ExportOrder {
-  orderNumber: string
-  customerName: string
-  customerPhone: string
-  address: string
-  phone: string
-  timeSlot: string
-  itemCount: number
-  total: number
-  status: string
-}
-
 export default function LogisticsPartnersPage() {
   const [partners, setPartners] = useState<LogisticsPartner[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,14 +25,7 @@ export default function LogisticsPartnersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingPartner, setEditingPartner] = useState<LogisticsPartner | null>(null)
-  const [activeTab, setActiveTab] = useState<'partners' | 'export' | 'settlement'>('partners')
-  
-  // Export state
-  const [exportDate, setExportDate] = useState(new Date().toISOString().split('T')[0])
-  const [exportType, setExportType] = useState<'pickup' | 'delivery'>('pickup')
-  const [exportPartnerId, setExportPartnerId] = useState('')
-  const [exportOrders, setExportOrders] = useState<ExportOrder[]>([])
-  const [exportLoading, setExportLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'partners' | 'settlement'>('partners')
   
   // Settlement state
   const [settlementPartnerId, setSettlementPartnerId] = useState('')
@@ -70,11 +50,27 @@ export default function LogisticsPartnersPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
   const getAuthHeaders = () => {
-    // Check both token keys for compatibility
-    const token = localStorage.getItem('center-admin-token') || localStorage.getItem('centerAdminToken')
+    let token = null
+    
+    // First try center-admin-storage (Zustand persist format)
+    try {
+      const centerAdminData = localStorage.getItem('center-admin-storage')
+      if (centerAdminData) {
+        const parsed = JSON.parse(centerAdminData)
+        token = parsed.state?.token || parsed.token
+      }
+    } catch (e) {
+      console.error('Error parsing center-admin-storage:', e)
+    }
+    
+    // Fallback to legacy token keys
+    if (!token) {
+      token = localStorage.getItem('center-admin-token') || localStorage.getItem('centerAdminToken') || localStorage.getItem('token')
+    }
+    
     return { 
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` 
+      ...(token && { 'Authorization': `Bearer ${token}` })
     }
   }
 
@@ -200,76 +196,6 @@ export default function LogisticsPartnersPage() {
     }
   }
 
-  // Export functions
-  const fetchExportOrders = async () => {
-    try {
-      setExportLoading(true)
-      const params = new URLSearchParams({
-        date: exportDate,
-        type: exportType
-      })
-      if (exportPartnerId) params.append('partnerId', exportPartnerId)
-      
-      const res = await fetch(`${API_URL}/center-admin/logistics/orders/export?${params}`, {
-        headers: getAuthHeaders()
-      })
-      const data = await res.json()
-      if (data.success) setExportOrders(data.data)
-    } catch (error) {
-      console.error('Export fetch error:', error)
-    } finally {
-      setExportLoading(false)
-    }
-  }
-
-  const handlePrint = () => {
-    const printContent = document.getElementById('export-table')
-    if (printContent) {
-      const win = window.open('', '', 'width=800,height=600')
-      win?.document.write(`
-        <html><head><title>${exportType === 'pickup' ? 'Pickup' : 'Delivery'} List - ${exportDate}</title>
-        <style>
-          body { font-family: Arial; padding: 20px; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
-          th { background: #f5f5f5; }
-          h2 { margin-bottom: 10px; }
-        </style></head><body>
-        <h2>${exportType === 'pickup' ? 'Pickup' : 'Delivery'} Orders - ${exportDate}</h2>
-        ${printContent.outerHTML}
-        </body></html>
-      `)
-      win?.document.close()
-      win?.print()
-    }
-  }
-
-  const handleWhatsAppShare = () => {
-    let message = `*${exportType === 'pickup' ? 'Pickup' : 'Delivery'} List - ${exportDate}*\n\n`
-    exportOrders.forEach((order, i) => {
-      message += `${i + 1}. *${order.orderNumber}*\n`
-      message += `   ${order.customerName} - ${order.customerPhone}\n`
-      message += `   ${order.address}\n`
-      message += `   Time: ${order.timeSlot}\n\n`
-    })
-    message += `Total Orders: ${exportOrders.length}`
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
-  }
-
-  const handleCSVDownload = () => {
-    const headers = ['Order#', 'Customer', 'Phone', 'Address', 'Time Slot', 'Items', 'Amount']
-    const rows = exportOrders.map(o => [
-      o.orderNumber, o.customerName, o.customerPhone, o.address, o.timeSlot, o.itemCount, o.total
-    ])
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${exportType}_orders_${exportDate}.csv`
-    a.click()
-  }
-
   // Settlement functions
   const fetchSettlement = async () => {
     if (!settlementPartnerId) return
@@ -307,7 +233,6 @@ export default function LogisticsPartnersPage() {
         <nav className="flex space-x-8">
           {[
             { id: 'partners', label: 'Partners', icon: Truck },
-            { id: 'export', label: 'Export Orders', icon: Download },
             { id: 'settlement', label: 'Settlement', icon: IndianRupee }
           ].map(tab => (
             <button
@@ -434,119 +359,6 @@ export default function LogisticsPartnersPage() {
                   </div>
                 </div>
               ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Export Tab */}
-      {activeTab === 'export' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">Export Order List</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={exportDate}
-                  onChange={(e) => setExportDate(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select
-                  value={exportType}
-                  onChange={(e) => setExportType(e.target.value as any)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="pickup">Pickup Orders</option>
-                  <option value="delivery">Delivery Orders</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Partner (Optional)</label>
-                <select
-                  value={exportPartnerId}
-                  onChange={(e) => setExportPartnerId(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">All Partners</option>
-                  {partners.filter(p => p.isActive).map(p => (
-                    <option key={p._id} value={p._id}>{p.companyName}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={fetchExportOrders}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                  <Filter className="w-4 h-4 inline mr-2" />
-                  Fetch Orders
-                </button>
-              </div>
-            </div>
-
-            {exportOrders.length > 0 && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm text-gray-600">{exportOrders.length} orders found</span>
-                  <div className="flex space-x-2">
-                    <button onClick={handlePrint} className="px-3 py-2 border rounded-lg hover:bg-gray-50 flex items-center space-x-1">
-                      <Printer className="w-4 h-4" />
-                      <span>Print</span>
-                    </button>
-                    <button onClick={handleWhatsAppShare} className="px-3 py-2 border rounded-lg hover:bg-gray-50 flex items-center space-x-1 text-green-600">
-                      <Share2 className="w-4 h-4" />
-                      <span>WhatsApp</span>
-                    </button>
-                    <button onClick={handleCSVDownload} className="px-3 py-2 border rounded-lg hover:bg-gray-50 flex items-center space-x-1">
-                      <Download className="w-4 h-4" />
-                      <span>CSV</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table id="export-table" className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left">#</th>
-                        <th className="px-4 py-3 text-left">Order</th>
-                        <th className="px-4 py-3 text-left">Customer</th>
-                        <th className="px-4 py-3 text-left">Address</th>
-                        <th className="px-4 py-3 text-left">Time</th>
-                        <th className="px-4 py-3 text-left">Items</th>
-                        <th className="px-4 py-3 text-left">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {exportOrders.map((order, i) => (
-                        <tr key={order.orderNumber} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">{i + 1}</td>
-                          <td className="px-4 py-3 font-medium">{order.orderNumber}</td>
-                          <td className="px-4 py-3">
-                            <div>{order.customerName}</div>
-                            <div className="text-gray-500">{order.customerPhone}</div>
-                          </td>
-                          <td className="px-4 py-3 max-w-xs truncate">{order.address}</td>
-                          <td className="px-4 py-3">{order.timeSlot}</td>
-                          <td className="px-4 py-3">{order.itemCount}</td>
-                          <td className="px-4 py-3">₹{order.total}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-
-            {exportLoading && (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-              </div>
             )}
           </div>
         </div>

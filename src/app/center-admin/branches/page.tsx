@@ -62,6 +62,7 @@ export default function BranchesPage() {
   const [managers, setManagers] = useState<any[]>([])
   const [selectedManager, setSelectedManager] = useState('')
   const [assigning, setAssigning] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchBranches({ page: 1, limit: 10, ...filters })
@@ -367,9 +368,65 @@ export default function BranchesPage() {
                     </span>
                     
                     <div className="relative">
-                      <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenMenuId(openMenuId === branch._id ? null : branch._id)
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
                         <MoreVertical className="w-4 h-4 text-gray-500" />
                       </button>
+                      
+                      {/* Dropdown Menu */}
+                      {openMenuId === branch._id && (
+                        <>
+                          {/* Backdrop to close menu */}
+                          <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                            <Link
+                              href={`/center-admin/branches/${branch._id}`}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setOpenMenuId(null)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </Link>
+                            <Link
+                              href={`/center-admin/branches/${branch._id}/edit`}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setOpenMenuId(null)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Branch
+                            </Link>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null)
+                                openAssignModal(branch)
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              {branch.manager ? 'Change Manager' : 'Assign Manager'}
+                            </button>
+                            <hr className="my-1" />
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null)
+                                handleDelete(branch._id, branch.name)
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Deactivate
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -2,8 +2,42 @@ const API_BASE_URL = 'http://localhost:5000/api' // Hardcoded for testing
 
 class CenterAdminAPI {
   private getAuthHeaders() {
-    // Check both token keys for compatibility
-    const token = localStorage.getItem('center-admin-token') || localStorage.getItem('centerAdminToken')
+    let token = null
+    
+    // First try center-admin-storage (Zustand persist format)
+    const centerAdminData = localStorage.getItem('center-admin-storage')
+    console.log('🔍 center-admin-storage:', centerAdminData ? 'found' : 'not found')
+    if (centerAdminData) {
+      try {
+        const parsed = JSON.parse(centerAdminData)
+        console.log('🔍 Parsed center-admin-storage:', { hasState: !!parsed.state, hasToken: !!parsed.state?.token })
+        token = parsed.state?.token || parsed.token
+      } catch (e) {
+        console.error('Error parsing center-admin-storage:', e)
+      }
+    }
+    
+    // Fallback to laundry-auth (shared auth store)
+    if (!token) {
+      const authData = localStorage.getItem('laundry-auth')
+      console.log('🔍 laundry-auth:', authData ? 'found' : 'not found')
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          token = parsed.state?.token || parsed.token
+        } catch (e) {
+          console.error('Error parsing laundry-auth:', e)
+        }
+      }
+    }
+    
+    // Fallback to legacy token keys
+    if (!token) {
+      token = localStorage.getItem('center-admin-token') || localStorage.getItem('centerAdminToken') || localStorage.getItem('token')
+    }
+    
+    console.log('🔑 Final token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN')
+    
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` })
@@ -22,6 +56,11 @@ class CenterAdminAPI {
     const data = await response.json()
     
     if (!response.ok) {
+      // Show validation errors if available
+      if (data.errors && Array.isArray(data.errors)) {
+        const errorMessages = data.errors.map((e: any) => e.msg || e.message).join(', ')
+        throw new Error(errorMessages || data.message || 'Validation failed')
+      }
       throw new Error(data.message || 'API request failed')
     }
     
@@ -1046,14 +1085,14 @@ class CenterAdminAPI {
     const searchParams = new URLSearchParams()
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
+        if (value !== undefined && value !== '') {
           searchParams.append(key, value.toString())
         }
       })
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/center-admin/audit/logs?${searchParams}`,
+      `${API_BASE_URL}/center-admin/audit?${searchParams}`,
       { headers: this.getAuthHeaders() }
     )
     
@@ -1062,7 +1101,7 @@ class CenterAdminAPI {
 
   async getAuditLog(logId: string) {
     const response = await fetch(
-      `${API_BASE_URL}/center-admin/audit/logs/${logId}`,
+      `${API_BASE_URL}/center-admin/audit/${logId}`,
       { headers: this.getAuthHeaders() }
     )
     

@@ -472,30 +472,28 @@ export default function RolesPage() {
       )}
 
       {/* Summary Stats */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold text-purple-600">{roles.length}</div>
-            <div className="text-sm text-gray-600">Total Roles</div>
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-center hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">{roles.length}</div>
+          <div className="text-sm text-purple-100">Total Roles</div>
+        </div>
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-center hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {roles.filter(r => r.isActive).length}
           </div>
-          <div>
-            <div className="text-2xl font-bold text-green-600">
-              {roles.filter(r => r.isActive).length}
-            </div>
-            <div className="text-sm text-gray-600">Active</div>
+          <div className="text-sm text-green-100">Active</div>
+        </div>
+        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-6 text-center hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {roles.reduce((sum, r) => sum + (r.userCount || 0), 0)}
           </div>
-          <div>
-            <div className="text-2xl font-bold text-blue-600">
-              {roles.reduce((sum, r) => sum + (r.userCount || 0), 0)}
-            </div>
-            <div className="text-sm text-gray-600">Total Users</div>
+          <div className="text-sm text-blue-100">Total Users</div>
+        </div>
+        <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl p-6 text-center hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {roles.filter(r => r.isSystemRole).length}
           </div>
-          <div>
-            <div className="text-2xl font-bold text-orange-600">
-              {roles.filter(r => r.isSystemRole).length}
-            </div>
-            <div className="text-sm text-gray-600">System Roles</div>
-          </div>
+          <div className="text-sm text-orange-100">System Roles</div>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import {
   ShoppingBag,
@@ -17,6 +18,9 @@ import {
   UserCheck,
   Sparkles,
   Zap,
+  BarChart3,
+  LineChart as LineChartIcon,
+  AreaChart,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -36,16 +40,19 @@ import {
   BarChart,
   Bar,
   Legend,
+  AreaChart as RechartsAreaChart,
+  Area,
 } from 'recharts'
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
   const { metrics, recentOrders, loading, error } = useAdminDashboard()
   const { weeklyOrders, orderStatus, revenueData, loading: analyticsLoading } = useAdminAnalytics()
+  const [revenueChartType, setRevenueChartType] = useState<'bar' | 'line' | 'area'>('bar')
 
   if (loading) {
     return (
-      <div className="space-y-6 mt-16">
+      <div className="space-y-6">
         <div className="animate-pulse">
           <div className="h-36 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -64,7 +71,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="space-y-6 mt-16">
+      <div className="space-y-6">
         <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
           <div className="flex items-center">
             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mr-4">
@@ -153,7 +160,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 mt-16 pb-8">
+    <div className="space-y-6 pb-8">
       {/* Welcome Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
         {/* Background Pattern */}
@@ -313,12 +320,48 @@ export default function AdminDashboard() {
 
       {/* Revenue Chart */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Revenue Overview</h2>
             <p className="text-sm text-gray-500">Daily revenue this week</p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Chart Type Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setRevenueChartType('bar')}
+                className={`p-2 rounded-md transition-all ${
+                  revenueChartType === 'bar'
+                    ? 'bg-white shadow-sm text-emerald-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                title="Bar Chart"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setRevenueChartType('line')}
+                className={`p-2 rounded-md transition-all ${
+                  revenueChartType === 'line'
+                    ? 'bg-white shadow-sm text-emerald-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                title="Line Chart"
+              >
+                <LineChartIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setRevenueChartType('area')}
+                className={`p-2 rounded-md transition-all ${
+                  revenueChartType === 'area'
+                    ? 'bg-white shadow-sm text-emerald-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                title="Area Chart"
+              >
+                <AreaChart className="w-4 h-4" />
+              </button>
+            </div>
             {revenueData && (
               <div className="text-right">
                 <p className="text-sm text-gray-500">Total Revenue</p>
@@ -338,34 +381,80 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData?.daily || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
-                <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(value) => `₹${value / 1000}k`} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                  }}
-                  formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="url(#colorRevenue)"
-                  strokeWidth={3}
-                  dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: '#10b981' }}
-                />
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#14b8a6" />
-                  </linearGradient>
-                </defs>
-              </LineChart>
+              {revenueChartType === 'bar' ? (
+                <BarChart data={revenueData?.daily || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                  <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(value) => `₹${value / 1000}k`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Bar dataKey="revenue" fill="url(#colorRevenueBar)" radius={[8, 8, 0, 0]} />
+                  <defs>
+                    <linearGradient id="colorRevenueBar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#14b8a6" />
+                    </linearGradient>
+                  </defs>
+                </BarChart>
+              ) : revenueChartType === 'line' ? (
+                <LineChart data={revenueData?.daily || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                  <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(value) => `₹${value / 1000}k`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#10b981' }}
+                  />
+                </LineChart>
+              ) : (
+                <RechartsAreaChart data={revenueData?.daily || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                  <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(value) => `₹${value / 1000}k`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    fill="url(#colorRevenueArea)"
+                  />
+                  <defs>
+                    <linearGradient id="colorRevenueArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                </RechartsAreaChart>
+              )}
             </ResponsiveContainer>
           )}
         </div>
@@ -387,7 +476,7 @@ export default function AdminDashboard() {
             {recentOrders && recentOrders.length > 0 ? recentOrders.map((order) => (
               <div
                 key={order._id}
-                className={`flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer border-l-4 ${getPriorityColor(order)}`}
+                className={`flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 border-l-4 ${getPriorityColor(order)}`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -409,11 +498,20 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} mb-2`}>
-                    {getStatusText(order.status)}
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} mb-2`}>
+                      {getStatusText(order.status)}
+                    </div>
+                    <div className="text-sm font-bold text-gray-800">₹{order.pricing?.total?.toLocaleString()}</div>
                   </div>
-                  <div className="text-sm font-bold text-gray-800">₹{order.pricing?.total?.toLocaleString()}</div>
+                  <Link
+                    href={`/admin/orders?view=${order._id}`}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="View Order"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </Link>
                 </div>
               </div>
             )) : (

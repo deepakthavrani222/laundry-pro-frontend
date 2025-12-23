@@ -122,9 +122,11 @@ export const useBranches = () => {
       
       return response.data.branch
     } catch (err: any) {
-      setError(err.message)
+      const errorMessage = err.message || 'Failed to create branch'
+      setError(errorMessage)
       console.error('Create branch error:', err)
-      throw err
+      // Re-throw with the actual error message
+      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }

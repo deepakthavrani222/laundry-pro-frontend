@@ -114,7 +114,10 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
           orders.map((order) => {
             const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.placed
             const StatusIcon = statusInfo.icon
-            const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+            const totalItems = Array.isArray(order.items) 
+              ? order.items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+              : (order.items?.length || 0)
+            const displayItems = totalItems || 1 // Prevent division by zero
             
             return (
               <div
@@ -169,10 +172,10 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <div className="text-lg font-semibold text-gray-900">
-                      ₹{order.totalAmount.toLocaleString()}
+                      ₹{(order.totalAmount || 0).toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500">
-                      ₹{Math.round(order.totalAmount / totalItems)} per item
+                      ₹{Math.round((order.totalAmount || 0) / displayItems)} per item
                     </div>
                   </div>
                   
@@ -201,13 +204,13 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ₹{orders.reduce((sum, order) => sum + order.totalAmount, 0).toLocaleString()}
+                ₹{orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Total Value</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ₹{Math.round(orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length).toLocaleString()}
+                ₹{Math.round(orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0) / orders.length).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Average Value</div>
             </div>

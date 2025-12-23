@@ -139,82 +139,80 @@ export default function FinancialManagementPage() {
         <>
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-green-100">Total Revenue</p>
+                  <p className="text-2xl font-bold text-white">
                     {formatCurrency(overview.totalRevenue)}
                   </p>
                   <div className="flex items-center mt-2">
                     {overview.revenueGrowth >= 0 ? (
-                      <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                      <TrendingUp className="h-4 w-4 text-green-200 mr-1" />
                     ) : (
-                      <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
+                      <TrendingDown className="h-4 w-4 text-red-200 mr-1" />
                     )}
-                    <span className={`text-sm font-medium ${
-                      overview.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <span className="text-sm font-medium text-green-100">
                       {formatPercentage(overview.revenueGrowth)}
                     </span>
                   </div>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <DollarSign className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-white/20 rounded-full">
+                  <DollarSign className="h-6 w-6 text-white" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-blue-100">Total Transactions</p>
+                  <p className="text-2xl font-bold text-white">
                     {overview.totalTransactions.toLocaleString()}
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-blue-100 mt-2">
                     Avg: {formatCurrency(overview.averageOrderValue)}
                   </p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <CreditCard className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-white/20 rounded-full">
+                  <CreditCard className="h-6 w-6 text-white" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Platform Fees</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-purple-100">Platform Fees</p>
+                  <p className="text-2xl font-bold text-white">
                     {formatCurrency(overview.totalFees)}
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-purple-100 mt-2">
                     {overview.totalRevenue > 0 
                       ? `${((overview.totalFees / overview.totalRevenue) * 100).toFixed(1)}% of revenue`
                       : '0% of revenue'
                     }
                   </p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-white/20 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-orange-100">Pending Approvals</p>
+                  <p className="text-2xl font-bold text-white">
                     {overview.pendingApprovals.transactions + overview.pendingApprovals.settlements}
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-orange-100 mt-2">
                     {formatCurrency(overview.pendingApprovals.totalAmount)}
                   </p>
                 </div>
-                <div className="p-3 bg-orange-100 rounded-full">
-                  <AlertCircle className="h-6 w-6 text-orange-600" />
+                <div className="p-3 bg-white/20 rounded-full">
+                  <AlertCircle className="h-6 w-6 text-white" />
                 </div>
               </div>
             </div>

@@ -40,23 +40,23 @@ function FAQItem({ question, answer, isOpen, onToggle }: {
   onToggle: () => void
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+        className={`w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200 ${
+          isOpen 
+            ? 'bg-teal-500 hover:bg-teal-500' 
+            : 'bg-slate-700 hover:bg-slate-600'
+        }`}
       >
-        <h4 className="text-lg font-semibold text-gray-800 pr-4">{question}</h4>
-        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isOpen ? 'bg-teal-100' : 'bg-gray-100'}`}>
-          {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-teal-600" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
-          )}
+        <h4 className="text-base font-medium text-white pr-4">{question}</h4>
+        <div className="flex-shrink-0">
+          <ChevronDown className={`w-5 h-5 text-white transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="px-6 pb-5">
-          <p className="text-gray-600 leading-relaxed">{answer}</p>
+      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="px-8 py-6 bg-white border-x border-b border-gray-200">
+          <p className="text-gray-600 text-base leading-relaxed">{answer}</p>
         </div>
       </div>
     </div>
@@ -65,7 +65,7 @@ function FAQItem({ question, answer, isOpen, onToggle }: {
 
 export default function HelpPage() {
   const { isAuthenticated, user } = useAuthStore()
-  const [openFAQ, setOpenFAQ] = useState<number | null>(0)
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState('general')
 
 
@@ -193,52 +193,51 @@ export default function HelpPage() {
       <PublicHeader />
       
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-500 pt-24 pb-32 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10"></div>
-        <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl"></div>
+      <section className="relative pt-20 pb-20 overflow-hidden min-h-[400px]">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=1920&q=80')" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-transparent"></div>
+        </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white/90 text-sm mb-6">
+          <div className="max-w-xl pt-8">
+            <div className="inline-flex items-center gap-2 bg-teal-500/20 backdrop-blur-sm px-4 py-2 rounded-full text-teal-300 text-sm mb-4">
               <Headphones className="w-4 h-4" />
-              <span>24/7 Customer Support Available</span>
+              <span>24/7 Support</span>
             </div>
             
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              How Can We <span className="text-cyan-200">Help You?</span>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              How Can We Help?
             </h1>
             
-            <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-              Find answers to common questions, track your orders, or get in touch with our friendly support team.
+            <p className="text-lg text-gray-300 mb-6">
+              Find answers, track orders, or contact our support team.
             </p>
 
             {/* Quick Stats */}
-            <div className="flex flex-wrap justify-center gap-8 mt-12">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">50K+</div>
-                <div className="text-white/70 text-sm">Happy Customers</div>
+            <div className="flex gap-8 mt-6">
+              <div>
+                <div className="text-2xl font-bold text-white">50K+</div>
+                <div className="text-gray-400 text-sm">Customers</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">24/7</div>
-                <div className="text-white/70 text-sm">Support Available</div>
+              <div>
+                <div className="text-2xl font-bold text-white">24/7</div>
+                <div className="text-gray-400 text-sm">Support</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">&lt;2hr</div>
-                <div className="text-white/70 text-sm">Avg Response Time</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">98%</div>
-                <div className="text-white/70 text-sm">Resolution Rate</div>
+              <div>
+                <div className="text-2xl font-bold text-white">98%</div>
+                <div className="text-gray-400 text-sm">Resolution</div>
               </div>
             </div>
           </div>
         </div>
-
       </section>
 
       {/* Quick Help Cards */}
-      <section className="py-16 -mt-16 relative z-20 bg-white">
+      <section className="py-16 relative z-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {quickHelpCards.map((card, index) => (
@@ -255,58 +254,6 @@ export default function HelpPage() {
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <HelpCircle className="w-4 h-4" />
-              <span>Frequently Asked Questions</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Find Quick Answers
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Browse through our most commonly asked questions to find the information you need.
-            </p>
-          </div>
-
-          {/* Category Tabs */}
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
-            {categoryTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveCategory(tab.id)
-                  setOpenFAQ(0)
-                }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                  activeCategory === tab.id
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                <tab.icon className="w-5 h-5" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* FAQ List */}
-          <div className="max-w-3xl mx-auto space-y-4">
-            {currentFAQs.map((faq, index) => (
-              <FAQItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openFAQ === index}
-                onToggle={() => toggleFAQ(index)}
-              />
             ))}
           </div>
         </div>
@@ -368,90 +315,54 @@ export default function HelpPage() {
         </div>
       </section>
 
-      {/* Guarantee Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-900 to-gray-800">
+      {/* FAQ Section */}
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 bg-teal-500/20 text-teal-400 px-4 py-2 rounded-full text-sm font-medium mb-4">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Our Promise</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                100% Satisfaction Guaranteed
-              </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-                We stand behind our service quality. If you&apos;re not happy, we&apos;ll make it right.
-              </p>
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <HelpCircle className="w-4 h-4" />
+              <span>Frequently Asked Questions</span>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-teal-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <RefreshCw className="w-8 h-8 text-teal-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Free Re-wash</h3>
-                <p className="text-gray-400 text-sm">Not satisfied? We&apos;ll redo it for free</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <CreditCard className="w-8 h-8 text-purple-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Full Refund</h3>
-                <p className="text-gray-400 text-sm">100% money back if still not happy</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-orange-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Damage Protection</h3>
-                <p className="text-gray-400 text-sm">Full compensation for any damage</p>
-              </div>
-            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+              Find Quick Answers
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Browse through our most commonly asked questions to find the information you need.
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-teal-600 to-cyan-500 rounded-3xl p-12 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-            
-            <div className="relative z-10">
-              <Zap className="w-12 h-12 text-white/80 mx-auto mb-6" />
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to Experience Premium Laundry?
-              </h2>
-              <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-                Join thousands of happy customers who trust LaundryPro for their laundry needs.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                {isAuthenticated ? (
-                  <Link href="/customer/orders/new">
-                    <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg">
-                      Place New Order
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <>
-                    <Link href="/auth/register">
-                      <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg">
-                        Get Started Free
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </Link>
-                    <Link href="/auth/login">
-                      <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl">
-                        Sign In
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
+          {/* Category Tabs */}
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            {categoryTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveCategory(tab.id)
+                  setOpenFAQ(null)
+                }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                  activeCategory === tab.id
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* FAQ List */}
+          <div className="max-w-6xl mx-auto space-y-2">
+            {currentFAQs.map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFAQ === index}
+                onToggle={() => toggleFAQ(index)}
+              />
+            ))}
           </div>
         </div>
       </section>

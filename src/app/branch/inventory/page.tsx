@@ -27,8 +27,9 @@ interface InventoryItem {
   minThreshold: number
   maxCapacity: number
   unit: string
-  unitCost: number
-  supplier?: string
+  unitCost?: number
+  costPerUnit?: number
+  supplier?: { name?: string; contact?: string; email?: string } | string
   expiryDate?: string
   isLowStock: boolean
   isExpired: boolean
@@ -63,6 +64,8 @@ export default function InventoryPage() {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false)
   const [showStockModal, setShowStockModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [saving, setSaving] = useState(false)
   
@@ -156,15 +159,23 @@ export default function InventoryPage() {
   }
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return
-
     try {
+      setSaving(true)
       await branchApi.deleteInventoryItem(itemId)
       toast.success('Item deleted')
+      setShowDeleteModal(false)
+      setDeleteItemId(null)
       fetchInventory()
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete item')
+    } finally {
+      setSaving(false)
     }
+  }
+
+  const openDeleteModal = (itemId: string) => {
+    setDeleteItemId(itemId)
+    setShowDeleteModal(true)
   }
 
   const openStockModal = (item: InventoryItem, action: 'add' | 'consume') => {
@@ -203,7 +214,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="space-y-6 mt-16">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -228,47 +239,47 @@ export default function InventoryPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Package2 className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <Package2 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-800">{stats.totalItems}</div>
-                <div className="text-sm text-gray-600">Total Items</div>
+                <div className="text-2xl font-bold text-white">{stats.totalItems}</div>
+                <div className="text-sm text-blue-100">Total Items</div>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
+              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-orange-600">{stats.lowStockItems}</div>
-                <div className="text-sm text-gray-600">Low Stock</div>
+                <div className="text-2xl font-bold text-white">{stats.lowStockItems}</div>
+                <div className="text-sm text-orange-100">Low Stock</div>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-red-600">{stats.expiredItems}</div>
-                <div className="text-sm text-gray-600">Expired</div>
+                <div className="text-2xl font-bold text-white">{stats.expiredItems}</div>
+                <div className="text-sm text-red-100">Expired</div>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">₹{stats.totalValue.toLocaleString()}</div>
-                <div className="text-sm text-gray-600">Total Value</div>
+                <div className="text-2xl font-bold text-white">₹{stats.totalValue.toLocaleString()}</div>
+                <div className="text-sm text-green-100">Total Value</div>
               </div>
             </div>
           </div>
@@ -360,16 +371,16 @@ export default function InventoryPage() {
                   <span>Min Threshold:</span>
                   <span>{item.minThreshold} {item.unit}</span>
                 </div>
-                {item.unitCost > 0 && (
+                {(item.unitCost || item.costPerUnit) && (item.unitCost || item.costPerUnit || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>Unit Cost:</span>
-                    <span>₹{item.unitCost}</span>
+                    <span>₹{item.unitCost || item.costPerUnit}</span>
                   </div>
                 )}
                 {item.supplier && (
                   <div className="flex justify-between">
                     <span>Supplier:</span>
-                    <span>{item.supplier}</span>
+                    <span>{typeof item.supplier === 'string' ? item.supplier : item.supplier?.name || '-'}</span>
                   </div>
                 )}
               </div>
@@ -398,7 +409,7 @@ export default function InventoryPage() {
                   size="sm" 
                   variant="outline"
                   className="text-red-600 border-red-300 hover:bg-red-50"
-                  onClick={() => handleDeleteItem(item._id)}
+                  onClick={() => openDeleteModal(item._id)}
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -575,6 +586,39 @@ export default function InventoryPage() {
                 {stockUpdate.action === 'add' ? 'Add Stock' : 'Use Stock'}
               </Button>
               <Button variant="outline" onClick={() => setShowStockModal(false)} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deleteItemId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Delete Item</h3>
+            <p className="text-gray-600 text-center mb-6">Are you sure you want to delete this inventory item? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => handleDeleteItem(deleteItemId)}
+                disabled={saving}
+                className="flex-1 bg-red-500 hover:bg-red-600"
+              >
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                Delete
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => { setShowDeleteModal(false); setDeleteItemId(null); }} 
+                className="flex-1"
+                disabled={saving}
+              >
                 Cancel
               </Button>
             </div>

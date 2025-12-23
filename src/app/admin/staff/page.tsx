@@ -8,7 +8,6 @@ import {
   Phone,
   Mail,
   Building2,
-  CheckCircle,
   Eye,
   AlertCircle,
   Shield,
@@ -21,7 +20,7 @@ import {
 import { adminApi } from '@/lib/adminApi'
 import toast from 'react-hot-toast'
 
-interface Staff {
+interface User {
   _id: string
   name: string
   email: string
@@ -36,8 +35,8 @@ interface Staff {
   createdAt: string
 }
 
-export default function AdminStaffPage() {
-  const [staff, setStaff] = useState<Staff[]>([])
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -47,10 +46,10 @@ export default function AdminStaffPage() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchStaff()
+    fetchUsers()
   }, [roleFilter, statusFilter])
 
-  const fetchStaff = async () => {
+  const fetchUsers = async () => {
     try {
       setLoading(true)
       setError(null)
@@ -64,31 +63,28 @@ export default function AdminStaffPage() {
       const response = await adminApi.getStaff(params)
       
       if (response.success) {
-        // Filter out customers, only show staff roles
-        const staffUsers = (response.data.data || response.data.users || []).filter(
-          (user: Staff) => user.role !== 'customer'
-        )
-        setStaff(staffUsers)
-        setPagination(response.data.pagination || { current: 1, pages: 1, total: staffUsers.length })
+        const allUsers = response.data.data || response.data.users || []
+        setUsers(allUsers)
+        setPagination(response.data.pagination || { current: 1, pages: 1, total: allUsers.length })
       }
     } catch (err) {
-      console.error('Error fetching staff:', err)
-      setError('Failed to fetch staff members')
+      console.error('Error fetching users:', err)
+      setError('Failed to fetch users')
     } finally {
       setLoading(false)
     }
   }
 
   const handleSearch = () => {
-    fetchStaff()
+    fetchUsers()
   }
 
-  const handleToggleStatus = async (userId: string, memberName: string, isActive: boolean) => {
+  const handleToggleStatus = async (userId: string, userName: string, isActive: boolean) => {
     setLoadingAction(userId)
     try {
       await adminApi.toggleStaffStatus(userId)
-      toast.success(`${memberName} has been ${isActive ? 'deactivated' : 'activated'} successfully!`)
-      fetchStaff() // Refresh list
+      toast.success(`${userName} has been ${isActive ? 'deactivated' : 'activated'} successfully!`)
+      fetchUsers()
     } catch (err: any) {
       console.error('Error toggling status:', err)
       toast.error(err.message || 'Failed to update status')
@@ -97,16 +93,17 @@ export default function AdminStaffPage() {
     }
   }
 
-  const filteredStaff = staff.filter(member => {
+  const filteredUsers = users.filter(user => {
     const matchesSearch = !search || 
-      member.name.toLowerCase().includes(search.toLowerCase()) ||
-      member.email.toLowerCase().includes(search.toLowerCase()) ||
-      member.phone?.includes(search)
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase()) ||
+      user.phone?.includes(search)
     return matchesSearch
   })
 
   const getRoleBadge = (role: string) => {
     const roleConfig: Record<string, { label: string; color: string }> = {
+      'customer': { label: 'Customer', color: 'bg-teal-100 text-teal-800' },
       'branch_manager': { label: 'Branch Manager', color: 'bg-purple-100 text-purple-800' },
       'support_agent': { label: 'Support Agent', color: 'bg-blue-100 text-blue-800' },
       'staff': { label: 'Staff', color: 'bg-green-100 text-green-800' },
@@ -117,7 +114,7 @@ export default function AdminStaffPage() {
     return <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${config.color}`}>{config.label}</span>
   }
 
-  if (loading && staff.length === 0) {
+  if (loading && users.length === 0) {
     return (
       <div className="space-y-6 mt-16">
         <div className="animate-pulse">
@@ -137,10 +134,10 @@ export default function AdminStaffPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Staff Management</h1>
-          <p className="text-gray-600">Manage staff members and their roles</p>
+          <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
+          <p className="text-gray-600">Manage all users and their roles</p>
         </div>
-        <Button variant="outline" onClick={fetchStaff}>
+        <Button variant="outline" onClick={fetchUsers}>
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
@@ -148,48 +145,44 @@ export default function AdminStaffPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Staff</p>
-              <p className="text-2xl font-bold text-gray-800">{staff.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-blue-100">Total Users</p>
+            <p className="text-3xl font-bold">{users.length}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Staff</p>
-              <p className="text-2xl font-bold text-green-600">{staff.filter(s => s.isActive).length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <UserCheck className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-emerald-100">Active Users</p>
+            <p className="text-3xl font-bold">{users.filter(u => u.isActive).length}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Admins</p>
-              <p className="text-2xl font-bold text-purple-600">{staff.filter(s => s.role === 'admin' || s.role === 'center_admin').length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Support Agents</p>
-              <p className="text-2xl font-bold text-blue-600">{staff.filter(s => s.role === 'support_agent').length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-amber-100">Customers</p>
+            <p className="text-3xl font-bold">{users.filter(u => u.role === 'customer').length}</p>
+          </div>
+        </div>
+        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <p className="text-sm text-purple-100">Admins & Staff</p>
+            <p className="text-3xl font-bold">{users.filter(u => u.role !== 'customer').length}</p>
           </div>
         </div>
       </div>
@@ -214,10 +207,11 @@ export default function AdminStaffPage() {
             className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Roles</option>
+            <option value="customer">Customer</option>
             <option value="admin">Admin</option>
+            <option value="center_admin">Center Admin</option>
             <option value="branch_manager">Branch Manager</option>
             <option value="support_agent">Support Agent</option>
-            <option value="staff">Staff</option>
           </select>
           <select
             value={statusFilter}
@@ -234,10 +228,10 @@ export default function AdminStaffPage() {
         </div>
       </div>
 
-      {/* Staff List */}
+      {/* Users List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Staff Members ({filteredStaff.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-800">All Users ({filteredUsers.length})</h2>
         </div>
 
         {error && (
@@ -250,67 +244,67 @@ export default function AdminStaffPage() {
         )}
 
         <div className="divide-y divide-gray-200">
-          {filteredStaff.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="p-12 text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Staff Found</h3>
-              <p className="text-gray-600">No staff members match your search criteria.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
+              <p className="text-gray-600">No users match your search criteria.</p>
             </div>
           ) : (
-            filteredStaff.map((member) => (
-              <div key={member._id} className="p-6 hover:bg-gray-50 transition-colors">
+            filteredUsers.map((user) => (
+              <div key={user._id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-start space-x-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      member.isActive ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gray-400'
+                  <div className="flex items-start space-x-4 min-w-0 flex-1">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      user.isActive ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gray-400'
                     }`}>
                       <span className="text-white font-semibold">
-                        {member.name?.split(' ').map(n => n[0]).join('') || '?'}
+                        {user.name?.split(' ').map(n => n[0]).join('') || '?'}
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h3 className="text-lg font-semibold text-gray-800">{member.name}</h3>
-                        {getRoleBadge(member.role)}
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h3 className="text-lg font-semibold text-gray-800">{user.name}</h3>
+                        {getRoleBadge(user.role)}
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          member.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {member.isActive ? 'Active' : 'Inactive'}
+                          {user.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Mail className="w-4 h-4 mr-1" />
-                          {member.email}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <div className="flex items-center min-w-0">
+                          <Mail className="w-4 h-4 mr-1 flex-shrink-0" />
+                          <span className="truncate">{user.email}</span>
                         </div>
-                        {member.phone && (
+                        {user.phone && (
                           <div className="flex items-center">
-                            <Phone className="w-4 h-4 mr-1" />
-                            {member.phone}
-                          </div>
-                        )}
-                        {member.assignedBranch && (
-                          <div className="flex items-center">
-                            <Building2 className="w-4 h-4 mr-1" />
-                            {member.assignedBranch.name}
+                            <Phone className="w-4 h-4 mr-1 flex-shrink-0" />
+                            <span>{user.phone}</span>
                           </div>
                         )}
                         <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Joined {new Date(member.createdAt).toLocaleDateString('en-IN')}
+                          <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                          <span>Joined {new Date(user.createdAt).toLocaleDateString('en-IN')}</span>
                         </div>
+                        {user.assignedBranch && (
+                          <div className="flex items-center min-w-0">
+                            <Building2 className="w-4 h-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{user.assignedBranch.name}</span>
+                          </div>
+                        )}
                       </div>
 
-                      {member.lastLogin && (
+                      {user.lastLogin && (
                         <p className="text-xs text-gray-400 mt-2">
-                          Last login: {new Date(member.lastLogin).toLocaleString('en-IN')}
+                          Last login: {new Date(user.lastLogin).toLocaleString('en-IN')}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-shrink-0">
                     <Button variant="outline" size="sm">
                       <Eye className="w-4 h-4 mr-1" />
                       View
@@ -318,18 +312,18 @@ export default function AdminStaffPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleToggleStatus(member._id, member.name, member.isActive)}
-                      disabled={loadingAction === member._id}
-                      className={member.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}
+                      onClick={() => handleToggleStatus(user._id, user.name, user.isActive)}
+                      disabled={loadingAction === user._id}
+                      className={user.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}
                     >
-                      {loadingAction === member._id ? (
+                      {loadingAction === user._id ? (
                         <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      ) : member.isActive ? (
+                      ) : user.isActive ? (
                         <UserX className="w-4 h-4 mr-1" />
                       ) : (
                         <UserCheck className="w-4 h-4 mr-1" />
                       )}
-                      {member.isActive ? 'Deactivate' : 'Activate'}
+                      {user.isActive ? 'Deactivate' : 'Activate'}
                     </Button>
                   </div>
                 </div>

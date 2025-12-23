@@ -49,27 +49,45 @@ interface DeliveryInfo {
   message: string
 }
 
-const serviceTypes = [
-  { id: 'wash_fold', name: 'Wash & Fold', icon: Shirt, price: 30, description: 'Fresh, clean, neatly folded clothes', color: 'blue' },
-  { id: 'wash_iron', name: 'Wash & Iron', icon: Sparkles, price: 40, description: 'Clean, crisp, wrinkle-free garments', color: 'purple' },
-  { id: 'premium_laundry', name: 'Premium Laundry', icon: Award, price: 60, description: 'Gentle, safe care for special fabrics', color: 'green' },
-  { id: 'dry_clean', name: 'Dry Clean', icon: Package, price: 80, description: 'Expert, delicate care for formal wear', color: 'orange' },
-  { id: 'steam_press', name: 'Steam Press', icon: Clock, price: 20, description: 'Smooth, polished finish with steam', color: 'red' },
-  { id: 'starching', name: 'Starching', icon: Home, price: 25, description: 'Perfect stiffness for cottons & sarees', color: 'cyan' },
-  { id: 'premium_steam_press', name: 'Premium Steam Press', icon: Truck, price: 35, description: 'Extra-fine press for premium outfits', color: 'pink' },
-  { id: 'premium_dry_clean', name: 'Premium Dry Clean', icon: Sparkles, price: 120, description: 'Luxury care for branded clothing', color: 'indigo' },
-]
-
 // Service items will be fetched from database
 type ServiceItem = { id: string; name: string; basePrice: number }
 
+// Service type from branch
+interface BranchService {
+  _id: string
+  name: string
+  code: string
+  displayName: string
+  description: string
+  icon: string
+  category: string
+  turnaroundTime: { standard: number; express: number }
+  isExpressAvailable: boolean
+  priceMultiplier: number
+}
+
 const STEPS = [
-  { id: 1, title: 'Select Items' },
-  { id: 2, title: 'Select Branch' },
-  { id: 3, title: 'Address' },
-  { id: 4, title: 'Schedule' },
-  { id: 5, title: 'Confirm' },
+  { id: 1, title: 'Select Branch' },
+  { id: 2, title: 'Select Service' },
+  { id: 3, title: 'Select Items' },
+  { id: 4, title: 'Address' },
+  { id: 5, title: 'Schedule' },
+  { id: 6, title: 'Confirm' },
 ]
+
+// Icon mapping for services
+const getServiceIcon = (iconName: string) => {
+  const iconMap: Record<string, any> = {
+    'shirt': Shirt,
+    'sparkles': Sparkles,
+    'award': Award,
+    'package': Package,
+    'clock': Clock,
+    'home': Home,
+    'truck': Truck,
+  }
+  return iconMap[iconName?.toLowerCase()] || Shirt
+}
 
 export default function NewOrderPage() {
   const searchParams = useSearchParams()
@@ -92,6 +110,10 @@ export default function NewOrderPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [branchesLoading, setBranchesLoading] = useState(true)
   const [selectedBranchId, setSelectedBranchId] = useState('')
+  
+  // Branch services (dynamic based on selected branch)
+  const [branchServices, setBranchServices] = useState<BranchService[]>([])
+  const [branchServicesLoading, setBranchServicesLoading] = useState(false)
   
   // Distance-based delivery
   const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | null>(null)
@@ -124,19 +146,30 @@ export default function NewOrderPage() {
   })
 
 
-  // Set service based on URL parameter
-  useEffect(() => {
-    if (serviceParam && serviceTypes.find(s => s.id === serviceParam)) {
-      setSelectedService(serviceParam)
-    }
-  }, [serviceParam])
-
-  // Fetch service items from database
+  // Fetch service items from database (with branch-specific items)
   useEffect(() => {
     const fetchServiceItems = async () => {
+      if (!selectedBranchId) {
+        // Fetch only global items if no branch selected
+        try {
+          setItemsLoading(true)
+          const response = await fetch('http://localhost:5000/api/service-items')
+          const data = await response.json()
+          if (data.success) {
+            setServiceItems(data.data)
+          }
+        } catch (error) {
+          console.error('Failed to fetch service items:', error)
+        } finally {
+          setItemsLoading(false)
+        }
+        return
+      }
+      
+      // Fetch items including branch-specific ones
       try {
         setItemsLoading(true)
-        const response = await fetch('http://localhost:5000/api/service-items')
+        const response = await fetch(`http://localhost:5000/api/service-items/branch/${selectedBranchId}`)
         const data = await response.json()
         if (data.success) {
           setServiceItems(data.data)
@@ -148,7 +181,7 @@ export default function NewOrderPage() {
       }
     }
     fetchServiceItems()
-  }, [])
+  }, [selectedBranchId])
 
   // Fetch branches
   useEffect(() => {
@@ -159,10 +192,6 @@ export default function NewOrderPage() {
         const data = await response.json()
         if (data.success) {
           setBranches(data.data.branches || [])
-          // Auto-select first branch if available
-          if (data.data.branches?.length > 0 && !selectedBranchId) {
-            setSelectedBranchId(data.data.branches[0]._id)
-          }
         }
       } catch (error) {
         console.error('Failed to fetch branches:', error)
@@ -172,6 +201,34 @@ export default function NewOrderPage() {
     }
     fetchBranches()
   }, [])
+
+  // Fetch branch services when branch is selected
+  useEffect(() => {
+    const fetchBranchServices = async () => {
+      if (!selectedBranchId) {
+        setBranchServices([])
+        return
+      }
+      
+      try {
+        setBranchServicesLoading(true)
+        const response = await fetch(`http://localhost:5000/api/services/branch/${selectedBranchId}`)
+        const data = await response.json()
+        if (data.success) {
+          setBranchServices(data.data.services || [])
+          // Reset selected service when branch changes
+          setSelectedService('')
+          setItems({})
+        }
+      } catch (error) {
+        console.error('Failed to fetch branch services:', error)
+        setBranchServices([])
+      } finally {
+        setBranchServicesLoading(false)
+      }
+    }
+    fetchBranchServices()
+  }, [selectedBranchId])
 
   // Load time slots
   useEffect(() => {
@@ -359,15 +416,21 @@ export default function NewOrderPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return getTotalItems() > 0
+        // Must select a branch
+        return selectedBranchId !== ''
       case 2:
-        // Must select branch and area must be serviceable (or no delivery info yet)
-        return selectedBranchId !== '' && (!deliveryInfo || deliveryInfo.isServiceable)
+        // Must select a service
+        return selectedService !== ''
       case 3:
-        return pickupAddressId && deliveryAddressId
+        // Must have items selected
+        return getTotalItems() > 0
       case 4:
-        return selectedDate && selectedTimeSlot
+        // Must have address and area must be serviceable
+        return pickupAddressId && deliveryAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
       case 5:
+        // Must have date and time slot
+        return selectedDate && selectedTimeSlot
+      case 6:
         return true
       default:
         return false
@@ -375,9 +438,9 @@ export default function NewOrderPage() {
   }
 
   const nextStep = () => {
-    if (canProceed() && currentStep < 5) {
+    if (canProceed() && currentStep < 6) {
       setCurrentStep(currentStep + 1)
-    } else if (currentStep === 5) {
+    } else if (currentStep === 6) {
       handleSubmit()
     }
   }
@@ -437,7 +500,7 @@ export default function NewOrderPage() {
                 className="flex-1"
                 onClick={() => {
                   setOrderSuccess(false)
-                  setCurrentStep(3)
+                  setCurrentStep(5)
                 }}
               >
                 <Clock className="w-4 h-4 mr-2" />
@@ -487,24 +550,150 @@ export default function NewOrderPage() {
 
         {/* Content */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
-          {/* Step 1: Select Items */}
+          {/* Step 1: Select Branch */}
           {currentStep === 1 && (
             <div className="space-y-4">
-              {/* Service Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
-                <select
-                  value={selectedService}
-                  onChange={(e) => {
-                    setSelectedService(e.target.value)
-                    setItems({})
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  {serviceTypes.map(service => (
-                    <option key={service.id} value={service.id}>{service.name}</option>
+              <p className="text-sm text-gray-600 mb-4">
+                Select a branch near you for pickup and delivery
+              </p>
+              
+              {branchesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+                  <span className="ml-2 text-gray-500">Loading branches...</span>
+                </div>
+              ) : branches.length === 0 ? (
+                <div className="text-center py-8">
+                  <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No branches available</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {branches.map((branch) => (
+                    <div
+                      key={branch._id}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        selectedBranchId === branch._id
+                          ? 'border-teal-500 bg-teal-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedBranchId(branch._id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Building2 className="w-4 h-4 text-teal-600" />
+                            <span className="font-medium text-gray-800">{branch.name}</span>
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                              {branch.code}
+                            </span>
+                          </div>
+                          {branch.phone && (
+                            <div className="flex items-center text-sm text-gray-500 mb-1">
+                              <Phone className="w-3 h-3 mr-1" />
+                              {branch.phone}
+                            </div>
+                          )}
+                          {branch.address && (
+                            <p className="text-sm text-gray-600">
+                              {branch.address.addressLine1}{branch.address.city ? `, ${branch.address.city}` : ''}{branch.address.pincode ? ` - ${branch.address.pincode}` : ''}
+                            </p>
+                          )}
+                        </div>
+                        {selectedBranchId === branch._id && (
+                          <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 2: Select Service */}
+          {currentStep === 2 && (
+            <div className="space-y-4">
+              <div className="p-3 bg-teal-50 rounded-lg mb-4">
+                <div className="flex items-center text-sm text-teal-700">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  <span className="font-medium">{branches.find(b => b._id === selectedBranchId)?.name}</span>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Select a service type
+              </p>
+              
+              {branchServicesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+                  <span className="ml-2 text-gray-500">Loading services...</span>
+                </div>
+              ) : branchServices.length === 0 ? (
+                <div className="text-center py-8">
+                  <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No services available at this branch</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {branchServices.map((service) => {
+                    const IconComponent = getServiceIcon(service.icon)
+                    return (
+                      <div
+                        key={service._id}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          selectedService === service.code
+                            ? 'border-teal-500 bg-teal-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => {
+                          setSelectedService(service.code)
+                          setItems({})
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                              <IconComponent className="w-5 h-5 text-teal-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-gray-800">{service.displayName || service.name}</h3>
+                              <p className="text-sm text-gray-500">{service.description}</p>
+                              {service.turnaroundTime && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Turnaround: {service.turnaroundTime.standard} hours
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {selectedService === service.code && (
+                            <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Select Items */}
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              {/* Selected Service Info */}
+              <div className="p-3 bg-teal-50 rounded-lg mb-4">
+                <div className="flex items-center text-sm text-teal-700">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  <span className="font-medium">
+                    {branchServices.find(s => s.code === selectedService)?.displayName || selectedService}
+                  </span>
+                </div>
               </div>
 
               {/* Items */}
@@ -566,126 +755,21 @@ export default function NewOrderPage() {
           )}
 
 
-          {/* Step 2: Select Branch */}
-          {currentStep === 2 && (
+          {/* Step 4: Address */}
+          {currentStep === 4 && (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Select a branch near you for pickup and delivery
-              </p>
+              {/* Selected Branch & Service Summary */}
+              <div className="p-3 bg-teal-50 rounded-lg mb-4">
+                <div className="flex items-center text-sm text-teal-700 mb-1">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  <span className="font-medium">{branches.find(b => b._id === selectedBranchId)?.name}</span>
+                </div>
+                <div className="flex items-center text-sm text-teal-600">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  <span>{branchServices.find(s => s.code === selectedService)?.displayName || selectedService}</span>
+                </div>
+              </div>
               
-              {branchesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
-                  <span className="ml-2 text-gray-500">Loading branches...</span>
-                </div>
-              ) : branches.length === 0 ? (
-                <div className="text-center py-8">
-                  <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No branches available</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {branches.map((branch) => (
-                    <div
-                      key={branch._id}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedBranchId === branch._id
-                          ? 'border-teal-500 bg-teal-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => setSelectedBranchId(branch._id)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <Building2 className="w-4 h-4 text-teal-600" />
-                            <span className="font-medium text-gray-800">{branch.name}</span>
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                              {branch.code}
-                            </span>
-                          </div>
-                          {branch.phone && (
-                            <div className="flex items-center text-sm text-gray-500 mb-1">
-                              <Phone className="w-3 h-3 mr-1" />
-                              {branch.phone}
-                            </div>
-                          )}
-                          {branch.address && (
-                            <p className="text-sm text-gray-600">
-                              {branch.address.addressLine1}{branch.address.city ? `, ${branch.address.city}` : ''}{branch.address.pincode ? ` - ${branch.address.pincode}` : ''}
-                            </p>
-                          )}
-                        </div>
-                        {selectedBranchId === branch._id && (
-                          <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Distance & Delivery Charge Info */}
-              {selectedBranchId && (
-                <div className="mt-4">
-                  {deliveryLoading ? (
-                    <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
-                      <Loader2 className="w-4 h-4 animate-spin text-teal-500 mr-2" />
-                      <span className="text-sm text-gray-500">Calculating delivery charge...</span>
-                    </div>
-                  ) : deliveryInfo ? (
-                    <div className={`p-4 rounded-lg ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
-                      {deliveryInfo.isServiceable ? (
-                        <>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center">
-                              <Truck className="w-4 h-4 text-teal-600 mr-2" />
-                              <span className="font-medium text-gray-800">Delivery Charge</span>
-                            </div>
-                            <span className="font-bold text-teal-600">
-                              {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
-                            </span>
-                          </div>
-                          {deliveryInfo.distance && (
-                            <div className="text-sm text-gray-600">
-                              📍 Distance: {deliveryInfo.distance} km
-                            </div>
-                          )}
-                          <div className="text-sm text-teal-600 mt-1">
-                            {deliveryInfo.message}
-                          </div>
-                          {deliveryInfo.isFallback && (
-                            <div className="text-xs text-amber-600 mt-1">
-                              ⚠️ Flat rate applied (distance calculation unavailable)
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="text-center">
-                          <div className="text-red-600 font-medium mb-1">❌ Area Not Serviceable</div>
-                          <div className="text-sm text-red-500">{deliveryInfo.message}</div>
-                        </div>
-                      )}
-                    </div>
-                  ) : pickupAddressId ? (
-                    <div className="p-4 bg-amber-50 rounded-lg text-sm text-amber-700">
-                      ⚠️ Could not calculate delivery charge. Please ensure your address is complete.
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500">
-                      💡 Add an address in the next step to see delivery charges
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Address */}
-          {currentStep === 3 && (
-            <div className="space-y-4">
               {addressesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
@@ -753,11 +837,56 @@ export default function NewOrderPage() {
                   </button>
                 </>
               )}
+
+              {/* Distance & Delivery Charge Info */}
+              {pickupAddressId && selectedBranchId && (
+                <div className="mt-4">
+                  {deliveryLoading ? (
+                    <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin text-teal-500 mr-2" />
+                      <span className="text-sm text-gray-500">Calculating delivery charge...</span>
+                    </div>
+                  ) : deliveryInfo ? (
+                    <div className={`p-4 rounded-lg ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
+                      {deliveryInfo.isServiceable ? (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center">
+                              <Truck className="w-4 h-4 text-teal-600 mr-2" />
+                              <span className="font-medium text-gray-800">Delivery Charge</span>
+                            </div>
+                            <span className="font-bold text-teal-600">
+                              {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
+                            </span>
+                          </div>
+                          {deliveryInfo.distance && (
+                            <div className="text-sm text-gray-600">
+                              📍 Distance: {deliveryInfo.distance} km
+                            </div>
+                          )}
+                          <div className="text-sm text-teal-600 mt-1">
+                            {deliveryInfo.message}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center">
+                          <div className="text-red-600 font-medium mb-1">❌ Area Not Serviceable</div>
+                          <div className="text-sm text-red-500">{deliveryInfo.message}</div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-amber-50 rounded-lg text-sm text-amber-700">
+                      ⚠️ Could not calculate delivery charge. Please ensure your address is complete.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Step 4: Schedule */}
-          {currentStep === 4 && (
+          {/* Step 5: Schedule */}
+          {currentStep === 5 && (
             <div className="space-y-6">
               {/* Selected Branch Summary */}
               {selectedBranchId && (
@@ -770,7 +899,7 @@ export default function NewOrderPage() {
                       </span>
                     </div>
                     <button 
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => setCurrentStep(1)}
                       className="text-sm text-teal-600 hover:underline"
                     >
                       Change Branch
@@ -785,7 +914,7 @@ export default function NewOrderPage() {
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-medium text-gray-800">{getSelectedAddress()?.name}</span>
                     <button 
-                      onClick={() => setCurrentStep(3)}
+                      onClick={() => setCurrentStep(4)}
                       className="text-sm text-teal-600 hover:underline"
                     >
                       Change Address
@@ -852,8 +981,8 @@ export default function NewOrderPage() {
           )}
 
 
-          {/* Step 5: Confirm */}
-          {currentStep === 5 && (
+          {/* Step 6: Confirm */}
+          {currentStep === 6 && (
             <div className="space-y-4">
               {/* Order Summary */}
               <div className="space-y-3">
@@ -987,7 +1116,7 @@ export default function NewOrderPage() {
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Processing...
               </>
-            ) : currentStep === 4 ? (
+            ) : currentStep === 6 ? (
               <>
                 Confirm Order
                 <ArrowRight className="w-4 h-4 ml-2" />

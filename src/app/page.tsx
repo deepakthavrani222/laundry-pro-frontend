@@ -35,14 +35,18 @@ import { useState, useEffect, useRef } from 'react'
 import React from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { useHomepageStats } from '@/hooks/useStats'
+import BookingModal from '@/components/BookingModal'
+import { useRouter } from 'next/navigation'
 
 // Hero Carousel Component
 function HeroCarousel({
   isAuthenticated,
   user,
+  onBookNow,
 }: {
   isAuthenticated: boolean
   user: any
+  onBookNow: () => void
 }) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [previousSlide, setPreviousSlide] = useState(0)
@@ -68,9 +72,7 @@ function HeroCarousel({
       ],
       image: 'https://spinbee.in/wp-content/uploads/2025/07/slide.png',
       discount: '20%',
-      primaryButton: isAuthenticated
-        ? { text: 'Book New Order', icon: Truck, href: '/customer/orders/new' }
-        : { text: 'Schedule Free Pickup', icon: Truck, href: '/auth/login?redirect=/customer/orders/new' },
+      primaryButton: { text: 'Book New Order', icon: Truck, action: 'book' },
       secondaryButton: { text: 'Chat on WhatsApp', icon: Phone, href: '#' },
     },
     {
@@ -87,13 +89,7 @@ function HeroCarousel({
       ],
       image: 'https://spinbee.in/wp-content/uploads/2025/07/women-slider.png',
       discount: '15%',
-      primaryButton: isAuthenticated
-        ? {
-            text: 'Book Dry Cleaning',
-            icon: Sparkles,
-            href: '/customer/orders/new',
-          }
-        : { text: 'Book Dry Cleaning', icon: Sparkles, href: '/auth/login?redirect=/customer/orders/new' },
+      primaryButton: { text: 'Book Dry Cleaning', icon: Sparkles, action: 'book' },
       secondaryButton: { text: 'View Services', icon: ArrowRight, href: '#services' },
     },
   ]
@@ -170,7 +166,7 @@ function HeroCarousel({
                   ))}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button size="lg" className="bg-gray-800 hover:bg-gray-900 text-white px-6">
+                  <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
                     <Truck className="w-5 h-5 mr-2" />
                     {previousSlideData.primaryButton.text}
                   </Button>
@@ -216,12 +212,14 @@ function HeroCarousel({
                 ))}
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href={currentSlideData.primaryButton.href}>
-                  <Button size="lg" className="bg-gray-800 hover:bg-gray-900 text-white px-6">
-                    <Truck className="w-5 h-5 mr-2" />
-                    {currentSlideData.primaryButton.text}
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="bg-teal-500 hover:bg-teal-600 text-white px-6"
+                  onClick={onBookNow}
+                >
+                  <Truck className="w-5 h-5 mr-2" />
+                  {currentSlideData.primaryButton.text}
+                </Button>
                 <Link href="https://wa.me/919876543210" target="_blank">
                   <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white px-6">
                     <Phone className="w-5 h-5 mr-2" />
@@ -416,6 +414,7 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
   const [scrollProgress, setScrollProgress] = useState(0)
   const [imageRowOffset, setImageRowOffset] = useState(0)
   const [bannerScrolledUp, setBannerScrolledUp] = useState(false)
+  const [isPinned, setIsPinned] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const bannerRef = useRef<HTMLDivElement>(null)
 
@@ -431,6 +430,10 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
       // Progress from 0 to 1 over the entire section height
       const progress = Math.max(0, Math.min(1, (windowHeight - sectionTop) / (windowHeight * 1.2)))
       setScrollProgress(progress)
+      
+      // Pin the section when it enters viewport and progress is between 0.1 and 0.95
+      const shouldPin = progress > 0.1 && progress < 0.95
+      setIsPinned(shouldPin)
       
       // Check if banner has scrolled up past the viewport (negative top means it's above screen)
       if (bannerRef.current) {
@@ -458,8 +461,11 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
   const bannerPaddingY = 30 + (scrollProgress * 80) // 30px to 110px
   const bannerPaddingX = 24 + (scrollProgress * 40) // 24px to 64px
   
-  // Border radius - starts rounded, becomes less rounded as it grows full width
-  const bannerRadius = Math.max(0, 20 - (scrollProgress * 20)) // 20px to 0px
+  // Border radius - top corners become 0, bottom corners stay rounded
+  // Top radius: 20px to 0px as it grows
+  const topRadius = Math.max(0, 20 - (scrollProgress * 20)) // 20px to 0px
+  // Bottom radius: stays at 20px always for pinned effect
+  const bottomRadius = 20
   
   // Color transition - starts light teal, becomes darker teal (theme color)
   // RGB values: light teal (204, 251, 241) to teal-500 (20, 184, 166)
@@ -491,23 +497,43 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
   ]
 
   return (
-    <div ref={sectionRef} className="relative">
+    <div ref={sectionRef} className="relative" style={{ minHeight: isPinned ? '200vh' : 'auto' }}>
       {/* Background Section - Always white, gallery has black background */}
       <section 
         ref={bannerRef}
-        className="bg-white py-16 min-h-[100vh] flex items-center justify-center overflow-hidden"
+        className={`bg-white py-16 min-h-[100vh] flex items-center justify-center overflow-hidden ${isPinned ? 'sticky top-0' : ''}`}
+        style={{ zIndex: isPinned ? 10 : 1 }}
       >
         <div className="w-full flex justify-center">
           <div 
-            className="transition-all duration-300 ease-out"
+            className="transition-all duration-300 ease-out relative"
             style={{ 
               width: `${bannerWidth}%`,
               padding: `${bannerPaddingY}px ${bannerPaddingX}px`,
-              borderRadius: `${bannerRadius}px`,
+              borderRadius: `${topRadius}px ${topRadius}px ${bottomRadius}px ${bottomRadius}px`,
               backgroundColor: `rgb(${colorR}, ${colorG}, ${colorB})`,
               textAlign: scrollProgress < 0.5 ? 'left' : 'center',
             }}
           >
+            {/* Fixed Bottom Corners - visible when banner is growing */}
+            {scrollProgress > 0.3 && scrollProgress < 0.95 && (
+              <>
+                <div 
+                  className="fixed bottom-0 left-0 w-8 h-8 z-50 transition-opacity duration-300"
+                  style={{
+                    background: `radial-gradient(circle at top right, transparent 70%, rgb(${colorR}, ${colorG}, ${colorB}) 70%)`,
+                    opacity: scrollProgress > 0.5 ? 1 : (scrollProgress - 0.3) * 5,
+                  }}
+                />
+                <div 
+                  className="fixed bottom-0 right-0 w-8 h-8 z-50 transition-opacity duration-300"
+                  style={{
+                    background: `radial-gradient(circle at top left, transparent 70%, rgb(${colorR}, ${colorG}, ${colorB}) 70%)`,
+                    opacity: scrollProgress > 0.5 ? 1 : (scrollProgress - 0.3) * 5,
+                  }}
+                />
+              </>
+            )}
             {/* "Schedule today to" - always on top, smoothly grows */}
             <p 
               className="font-bold tracking-[0.2em] uppercase text-gray-600 transition-all duration-300 ease-out"
@@ -538,7 +564,7 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
             {/* Button */}
             <Link href={isAuthenticated ? "/customer/orders/new" : "/auth/login?redirect=/customer/orders/new"}>
               <Button 
-                className="rounded-full font-bold transition-all duration-300 ease-out bg-gray-700 hover:bg-gray-800 text-white"
+                className="rounded-full font-bold transition-all duration-300 ease-out bg-teal-500 hover:bg-teal-600 text-white"
                 style={{
                   padding: `${10 + scrollProgress * 6}px ${24 + scrollProgress * 20}px`,
                   fontSize: `${13 + scrollProgress * 3}px`,
@@ -639,9 +665,26 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuthStore()
   const { stats, loading: statsLoading, error: statsError } = useHomepageStats()
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const router = useRouter()
+
+  const handleBookNow = () => {
+    setShowBookingModal(true)
+  }
+
+  const handleLoginRequired = () => {
+    setShowBookingModal(false)
+    router.push('/auth/login?redirect=/')
+  }
   
   return (
     <div className="min-h-screen bg-white">
+      {/* Booking Modal */}
+      <BookingModal 
+        isOpen={showBookingModal} 
+        onClose={() => setShowBookingModal(false)}
+        onLoginRequired={handleLoginRequired}
+      />
       {/* Navigation */}
       <nav className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
@@ -738,9 +781,186 @@ export default function HomePage() {
           <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-cyan-500 rounded-full"></div>
           <div className="absolute bottom-40 right-1/3 w-8 h-8 bg-teal-400 rounded-full"></div>
         </div>
+
+        {/* Floating Bubbles Animation - More bubbles for better visibility */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Extra Large Bubbles */}
+          <div className="bubble bubble-xl-1"></div>
+          <div className="bubble bubble-xl-2"></div>
+          <div className="bubble bubble-xl-3"></div>
+          {/* Large Bubbles */}
+          <div className="bubble bubble-1"></div>
+          <div className="bubble bubble-2"></div>
+          <div className="bubble bubble-3"></div>
+          <div className="bubble bubble-4"></div>
+          <div className="bubble bubble-5"></div>
+          <div className="bubble bubble-6"></div>
+          <div className="bubble bubble-7"></div>
+          <div className="bubble bubble-8"></div>
+          {/* Medium Bubbles */}
+          <div className="bubble bubble-9"></div>
+          <div className="bubble bubble-10"></div>
+          <div className="bubble bubble-11"></div>
+          <div className="bubble bubble-12"></div>
+          <div className="bubble bubble-13"></div>
+          <div className="bubble bubble-14"></div>
+          <div className="bubble bubble-15"></div>
+          <div className="bubble bubble-16"></div>
+          {/* Small Bubbles */}
+          <div className="bubble bubble-17"></div>
+          <div className="bubble bubble-18"></div>
+          <div className="bubble bubble-19"></div>
+          <div className="bubble bubble-20"></div>
+          <div className="bubble bubble-21"></div>
+          <div className="bubble bubble-22"></div>
+          <div className="bubble bubble-23"></div>
+          <div className="bubble bubble-24"></div>
+          <div className="bubble bubble-25"></div>
+          {/* Sparkle Stars */}
+          <div className="sparkle sparkle-1">✦</div>
+          <div className="sparkle sparkle-2">✦</div>
+          <div className="sparkle sparkle-3">✦</div>
+          <div className="sparkle sparkle-4">✦</div>
+          <div className="sparkle sparkle-5">✦</div>
+          <div className="sparkle sparkle-6">✦</div>
+        </div>
+
+        <style jsx>{`
+          .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: 
+              radial-gradient(circle at 25% 25%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 10%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(255,255,255,0.3) 0%, transparent 30%),
+              radial-gradient(circle at 50% 50%, rgba(200,230,255,0.4) 0%, rgba(180,220,255,0.3) 50%, rgba(150,200,255,0.2) 70%, rgba(100,180,255,0.1) 100%);
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 
+              inset 0 -3px 8px rgba(100,150,200,0.2),
+              inset 0 3px 8px rgba(255,255,255,0.8),
+              0 2px 15px rgba(100,150,200,0.3),
+              0 0 30px rgba(100,180,220,0.15);
+            animation: floatUp ease-in-out infinite;
+          }
+          
+          .bubble::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 35%;
+            height: 35%;
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.6) 50%, transparent 70%);
+            border-radius: 50%;
+          }
+          
+          .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 15%;
+            right: 20%;
+            width: 15%;
+            height: 15%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+          }
+          
+          /* Extra Large Bubbles */
+          .bubble-xl-1 { width: 100px; height: 100px; left: 8%; bottom: -120px; animation-duration: 15s; animation-delay: 0s; }
+          .bubble-xl-2 { width: 90px; height: 90px; left: 45%; bottom: -110px; animation-duration: 16s; animation-delay: 3s; }
+          .bubble-xl-3 { width: 85px; height: 85px; left: 78%; bottom: -105px; animation-duration: 14s; animation-delay: 6s; }
+          
+          /* Large Bubbles */
+          .bubble-1 { width: 70px; height: 70px; left: 3%; bottom: -90px; animation-duration: 12s; animation-delay: 0s; }
+          .bubble-2 { width: 75px; height: 75px; left: 18%; bottom: -95px; animation-duration: 13s; animation-delay: 1s; }
+          .bubble-3 { width: 65px; height: 65px; left: 28%; bottom: -85px; animation-duration: 11s; animation-delay: 2s; }
+          .bubble-4 { width: 72px; height: 72px; left: 38%; bottom: -92px; animation-duration: 12.5s; animation-delay: 0.5s; }
+          .bubble-5 { width: 68px; height: 68px; left: 52%; bottom: -88px; animation-duration: 11.5s; animation-delay: 1.5s; }
+          .bubble-6 { width: 60px; height: 60px; left: 65%; bottom: -80px; animation-duration: 10.5s; animation-delay: 2.5s; }
+          .bubble-7 { width: 74px; height: 74px; left: 82%; bottom: -94px; animation-duration: 13.5s; animation-delay: 0.8s; }
+          .bubble-8 { width: 62px; height: 62px; left: 92%; bottom: -82px; animation-duration: 11s; animation-delay: 4s; }
+          
+          /* Medium Bubbles */
+          .bubble-9 { width: 50px; height: 50px; left: 6%; bottom: -70px; animation-duration: 9s; animation-delay: 1.2s; }
+          .bubble-10 { width: 45px; height: 45px; left: 15%; bottom: -65px; animation-duration: 8.5s; animation-delay: 2.2s; }
+          .bubble-11 { width: 52px; height: 52px; left: 25%; bottom: -72px; animation-duration: 9.5s; animation-delay: 0.3s; }
+          .bubble-12 { width: 48px; height: 48px; left: 35%; bottom: -68px; animation-duration: 8.8s; animation-delay: 3.3s; }
+          .bubble-13 { width: 55px; height: 55px; left: 48%; bottom: -75px; animation-duration: 10s; animation-delay: 1.8s; }
+          .bubble-14 { width: 42px; height: 42px; left: 58%; bottom: -62px; animation-duration: 8s; animation-delay: 4.5s; }
+          .bubble-15 { width: 50px; height: 50px; left: 72%; bottom: -70px; animation-duration: 9.2s; animation-delay: 2.8s; }
+          .bubble-16 { width: 46px; height: 46px; left: 88%; bottom: -66px; animation-duration: 8.6s; animation-delay: 5s; }
+          
+          /* Small Bubbles */
+          .bubble-17 { width: 30px; height: 30px; left: 2%; bottom: -50px; animation-duration: 7s; animation-delay: 0.5s; }
+          .bubble-18 { width: 25px; height: 25px; left: 12%; bottom: -45px; animation-duration: 6s; animation-delay: 1.5s; }
+          .bubble-19 { width: 32px; height: 32px; left: 22%; bottom: -52px; animation-duration: 7.2s; animation-delay: 2.5s; }
+          .bubble-20 { width: 28px; height: 28px; left: 32%; bottom: -48px; animation-duration: 6.5s; animation-delay: 0.2s; }
+          .bubble-21 { width: 35px; height: 35px; left: 42%; bottom: -55px; animation-duration: 7.5s; animation-delay: 3.2s; }
+          .bubble-22 { width: 24px; height: 24px; left: 55%; bottom: -44px; animation-duration: 5.8s; animation-delay: 1.8s; }
+          .bubble-23 { width: 30px; height: 30px; left: 68%; bottom: -50px; animation-duration: 6.8s; animation-delay: 4.2s; }
+          .bubble-24 { width: 26px; height: 26px; left: 78%; bottom: -46px; animation-duration: 6.2s; animation-delay: 0.8s; }
+          .bubble-25 { width: 22px; height: 22px; left: 95%; bottom: -42px; animation-duration: 5.5s; animation-delay: 2.8s; }
+          
+          @keyframes floatUp {
+            0% {
+              transform: translateY(0) translateX(0) scale(0.8);
+              opacity: 0;
+            }
+            5% {
+              opacity: 1;
+            }
+            25% {
+              transform: translateY(-150px) translateX(15px) scale(1);
+            }
+            50% {
+              transform: translateY(-300px) translateX(-10px) scale(1.05);
+            }
+            75% {
+              transform: translateY(-450px) translateX(20px) scale(1);
+            }
+            95% {
+              opacity: 0.9;
+            }
+            100% {
+              transform: translateY(-600px) translateX(-5px) scale(0.95);
+              opacity: 0;
+            }
+          }
+          
+          .sparkle {
+            position: absolute;
+            color: rgba(100,180,220,0.9);
+            font-size: 16px;
+            animation: sparkleFloat linear infinite;
+            text-shadow: 0 0 10px rgba(100,180,220,0.5);
+          }
+          
+          .sparkle-1 { left: 8%; bottom: -30px; animation-duration: 8s; animation-delay: 0s; font-size: 22px; }
+          .sparkle-2 { left: 25%; bottom: -30px; animation-duration: 9s; animation-delay: 1.5s; font-size: 16px; }
+          .sparkle-3 { left: 42%; bottom: -30px; animation-duration: 7.5s; animation-delay: 3s; font-size: 20px; }
+          .sparkle-4 { left: 60%; bottom: -30px; animation-duration: 8.5s; animation-delay: 0.5s; font-size: 14px; }
+          .sparkle-5 { left: 75%; bottom: -30px; animation-duration: 9.5s; animation-delay: 2s; font-size: 18px; }
+          .sparkle-6 { left: 92%; bottom: -30px; animation-duration: 7s; animation-delay: 4s; font-size: 15px; }
+          
+          @keyframes sparkleFloat {
+            0% {
+              transform: translateY(0) rotate(0deg);
+              opacity: 0;
+            }
+            10% {
+              opacity: 1;
+            }
+            90% {
+              opacity: 0.9;
+            }
+            100% {
+              transform: translateY(-550px) rotate(360deg);
+              opacity: 0;
+            }
+          }
+        `}</style>
         
         <div className="container mx-auto px-4 relative z-10">
-          <HeroCarousel isAuthenticated={isAuthenticated} user={user} />
+          <HeroCarousel isAuthenticated={isAuthenticated} user={user} onBookNow={handleBookNow} />
         </div>
       </section>
 
@@ -938,19 +1158,23 @@ export default function HomePage() {
                 
                 <div className="flex flex-col sm:flex-row gap-3">
                   {isAuthenticated ? (
-                    <Link href="/customer/orders/new">
-                      <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white w-full sm:w-auto shadow-lg">
-                        <Truck className="w-5 h-5 mr-2" />
-                        Book New Order
-                      </Button>
-                    </Link>
+                    <Button 
+                      size="lg" 
+                      className="bg-teal-500 hover:bg-teal-600 text-white w-full sm:w-auto shadow-lg"
+                      onClick={handleBookNow}
+                    >
+                      <Truck className="w-5 h-5 mr-2" />
+                      Book New Order
+                    </Button>
                   ) : (
-                    <Link href="/auth/login?redirect=/customer/orders/new">
-                      <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white w-full sm:w-auto shadow-lg">
-                        <Truck className="w-5 h-5 mr-2" />
-                        Schedule Free Pickup
-                      </Button>
-                    </Link>
+                    <Button 
+                      size="lg" 
+                      className="bg-teal-500 hover:bg-teal-600 text-white w-full sm:w-auto shadow-lg"
+                      onClick={handleBookNow}
+                    >
+                      <Truck className="w-5 h-5 mr-2" />
+                      Schedule Free Pickup
+                    </Button>
                   )}
                   <Link href="https://wa.me/919876543210" target="_blank">
                     <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto shadow-lg">
@@ -986,11 +1210,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Wash & Fold</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Fresh, clean, neatly folded clothes.<br />Perfect for everyday wear.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=wash_fold" : "/auth/login?redirect=/customer/orders/new?service=wash_fold"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 2 - Wash & Iron */}
@@ -1000,11 +1222,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Wash & Iron</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Clean, crisp, wrinkle-free garments.<br />Ready to wear daily.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=wash_iron" : "/auth/login?redirect=/customer/orders/new?service=wash_iron"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 3 - Premium Laundry */}
@@ -1014,11 +1234,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Premium Laundry</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Gentle care for special fabrics.<br />Extra attention to detail.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_laundry" : "/auth/login?redirect=/customer/orders/new?service=premium_laundry"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 4 - Dry Clean */}
@@ -1028,11 +1246,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Dry Clean</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Delicate care for formal wear.<br />Suits, blazers & more.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=dry_clean" : "/auth/login?redirect=/customer/orders/new?service=dry_clean"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 5 - Steam Press */}
@@ -1042,11 +1258,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Steam Press</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Smooth, polished finish with steam.<br />Professional ironing service.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=steam_press" : "/auth/login?redirect=/customer/orders/new?service=steam_press"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 6 - Starching */}
@@ -1056,11 +1270,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Starching</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Perfect, lasting stiffness for clothes.<br />Ideal for cottons & sarees.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=starching" : "/auth/login?redirect=/customer/orders/new?service=starching"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 7 - Premium Steam Press */}
@@ -1070,11 +1282,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Premium Steam Press</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Extra-fine, careful press service.<br />For premium outfits only.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_steam_press" : "/auth/login?redirect=/customer/orders/new?service=premium_steam_press"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
 
             {/* Card 8 - Premium Dry Clean */}
@@ -1084,30 +1294,30 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-semibold text-gray-800 mb-2">Premium Dry Clean</h3>
               <p className="text-gray-600 text-sm mb-4 min-h-[40px]">Luxury care for branded items.<br />Designer clothing experts.</p>
-              <Link href={isAuthenticated ? "/customer/orders/new?service=premium_dry_clean" : "/auth/login?redirect=/customer/orders/new?service=premium_dry_clean"}>
-                <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6">
-                  Book Now
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-teal-500 hover:bg-teal-600 text-white px-6" onClick={handleBookNow}>
+                Book Now
+              </Button>
             </div>
           </div>
 
           <div className="text-center">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {isAuthenticated ? (
-                <Link href="/customer/orders/new">
-                  <Button className="bg-gray-700 hover:bg-gray-800 text-white">
-                    <Truck className="w-5 h-5 mr-2" />
-                    Book New Order
-                  </Button>
-                </Link>
+                <Button 
+                  className="bg-teal-500 hover:bg-teal-600 text-white"
+                  onClick={handleBookNow}
+                >
+                  <Truck className="w-5 h-5 mr-2" />
+                  Book New Order
+                </Button>
               ) : (
-                <Link href="/auth/login?redirect=/customer/orders/new">
-                  <Button className="bg-gray-700 hover:bg-gray-800 text-white">
-                    <Truck className="w-5 h-5 mr-2" />
-                    Schedule Free Pickup
-                  </Button>
-                </Link>
+                <Button 
+                  className="bg-teal-500 hover:bg-teal-600 text-white"
+                  onClick={handleBookNow}
+                >
+                  <Truck className="w-5 h-5 mr-2" />
+                  Schedule Free Pickup
+                </Button>
               )}
               <Link href="https://wa.me/919876543210" target="_blank">
                 <Button variant="outline" className="border-teal-500 text-teal-500 hover:bg-teal-50">

@@ -1,10 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { BranchSidebar } from '@/components/layout/BranchSidebar'
 import { BranchNavbar } from '@/components/layout/BranchNavbar'
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 export default function BranchLayout({
   children,
@@ -14,6 +15,7 @@ export default function BranchLayout({
   const { isAuthenticated, user, _hasHydrated } = useAuthStore()
   const router = useRouter()
   const [isReady, setIsReady] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     // Wait for store to hydrate from localStorage
@@ -59,9 +61,11 @@ export default function BranchLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <BranchNavbar />
-      <div className="flex">
-        <BranchSidebar />
-        <main className="flex-1 lg:ml-64 p-4 lg:p-6 overflow-x-auto">
+      <div className="flex pt-16">
+        <BranchSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
+        <main className={`flex-1 p-4 lg:p-6 overflow-x-auto transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}>
           <div className="max-w-full">
             {children}
           </div>

@@ -12,12 +12,25 @@ import {
   Users,
   Clock,
   Calendar,
-  Download,
-  ArrowUp,
-  ArrowDown
+  Download
 } from 'lucide-react'
 import { branchApi } from '@/lib/branchApi'
 import toast from 'react-hot-toast'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  LineChart,
+  Line
+} from 'recharts'
 
 interface AnalyticsData {
   branch: { name: string; code: string }
@@ -48,10 +61,13 @@ interface AnalyticsData {
   }>
 }
 
+const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
+
 export default function BranchPerformancePage() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeframe, setTimeframe] = useState('7d')
+  const [revenueChartType, setRevenueChartType] = useState<'bar' | 'line'>('bar')
 
   const fetchAnalytics = async () => {
     try {
@@ -99,6 +115,7 @@ export default function BranchPerformancePage() {
     return colorMap[status] || 'bg-gray-500'
   }
 
+
   const handleExport = () => {
     if (!data) return
     
@@ -138,6 +155,24 @@ export default function BranchPerformancePage() {
     toast.success('Analytics exported successfully')
   }
 
+  // Transform data for charts
+  const dailyChartData = data?.dailyStats.map(d => ({
+    date: `${d._id.day}/${d._id.month}`,
+    orders: d.orders,
+    revenue: d.revenue
+  })) || []
+
+  const serviceChartData = data?.serviceStats.map(s => ({
+    name: s._id?.replace(/_/g, ' ') || 'Unknown',
+    value: s.count,
+    revenue: s.revenue
+  })) || []
+
+  const statusChartData = data?.statusDistribution.map(s => ({
+    name: getStatusText(s._id),
+    value: s.count
+  })) || []
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -148,18 +183,16 @@ export default function BranchPerformancePage() {
 
   if (!data) {
     return (
-      <div className="mt-16 p-6 bg-red-50 rounded-xl text-center">
+      <div className="p-6 bg-red-50 rounded-xl text-center">
         <p className="text-red-600">Failed to load analytics</p>
         <Button onClick={fetchAnalytics} className="mt-4">Try Again</Button>
       </div>
     )
   }
 
-  const maxDailyOrders = Math.max(...data.dailyStats.map(d => d.orders), 1)
-  const maxServiceCount = Math.max(...data.serviceStats.map(s => s.count), 1)
 
   return (
-    <div className="space-y-6 mt-16">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -220,135 +253,294 @@ export default function BranchPerformancePage() {
         </div>
       </div>
 
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Orders Chart */}
+        {/* Daily Orders Bar Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Calendar className="w-5 h-5 mr-2 text-blue-500" />
             Daily Orders
           </h2>
-          {data.dailyStats.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-500">
+          {dailyChartData.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-500">
               No data available
             </div>
           ) : (
-            <div className="space-y-3">
-              {data.dailyStats.slice(-7).map((day, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-20">
-                    {day._id.day}/{day._id.month}
-                  </span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full flex items-center justify-end pr-2"
-                      style={{ width: `${(day.orders / maxDailyOrders) * 100}%`, minWidth: '40px' }}
-                    >
-                      <span className="text-xs text-white font-medium">{day.orders}</span>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-600 w-24 text-right">
-                    ₹{day.revenue.toLocaleString()}
-                  </span>
-                </div>
-              ))}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    formatter={(value: number) => [value, 'Orders']}
+                  />
+                  <Bar 
+                    dataKey="orders" 
+                    fill="#3B82F6" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>
 
-        {/* Service Breakdown */}
+        {/* Service Breakdown Pie Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <BarChart3 className="w-5 h-5 mr-2 text-green-500" />
             Service Breakdown
           </h2>
-          {data.serviceStats.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-500">
+          {serviceChartData.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-500">
               No data available
             </div>
           ) : (
-            <div className="space-y-3">
-              {data.serviceStats.map((service, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-28 truncate capitalize">
-                    {service._id?.replace(/_/g, ' ') || 'Unknown'}
-                  </span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-full rounded-full flex items-center justify-end pr-2"
-                      style={{ width: `${(service.count / maxServiceCount) * 100}%`, minWidth: '40px' }}
-                    >
-                      <span className="text-xs text-white font-medium">{service.count}</span>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-600 w-24 text-right">
-                    ₹{service.revenue.toLocaleString()}
-                  </span>
-                </div>
-              ))}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={serviceChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
+                  >
+                    {serviceChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number, name: string, props: any) => [
+                      `${value} orders (₹${props.payload.revenue.toLocaleString()})`,
+                      props.payload.name
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>
       </div>
 
+
       {/* Status Distribution & Staff Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution */}
+        {/* Status Distribution Pie Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Clock className="w-5 h-5 mr-2 text-orange-500" />
             Order Status Distribution
           </h2>
-          {data.statusDistribution.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-500">
+          {statusChartData.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-500">
               No data available
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {data.statusDistribution.map((status, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(status._id)}`}></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">{getStatusText(status._id)}</p>
-                    <p className="text-lg font-bold text-gray-700">{status.count}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusChartData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                    labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
+                  >
+                    {statusChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    formatter={(value) => <span className="text-sm text-gray-600">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>
 
-        {/* Staff Performance */}
+        {/* Staff Performance Bar Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Users className="w-5 h-5 mr-2 text-purple-500" />
             Staff Performance
           </h2>
           {data.staffPerformance.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-500">
+            <div className="h-64 flex items-center justify-center text-gray-500">
               No staff data available
             </div>
           ) : (
-            <div className="space-y-3">
-              {data.staffPerformance.slice(0, 5).map((staff, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-400' : 'bg-blue-400'} text-white font-bold text-sm`}>
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-800">{staff.name}</p>
-                      <p className="text-xs text-gray-500">{staff.ordersProcessed} orders</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">₹{staff.revenue.toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={data.staffPerformance.slice(0, 5)} 
+                  layout="vertical"
+                  margin={{ left: 20, right: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    width={80}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === 'ordersProcessed' ? value : `₹${value.toLocaleString()}`,
+                      name === 'ordersProcessed' ? 'Orders' : 'Revenue'
+                    ]}
+                  />
+                  <Bar dataKey="ordersProcessed" fill="#8B5CF6" radius={[0, 4, 4, 0]} name="Orders" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>
+      </div>
+
+
+      {/* Revenue Trend Chart */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+            <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+            Revenue Trend
+          </h2>
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setRevenueChartType('bar')}
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                revenueChartType === 'bar' 
+                  ? 'bg-white text-green-600 shadow-sm font-medium' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Bar
+            </button>
+            <button
+              onClick={() => setRevenueChartType('line')}
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                revenueChartType === 'line' 
+                  ? 'bg-white text-green-600 shadow-sm font-medium' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Curve
+            </button>
+          </div>
+        </div>
+        {dailyChartData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-gray-500">
+            No data available
+          </div>
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              {revenueChartType === 'bar' ? (
+                <BarChart data={dailyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tickFormatter={(value) => `₹${value}`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Bar 
+                    dataKey="revenue" 
+                    fill="#10B981" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              ) : (
+                <LineChart data={dailyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tickFormatter={(value) => `₹${value}`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#10B981" 
+                    strokeWidth={3}
+                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#10B981' }}
+                  />
+                </LineChart>
+              )}
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Quick Insights */}
