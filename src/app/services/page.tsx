@@ -17,7 +17,8 @@ import {
   Smartphone,
   WashingMachine,
   ShirtIcon,
-  User
+  User,
+  ChevronDown
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useState, useEffect, useRef } from 'react'
@@ -30,9 +31,6 @@ const services = [
     description: 'Regular washing and folding service for everyday clothes',
     price: 'Starting ₹25/item',
     features: ['Same day pickup', 'Eco-friendly detergents', 'Neatly folded'],
-    color: 'blue',
-    bgColor: 'bg-blue-50',
-    iconBg: 'bg-blue-500'
   },
   {
     id: 'dry-cleaning',
@@ -41,9 +39,6 @@ const services = [
     description: 'Professional dry cleaning for delicate and formal wear',
     price: 'Starting ₹60/item',
     features: ['Expert care', 'Stain removal', 'Premium finish'],
-    color: 'purple',
-    bgColor: 'bg-purple-50',
-    iconBg: 'bg-purple-500'
   },
   {
     id: 'laundry',
@@ -52,9 +47,6 @@ const services = [
     description: 'Complete laundry service with wash, dry and iron',
     price: 'Starting ₹30/item',
     features: ['Full service', 'Quick turnaround', 'Quality assured'],
-    color: 'green',
-    bgColor: 'bg-green-50',
-    iconBg: 'bg-green-500'
   },
   {
     id: 'shoe-cleaning',
@@ -63,9 +55,6 @@ const services = [
     description: 'Professional shoe care and cleaning services',
     price: 'Starting ₹80/pair',
     features: ['Deep cleaning', 'Polish & shine', 'Odor removal'],
-    color: 'orange',
-    bgColor: 'bg-orange-50',
-    iconBg: 'bg-orange-500'
   },
   {
     id: 'express',
@@ -74,11 +63,39 @@ const services = [
     description: 'Same-day delivery for urgent laundry needs',
     price: 'Starting ₹45/item',
     features: ['4-6 hour delivery', 'Priority handling', 'Premium care'],
-    color: 'red',
-    bgColor: 'bg-red-50',
-    iconBg: 'bg-red-500'
   }
 ]
+
+// FAQ Component
+function FAQItem({ question, answer, isOpen, onToggle }: {
+  question: string
+  answer: string
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="overflow-hidden">
+      <button
+        onClick={onToggle}
+        className={`w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200 ${
+          isOpen 
+            ? 'bg-teal-500 hover:bg-teal-500' 
+            : 'bg-slate-700 hover:bg-slate-600'
+        }`}
+      >
+        <h4 className="text-base font-medium text-white pr-4">{question}</h4>
+        <div className="flex-shrink-0">
+          <ChevronDown className={`w-5 h-5 text-white transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="px-8 py-6 bg-white border-x border-b border-gray-200">
+          <p className="text-gray-600 text-base leading-relaxed">{answer}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // How We Work Steps with images
 const howWeWorkSteps = [
@@ -181,17 +198,17 @@ function HowWeWorkSection() {
         {/* Section Header */}
         <div className="text-center py-16">
           <p className="text-teal-500 font-semibold mb-2">Simple & Easy</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">How We Work</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How We Work</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Getting your laundry done has never been easier. Just 4 simple steps!
           </p>
         </div>
 
         {/* Sticky Scroll Section */}
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
-          {/* Left - Sticky Image */}
-          <div className="lg:w-1/2 lg:sticky lg:top-24 lg:h-[500px] flex items-center justify-center">
-            <div className="relative w-full max-w-md h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          {/* Left - Sticky Image - Increased width */}
+          <div className="lg:w-[55%] lg:sticky lg:top-24 lg:h-[550px] flex items-center justify-center">
+            <div className="relative w-full max-w-xl h-[450px] lg:h-[550px] rounded-2xl overflow-hidden shadow-2xl">
               {howWeWorkSteps.map((step, index) => (
                 <div
                   key={step.id}
@@ -233,8 +250,8 @@ function HowWeWorkSection() {
             </div>
           </div>
 
-          {/* Right - Scrollable Content */}
-          <div ref={contentRef} className="lg:w-1/2 space-y-8 pb-16">
+          {/* Right - Scrollable Content - Darker text for better readability */}
+          <div ref={contentRef} className="lg:w-[45%] space-y-8 pb-16">
             {howWeWorkSteps.map((step, index) => (
               <div
                 key={step.id}
@@ -244,23 +261,23 @@ function HowWeWorkSection() {
                 <div className="w-full py-8">
                   <div className="flex items-center space-x-4 mb-6">
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                      activeStep === index ? 'bg-teal-500' : 'bg-gray-300'
+                      activeStep === index ? 'bg-teal-500' : 'bg-gray-400'
                     } transition-colors duration-300`}>
                       <span className="text-xl font-bold text-white">{step.id}</span>
                     </div>
                     <div>
-                      <p className="text-teal-500 font-medium text-sm uppercase tracking-wide">{step.subtitle}</p>
-                      <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{step.title}</h3>
+                      <p className="text-teal-600 font-semibold text-sm uppercase tracking-wide">{step.subtitle}</p>
+                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{step.title}</h3>
                     </div>
                   </div>
                   
-                  <p className="text-gray-600 text-lg mb-8 leading-relaxed">{step.description}</p>
+                  <p className="text-gray-700 text-lg mb-8 leading-relaxed font-medium">{step.description}</p>
                   
                   <ul className="space-y-4">
                     {step.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start text-gray-700">
+                      <li key={idx} className="flex items-start text-gray-800">
                         <CheckCircle className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0 mt-0.5" />
-                        <span>{feature}</span>
+                        <span className="font-medium">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -276,6 +293,38 @@ function HowWeWorkSection() {
 
 export default function ServicesPage() {
   const { isAuthenticated } = useAuthStore()
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null)
+
+  const faqData = [
+    {
+      question: "What types of clothes do you clean?",
+      answer: "We clean all types of garments including everyday wear, formal clothes, delicates, woolens, silks, sarees, suits, curtains, bed sheets, and more. Our experts handle each fabric type with appropriate care and cleaning methods."
+    },
+    {
+      question: "How do you handle delicate fabrics?",
+      answer: "Delicate fabrics like silk, wool, and cashmere receive special attention. We use gentle, fabric-specific detergents and appropriate cleaning methods. Our trained staff inspects each garment before processing to ensure the best care."
+    },
+    {
+      question: "What is the difference between Wash & Fold and Dry Cleaning?",
+      answer: "Wash & Fold is regular water-based washing suitable for everyday clothes like t-shirts, jeans, and cotton wear. Dry Cleaning uses special solvents instead of water, ideal for delicate fabrics, formal wear, suits, and garments that can't be washed with water."
+    },
+    {
+      question: "Can you remove tough stains?",
+      answer: "Yes! Our expert technicians specialize in stain removal. We treat various stains including oil, ink, wine, coffee, and food stains. For best results, inform us about the stain type during pickup. Some old or set-in stains may require multiple treatments."
+    },
+    {
+      question: "How long does the service take?",
+      answer: "Standard service takes 24-48 hours from pickup to delivery. Express service is available for urgent needs with same-day or next-day delivery. Turnaround time may vary based on the service type and garment condition."
+    },
+    {
+      question: "Do you provide packaging for delivered clothes?",
+      answer: "Yes, all cleaned garments are carefully packed. Regular items are neatly folded in eco-friendly bags. Formal wear and delicates are delivered on hangers with protective covers to maintain their freshness and prevent wrinkles."
+    }
+  ]
+
+  const toggleFAQ = (index: number) => {
+    setOpenFAQ(openFAQ === index ? null : index)
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -346,25 +395,25 @@ export default function ServicesPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
             {services.map((service) => {
               const Icon = service.icon
               return (
                 <div 
                   key={service.id}
-                  className={`${service.bgColor} rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+                  className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-teal-200"
                 >
-                  <div className={`w-14 h-14 ${service.iconBg} rounded-xl flex items-center justify-center mb-4`}>
-                    <Icon className="w-7 h-7 text-white" />
+                  <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center mb-3">
+                    <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{service.name}</h3>
-                  <p className="text-gray-600 mb-3">{service.description}</p>
-                  <p className="text-lg font-bold text-gray-800 mb-4">{service.price}</p>
+                  <h3 className="text-base font-semibold text-gray-800 mb-1">{service.name}</h3>
+                  <p className="text-gray-500 text-sm mb-2 line-clamp-2">{service.description}</p>
+                  <p className="text-sm font-bold text-teal-600 mb-3">{service.price}</p>
                   
-                  <ul className="space-y-2 mb-6">
+                  <ul className="space-y-1 mb-4">
                     {service.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sm text-gray-600">
-                        <CheckCircle className="w-4 h-4 text-teal-500 mr-2" />
+                      <li key={idx} className="flex items-center text-xs text-gray-600">
+                        <CheckCircle className="w-3 h-3 text-teal-500 mr-1.5 flex-shrink-0" />
                         {feature}
                       </li>
                     ))}
@@ -372,16 +421,14 @@ export default function ServicesPage() {
 
                   {isAuthenticated ? (
                     <Link href={`/customer/orders/new?service=${service.id}`}>
-                      <Button className="w-full bg-gray-800 hover:bg-gray-900 text-white">
+                      <Button size="sm" className="w-full bg-teal-500 hover:bg-teal-600 text-white text-sm">
                         Book Now
-                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
                   ) : (
                     <Link href="/auth/login?redirect=/customer/orders/new">
-                      <Button className="w-full bg-gray-800 hover:bg-gray-900 text-white">
+                      <Button size="sm" className="w-full bg-teal-500 hover:bg-teal-600 text-white text-sm">
                         Book Now
-                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
                   )}
@@ -428,6 +475,30 @@ export default function ServicesPage() {
               <h3 className="font-semibold text-gray-800 mb-2">24/7 Support</h3>
               <p className="text-sm text-gray-600">Always here to help you</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Frequently Asked Questions</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Got questions about our services? We've got answers.
+            </p>
+          </div>
+
+          <div className="max-w-6xl mx-auto space-y-2">
+            {faqData.map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFAQ === index}
+                onToggle={() => toggleFAQ(index)}
+              />
+            ))}
           </div>
         </div>
       </section>

@@ -137,3 +137,217 @@ export function useBranchAnalytics() {
     refetch: fetchAnalytics
   }
 }
+
+
+// Center Admin Analytics Hooks
+
+import { centerAdminApi } from '@/lib/centerAdminApi'
+
+interface AnalyticsOverview {
+  customerMetrics: {
+    totalCustomers: number
+    newCustomers: number
+    retentionRate: number
+    growth: number
+  }
+  revenueMetrics: {
+    totalRevenue: number
+    averageOrderValue: number
+    growth: number
+  }
+  orderMetrics: {
+    totalOrders: number
+    completedOrders: number
+    cancelledOrders: number
+    completionRate: number
+  }
+  branchMetrics: {
+    totalBranches: number
+    activeBranches: number
+    averageRevenuePerBranch: number
+    totalBranchRevenue: number
+  }
+}
+
+interface AnalyticsItem {
+  _id: string
+  analyticsId: string
+  type: string
+  status: string
+  startDate: string
+  endDate: string
+  createdAt: string
+  createdBy: {
+    name: string
+  }
+}
+
+interface AnalyticsFilters {
+  type: string
+  status: string
+  search: string
+  page: number
+  limit: number
+}
+
+export function useAnalyticsOverview(timeframe: string) {
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchOverview = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await centerAdminApi.getAnalyticsOverview(timeframe)
+      
+      if (response.success && response.data?.overview) {
+        setOverview(response.data.overview)
+      }
+    } catch (err: any) {
+      console.error('Error fetching analytics overview:', err)
+      setError(err.message || 'Failed to fetch overview')
+    } finally {
+      setLoading(false)
+    }
+  }, [timeframe])
+
+  useEffect(() => {
+    fetchOverview()
+  }, [fetchOverview])
+
+  return { overview, loading, error, refetch: fetchOverview }
+}
+
+export function useAnalytics(filters: AnalyticsFilters) {
+  const [analytics, setAnalytics] = useState<AnalyticsItem[]>([])
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pages: 1,
+    total: 0,
+    limit: 20
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await centerAdminApi.getAnalytics({
+        page: filters.page,
+        limit: filters.limit,
+        type: filters.type || undefined,
+        status: filters.status || undefined,
+        search: filters.search || undefined
+      })
+      
+      if (response.success && response.data) {
+        setAnalytics(response.data.analytics || [])
+        setPagination(response.data.pagination || {
+          current: filters.page,
+          pages: 1,
+          total: 0,
+          limit: filters.limit
+        })
+      }
+    } catch (err: any) {
+      console.error('Error fetching analytics:', err)
+      setError(err.message || 'Failed to fetch analytics')
+    } finally {
+      setLoading(false)
+    }
+  }, [filters])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
+
+  return { analytics, pagination, loading, error, refetch: fetchAnalytics }
+}
+
+export function useAnalyticsGeneration() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const generateCustomerRetentionAnalysis = async (data: { startDate: string; endDate: string }) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await centerAdminApi.generateCustomerRetentionAnalysis(data)
+      return response
+    } catch (err: any) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateBranchPerformanceAnalysis = async (data: { startDate: string; endDate: string }) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await centerAdminApi.generateBranchPerformanceAnalysis(data)
+      return response
+    } catch (err: any) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateRevenueForecast = async (data: { 
+    startDate: string
+    endDate: string
+    forecastHorizon: number
+    methodology: string 
+  }) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await centerAdminApi.generateRevenueForecast(data)
+      return response
+    } catch (err: any) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateExpansionAnalysis = async (data: {
+    targetLocation: { city: string; area: string; pincode: string }
+    marketData: {
+      populationDensity: number
+      averageIncome: number
+      competitorCount: number
+      marketSaturation: number
+      demandEstimate: number
+    }
+  }) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await centerAdminApi.generateExpansionAnalysis(data)
+      return response
+    } catch (err: any) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return {
+    loading,
+    error,
+    generateCustomerRetentionAnalysis,
+    generateBranchPerformanceAnalysis,
+    generateRevenueForecast,
+    generateExpansionAnalysis
+  }
+}

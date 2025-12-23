@@ -15,7 +15,7 @@ import {
   AlertCircle,
   User,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Crown,
   Zap,
   X,
@@ -28,7 +28,7 @@ import {
   Edit,
   Ban
 } from 'lucide-react'
-import { useAdminOrders, useBranches, useLogisticsPartners } from '@/hooks/useAdmin'
+import { useAdminOrders, useLogisticsPartners } from '@/hooks/useAdmin'
 import toast from 'react-hot-toast'
 
 interface Order {
@@ -91,7 +91,7 @@ export default function AdminOrdersPage() {
     isExpress: undefined as boolean | undefined
   })
   const [showAssignModal, setShowAssignModal] = useState(false)
-  const [assignType, setAssignType] = useState<'branch' | 'logistics'>('branch')
+  const [logisticsType, setLogisticsType] = useState<'pickup' | 'delivery'>('pickup')
   const [selectedOrderForAssign, setSelectedOrderForAssign] = useState<string>('')
   const [selectedAssignee, setSelectedAssignee] = useState('')
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
@@ -104,8 +104,7 @@ export default function AdminOrdersPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const { orders, pagination, loading, error, assignToBranch, assignToLogistics, updateStatus, refetch } = useAdminOrders(filters)
-  const { branches } = useBranches()
+  const { orders, pagination, loading, error, assignToLogistics, updateStatus, refetch } = useAdminOrders(filters)
   const { partners } = useLogisticsPartners()
 
   // Close menu when clicking outside
@@ -123,9 +122,9 @@ export default function AdminOrdersPage() {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
   }
 
-  const handleAssignOrder = (orderId: string, type: 'branch' | 'logistics') => {
+  const handleAssignLogistics = (orderId: string, type: 'pickup' | 'delivery') => {
     setSelectedOrderForAssign(orderId)
-    setAssignType(type)
+    setLogisticsType(type)
     setSelectedAssignee('')
     setShowAssignModal(true)
     setOpenMenuId(null)
@@ -135,16 +134,11 @@ export default function AdminOrdersPage() {
     if (!selectedAssignee) return
     setLoadingAction('assign')
     try {
-      if (assignType === 'branch') {
-        await assignToBranch(selectedOrderForAssign, selectedAssignee)
-        toast.success('Order assigned to branch successfully!')
-      } else {
-        await assignToLogistics(selectedOrderForAssign, selectedAssignee, 'pickup')
-        toast.success('Order assigned to logistics partner successfully!')
-      }
+      await assignToLogistics(selectedOrderForAssign, selectedAssignee, logisticsType)
+      toast.success(`Logistics partner assigned for ${logisticsType} successfully!`)
       setShowAssignModal(false)
     } catch (error: any) {
-      toast.error(error.message || `Failed to assign order`)
+      toast.error(error.message || `Failed to assign logistics partner`)
     } finally {
       setLoadingAction(null)
     }
@@ -296,8 +290,11 @@ export default function AdminOrdersPage() {
     const statusFlow: Record<string, string[]> = {
       'placed': ['in_process', 'cancelled'],
       'assigned_to_branch': ['in_process', 'cancelled'],
+      'assigned_to_logistics_pickup': ['picked', 'cancelled'],
+      'picked': ['in_process', 'cancelled'],
       'in_process': ['ready', 'cancelled'],
       'ready': ['out_for_delivery', 'cancelled'],
+      'assigned_to_logistics_delivery': ['out_for_delivery', 'cancelled'],
       'out_for_delivery': ['delivered', 'cancelled'],
     }
     return statusFlow[currentStatus] || []
@@ -382,7 +379,7 @@ export default function AdminOrdersPage() {
       {/* Orders List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Orders ({pagination.total})</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Orders {pagination.total > 0 ? `(${pagination.total})` : ''}</h2>
         </div>
         
         {error && (
@@ -435,7 +432,7 @@ export default function AdminOrdersPage() {
                           <div className="flex items-center"><User className="w-4 h-4 mr-1" />{order.customer?.name}</div>
                           <div className="flex items-center"><Package className="w-4 h-4 mr-1" />{order.items?.length || 0} items</div>
                           <div className="flex items-center"><Calendar className="w-4 h-4 mr-1" />{new Date(order.createdAt).toLocaleDateString('en-IN')}</div>
-                          <div className="flex items-center"><DollarSign className="w-4 h-4 mr-1" />₹{order.pricing?.total?.toLocaleString()}</div>
+                          <div className="flex items-center"><IndianRupee className="w-4 h-4 mr-1" />{order.pricing?.total?.toLocaleString()}</div>
                         </div>
                         
                         <div className="mt-2 text-sm text-gray-500">
@@ -451,47 +448,40 @@ export default function AdminOrdersPage() {
                         <Eye className="w-4 h-4 mr-1" />View
                       </Button>
                       
-                      {(order.status === 'placed' || order.status === 'assigned_to_branch' || order.status === 'ready') && (
-                        <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => handleAssignOrder(order._id, 'logistics')}>
-                          <Truck className="w-4 h-4 mr-1" />Assign Logistics
+                      {/* Assign Logistics for Pickup - when order is placed (customer already selected branch) */}
+                      {order.status === 'placed' && (
+                        <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => handleAssignLogistics(order._id, 'pickup')}>
+                          <Truck className="w-4 h-4 mr-1" />Assign Pickup
                         </Button>
                       )}
                       
-                      {/* Menu Dropdown */}
-                      <div className="relative" ref={openMenuId === order._id ? menuRef : null}>
-                        <Button variant="outline" size="sm" onClick={() => setOpenMenuId(openMenuId === order._id ? null : order._id)}>
-                          <MoreVertical className="w-4 h-4" />
+                      {/* Assign Logistics for Delivery - when order is ready */}
+                      {order.status === 'ready' && (
+                        <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleAssignLogistics(order._id, 'delivery')}>
+                          <Truck className="w-4 h-4 mr-1" />Assign Delivery
                         </Button>
-                        
-                        {openMenuId === order._id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                            <div className="py-1">
-                              <button onClick={() => handleViewOrder(order)} className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                <Eye className="w-4 h-4 mr-2" />View Details
-                              </button>
-                              
-                              {(order.status === 'placed' || order.status === 'assigned_to_branch' || order.status === 'ready') && (
-                                <button onClick={() => handleAssignOrder(order._id, 'logistics')} className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                  <Truck className="w-4 h-4 mr-2" />Assign Logistics
-                                </button>
-                              )}
-                              
-                              {nextStatuses.length > 0 && (
-                                <>
-                                  <div className="border-t border-gray-100 my-1"></div>
-                                  <div className="px-4 py-1 text-xs text-gray-500">Update Status</div>
-                                  {nextStatuses.filter(s => s !== 'assigned_to_branch').map(status => (
-                                    <button key={status} onClick={() => handleUpdateStatus(order._id, status)} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center ${status === 'cancelled' ? 'text-red-600' : 'text-gray-700'}`}>
-                                      {status === 'cancelled' ? <Ban className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
-                                      {getStatusText(status)}
-                                    </button>
-                                  ))}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      )}
+                      
+                      {/* Status Change Dropdown */}
+                      {nextStatuses.length > 0 && (
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleUpdateStatus(order._id, e.target.value)
+                            }
+                          }}
+                          disabled={loadingAction === `status-${order._id}`}
+                          className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="">Change Status</option>
+                          {nextStatuses.map(status => (
+                            <option key={status} value={status}>
+                              {getStatusText(status)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -700,9 +690,17 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-              {(selectedOrder.status === 'placed' || selectedOrder.status === 'assigned_to_branch' || selectedOrder.status === 'ready') && (
-                <Button className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => { handleAssignOrder(selectedOrder._id, 'logistics'); setShowViewModal(false) }}>
-                  <Truck className="w-4 h-4 mr-2" />Assign Logistics
+              {/* Assign Logistics for Pickup */}
+              {selectedOrder.status === 'placed' && (
+                <Button className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => { handleAssignLogistics(selectedOrder._id, 'pickup'); setShowViewModal(false) }}>
+                  <Truck className="w-4 h-4 mr-2" />Assign Pickup Partner
+                </Button>
+              )}
+              
+              {/* Assign Logistics for Delivery */}
+              {selectedOrder.status === 'ready' && (
+                <Button className="bg-green-500 hover:bg-green-600 text-white" onClick={() => { handleAssignLogistics(selectedOrder._id, 'delivery'); setShowViewModal(false) }}>
+                  <Truck className="w-4 h-4 mr-2" />Assign Delivery Partner
                 </Button>
               )}
               <Button variant="outline" onClick={() => setShowViewModal(false)}>Close</Button>
@@ -711,24 +709,47 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      {/* Assignment Modal */}
+      {/* Assignment Modal - Logistics Partner Only */}
       {showAssignModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Assign {assignType === 'branch' ? 'Branch' : 'Logistics Partner'}</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              Assign Logistics Partner for {logisticsType === 'pickup' ? 'Pickup' : 'Delivery'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {logisticsType === 'pickup' 
+                ? 'Select a logistics partner to pick up items from customer' 
+                : 'Select a logistics partner to deliver items to customer'}
+            </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select {assignType === 'branch' ? 'Branch' : 'Logistics Partner'}</label>
-                <select value={selectedAssignee} onChange={(e) => setSelectedAssignee(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Choose...</option>
-                  {(assignType === 'branch' ? branches : partners).map((item) => (
-                    <option key={item._id} value={item._id}>{assignType === 'branch' ? item.name : item.companyName}</option>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Logistics Partner
+                </label>
+                <select 
+                  value={selectedAssignee} 
+                  onChange={(e) => setSelectedAssignee(e.target.value)} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Choose a partner...</option>
+                  {partners.map((partner) => (
+                    <option key={partner._id} value={partner._id}>
+                      {partner.companyName}
+                    </option>
                   ))}
                 </select>
+                {partners.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">No logistics partners available. Please add partners first.</p>
+                )}
               </div>
               <div className="flex gap-3">
-                <Button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white" onClick={handleAssignSubmit} disabled={!selectedAssignee || loadingAction === 'assign'}>
-                  {loadingAction === 'assign' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}Assign
+                <Button 
+                  className="flex-1 text-white bg-green-900 hover:bg-green-950"
+                  onClick={handleAssignSubmit} 
+                  disabled={!selectedAssignee || loadingAction === 'assign'}
+                >
+                  {loadingAction === 'assign' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Assign
                 </Button>
                 <Button variant="outline" className="flex-1" onClick={() => setShowAssignModal(false)}>Cancel</Button>
               </div>

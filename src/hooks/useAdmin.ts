@@ -314,29 +314,13 @@ export function useLogisticsPartners() {
     try {
       setLoading(true)
       setError(null)
-      // For now, return mock data since the endpoint might not exist
-      setPartners([
-        {
-          _id: 'LP001',
-          companyName: 'FastDelivery',
-          contactPerson: { name: 'John Doe', phone: '9876543210' },
-          isActive: true
-        },
-        {
-          _id: 'LP002',
-          companyName: 'QuickLogistics',
-          contactPerson: { name: 'Jane Smith', phone: '9876543211' },
-          isActive: true
-        },
-        {
-          _id: 'LP003',
-          companyName: 'SpeedyPickup',
-          contactPerson: { name: 'Mike Johnson', phone: '9876543212' },
-          isActive: true
-        }
-      ])
+      const response = await adminApi.getLogisticsPartners()
+      setPartners(response.data?.partners || response.data || [])
     } catch (err) {
+      console.error('Failed to fetch logistics partners:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch logistics partners')
+      // Fallback to empty array if API fails
+      setPartners([])
     } finally {
       setLoading(false)
     }

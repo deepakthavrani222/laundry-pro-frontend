@@ -276,20 +276,36 @@ export default function CenterAdminOrdersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {[
-          { label: 'New Orders', status: 'placed', color: 'blue' },
-          { label: 'In Progress', status: 'in_process', color: 'orange' },
-          { label: 'Ready', status: 'ready', color: 'purple' },
-          { label: 'Out for Delivery', status: 'out_for_delivery', color: 'teal' },
-          { label: 'Delivered', status: 'delivered', color: 'green' },
-        ].map(stat => (
-          <div key={stat.status} className={`bg-${stat.color}-50 rounded-lg p-4`}>
-            <div className={`text-2xl font-bold text-${stat.color}-600`}>
-              {orders.filter(o => o.status === stat.status).length}
-            </div>
-            <div className="text-sm text-gray-600">{stat.label}</div>
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {orders.filter(o => o.status === 'placed').length}
           </div>
-        ))}
+          <div className="text-sm text-blue-100">New Orders</div>
+        </div>
+        <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {orders.filter(o => o.status === 'in_process').length}
+          </div>
+          <div className="text-sm text-orange-100">In Progress</div>
+        </div>
+        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {orders.filter(o => o.status === 'ready').length}
+          </div>
+          <div className="text-sm text-purple-100">Ready</div>
+        </div>
+        <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {orders.filter(o => o.status === 'out_for_delivery').length}
+          </div>
+          <div className="text-sm text-teal-100">Out for Delivery</div>
+        </div>
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
+            {orders.filter(o => o.status === 'delivered').length}
+          </div>
+          <div className="text-sm text-green-100">Delivered</div>
+        </div>
       </div>
 
 
@@ -421,15 +437,48 @@ export default function CenterAdminOrdersPage() {
                               Assign Delivery
                             </Button>
                           )}
-                          {nextStatus && order.status !== 'delivered' && order.status !== 'cancelled' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleUpdateStatus(order._id, nextStatus)}
+                          {/* Status Change Dropdown */}
+                          {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handleUpdateStatus(order._id, e.target.value)
+                                }
+                              }}
                               disabled={updating}
-                              className="text-xs bg-teal-500 hover:bg-teal-600"
+                              className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                             >
-                              Next Status
-                            </Button>
+                              <option value="">Change Status</option>
+                              {order.status === 'placed' && (
+                                <>
+                                  <option value="assigned_to_branch">Assign to Branch</option>
+                                  <option value="in_process">Start Processing</option>
+                                </>
+                              )}
+                              {order.status === 'assigned_to_branch' && (
+                                <option value="in_process">Start Processing</option>
+                              )}
+                              {order.status === 'assigned_to_logistics_pickup' && (
+                                <option value="picked">Mark Picked</option>
+                              )}
+                              {order.status === 'picked' && (
+                                <option value="in_process">Start Processing</option>
+                              )}
+                              {order.status === 'in_process' && (
+                                <option value="ready">Mark Ready</option>
+                              )}
+                              {order.status === 'ready' && (
+                                <option value="out_for_delivery">Out for Delivery</option>
+                              )}
+                              {order.status === 'assigned_to_logistics_delivery' && (
+                                <option value="out_for_delivery">Out for Delivery</option>
+                              )}
+                              {order.status === 'out_for_delivery' && (
+                                <option value="delivered">Mark Delivered</option>
+                              )}
+                              <option value="cancelled">Cancel Order</option>
+                            </select>
                           )}
                         </div>
                       </td>

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCenterAdminStore } from '@/store/centerAdminStore'
@@ -21,7 +20,8 @@ import {
   Crown,
   Tag,
   Truck,
-  Package
+  Package,
+  Sparkles
 } from 'lucide-react'
 
 const navigation = [
@@ -56,14 +56,14 @@ const navigation = [
     permission: 'orders'
   },
   {
-    name: 'Service Items',
-    href: '/center-admin/service-items',
-    icon: Package,
+    name: 'Services',
+    href: '/center-admin/services',
+    icon: Sparkles,
     permission: 'settings'
   },
   {
-    name: 'Finances',
-    href: '/center-admin/finances',
+    name: 'Financial',
+    href: '/center-admin/financial',
     icon: DollarSign,
     permission: 'finances'
   },
@@ -78,12 +78,6 @@ const navigation = [
     href: '/center-admin/pricing',
     icon: Tag,
     permission: 'settings'
-  },
-  {
-    name: 'Financial Management',
-    href: '/center-admin/financial',
-    icon: DollarSign,
-    permission: 'finances'
   },
   {
     name: 'Risk & Escalation',
@@ -107,12 +101,15 @@ const navigation = [
 
 export default function CenterAdminSidebar() {
   const pathname = usePathname()
-  const { admin, logout } = useCenterAdminStore()
-  const [collapsed, setCollapsed] = useState(false)
+  const { admin, logout, sidebarCollapsed, setSidebarCollapsed } = useCenterAdminStore()
 
   const handleLogout = () => {
     logout()
     window.location.href = '/center-admin/auth/login'
+  }
+
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
   }
 
   const hasPermission = (permission: string) => {
@@ -126,12 +123,12 @@ export default function CenterAdminSidebar() {
       
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-xl transition-all duration-300 flex flex-col ${
-        collapsed ? 'w-16' : 'w-64'
+        sidebarCollapsed ? 'w-16' : 'w-64'
       } lg:translate-x-0`}>
         
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between h-16 px-4 border-b border-gray-200">
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <Crown className="w-5 h-5 text-white" />
@@ -144,10 +141,10 @@ export default function CenterAdminSidebar() {
           )}
           
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={handleToggleSidebar}
             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            {collapsed ? (
+            {sidebarCollapsed ? (
               <ChevronRight className="w-5 h-5 text-gray-500" />
             ) : (
               <ChevronLeft className="w-5 h-5 text-gray-500" />
@@ -156,7 +153,7 @@ export default function CenterAdminSidebar() {
         </div>
 
         {/* Admin Info */}
-        {!collapsed && admin && (
+        {!sidebarCollapsed && admin && (
           <div className="flex-shrink-0 p-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
@@ -205,9 +202,9 @@ export default function CenterAdminSidebar() {
                 }`}
               >
                 <Icon className={`flex-shrink-0 w-5 h-5 ${
-                  collapsed ? 'mx-auto' : 'mr-3'
+                  sidebarCollapsed ? 'mx-auto' : 'mr-3'
                 } ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                {!collapsed && item.name}
+                {!sidebarCollapsed && item.name}
               </Link>
             )
           })}
@@ -218,13 +215,13 @@ export default function CenterAdminSidebar() {
           <button
             onClick={handleLogout}
             className={`group flex items-center w-full px-2 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors ${
-              collapsed ? 'justify-center' : ''
+              sidebarCollapsed ? 'justify-center' : ''
             }`}
           >
             <LogOut className={`flex-shrink-0 w-5 h-5 ${
-              collapsed ? '' : 'mr-3'
+              sidebarCollapsed ? '' : 'mr-3'
             } text-gray-400 group-hover:text-red-500`} />
-            {!collapsed && 'Sign Out'}
+            {!sidebarCollapsed && 'Sign Out'}
           </button>
         </div>
       </div>

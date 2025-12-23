@@ -118,15 +118,46 @@ export function useAudit(filters?: {
 
   const exportLogs = async (format: 'json' | 'csv', exportFilters?: any) => {
     try {
-      const response = await centerAdminApi.exportAuditLogs({
-        format,
-        ...exportFilters
+      // Build query params
+      const params = new URLSearchParams()
+      params.append('format', format)
+      if (exportFilters?.category) params.append('category', exportFilters.category)
+      if (exportFilters?.riskLevel) params.append('riskLevel', exportFilters.riskLevel)
+      if (exportFilters?.startDate) params.append('startDate', exportFilters.startDate)
+      if (exportFilters?.endDate) params.append('endDate', exportFilters.endDate)
+
+      // Get token
+      let token = null
+      const centerAdminData = localStorage.getItem('center-admin-storage')
+      if (centerAdminData) {
+        try {
+          const parsed = JSON.parse(centerAdminData)
+          token = parsed.state?.token || parsed.token
+        } catch (e) {}
+      }
+      if (!token) {
+        const authData = localStorage.getItem('laundry-auth')
+        if (authData) {
+          try {
+            const parsed = JSON.parse(authData)
+            token = parsed.state?.token || parsed.token
+          } catch (e) {}
+        }
+      }
+
+      const response = await fetch(`http://localhost:5000/api/center-admin/audit/export?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       })
-      
-      // Create download link
-      const blob = new Blob([format === 'csv' ? response : JSON.stringify(response, null, 2)], {
-        type: format === 'csv' ? 'text/csv' : 'application/json'
-      })
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      // Get the response as blob for download
+      const blob = await response.blob()
       
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -137,7 +168,7 @@ export function useAudit(filters?: {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
       
-      return response
+      return true
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to export audit logs'
       throw new Error(errorMessage)

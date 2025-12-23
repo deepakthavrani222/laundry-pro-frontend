@@ -35,7 +35,14 @@ interface BranchSettings {
     _id: string
     name: string
     code: string
-    address: string
+    address?: {
+      addressLine1?: string
+      addressLine2?: string
+      city?: string
+      state?: string
+      pincode?: string
+      landmark?: string
+    } | string
     phone: string
     email: string
     status: string
@@ -132,7 +139,7 @@ export default function BranchSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 mt-16">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -257,7 +264,11 @@ function GeneralSettings({ branch, settings, setSettings }: any) {
             {branch.address && (
               <div className="col-span-2 flex items-start">
                 <MapPin className="w-4 h-4 text-gray-400 mr-1 mt-0.5" />
-                <span className="text-gray-600">{branch.address}</span>
+                <span className="text-gray-600">
+                  {typeof branch.address === 'string' 
+                    ? branch.address 
+                    : [branch.address.addressLine1, branch.address.city, branch.address.pincode].filter(Boolean).join(', ')}
+                </span>
               </div>
             )}
           </div>

@@ -16,8 +16,50 @@ import {
   X,
   Check
 } from 'lucide-react'
-import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
+// Helper function to get auth token
+const getAuthToken = () => {
+  let token = null
+  
+  // First try center-admin-storage (Zustand persist format)
+  try {
+    const centerAdminData = localStorage.getItem('center-admin-storage')
+    if (centerAdminData) {
+      const parsed = JSON.parse(centerAdminData)
+      token = parsed.state?.token || parsed.token
+    }
+  } catch (e) {
+    console.error('Error parsing center-admin-storage:', e)
+  }
+  
+  // Fallback to legacy token keys
+  if (!token) {
+    token = localStorage.getItem('center-admin-token') || localStorage.getItem('token')
+  }
+  
+  return token
+}
+
+// Helper function to make API calls
+const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getAuthToken()
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.message || 'API request failed')
+  }
+  return data
+}
 
 interface User {
   _id: string
@@ -30,6 +72,11 @@ interface User {
   branch?: {
     _id: string
     name: string
+  }
+  assignedBranch?: {
+    _id: string
+    name: string
+    code: string
   }
 }
 
@@ -56,6 +103,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [editRole, setEditRole] = useState('')
   const [editStatus, setEditStatus] = useState(true)
+  const [editBranchId, setEditBranchId] = useState('')
   const [updating, setUpdating] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -76,8 +124,8 @@ export default function UsersPage() {
 
   const fetchBranches = async () => {
     try {
-      const response = await api.get('/center-admin/branches')
-      const branchesData = response.data.data?.branches || response.data.data || []
+      const data = await apiCall('/center-admin/branches')
+      const branchesData = data.data?.branches || data.data || []
       setBranches(branchesData)
     } catch (error) {
       console.error('Error fetching branches:', error)
@@ -87,8 +135,8 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/center-admin/users')
-      const usersData = response.data.data?.users || response.data.data || []
+      const data = await apiCall('/center-admin/users')
+      const usersData = data.data?.users || data.data || []
       setUsers(usersData)
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -102,6 +150,7 @@ export default function UsersPage() {
     setSelectedUser(user)
     setEditRole(user.role)
     setEditStatus(user.isActive)
+    setEditBranchId(user.assignedBranch?._id || user.branch?._id || '')
     setShowEditModal(true)
   }
 
@@ -111,14 +160,23 @@ export default function UsersPage() {
     try {
       setUpdating(true)
 
-      // Update role if changed
-      if (editRole !== selectedUser.role) {
-        await api.patch(`/center-admin/users/${selectedUser._id}/role`, { role: editRole })
+      // Update role and branch if changed
+      if (editRole !== selectedUser.role || editBranchId !== (selectedUser.assignedBranch?._id || selectedUser.branch?._id || '')) {
+        await apiCall(`/center-admin/users/${selectedUser._id}/role`, {
+          method: 'PATCH',
+          body: JSON.stringify({ 
+            role: editRole,
+            assignedBranch: (editRole === 'branch_manager' || editRole === 'staff') ? editBranchId : undefined
+          })
+        })
       }
 
       // Update status if changed
       if (editStatus !== selectedUser.isActive) {
-        await api.patch(`/center-admin/users/${selectedUser._id}/status`, { isActive: editStatus })
+        await apiCall(`/center-admin/users/${selectedUser._id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive: editStatus })
+        })
       }
 
       toast.success('User updated successfully')
@@ -126,7 +184,7 @@ export default function UsersPage() {
       setSelectedUser(null)
       fetchUsers()
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update user')
+      toast.error(error.message || 'Failed to update user')
     } finally {
       setUpdating(false)
     }
@@ -134,11 +192,14 @@ export default function UsersPage() {
 
   const handleToggleStatus = async (user: User) => {
     try {
-      await api.patch(`/center-admin/users/${user._id}/status`, { isActive: !user.isActive })
+      await apiCall(`/center-admin/users/${user._id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: !user.isActive })
+      })
       toast.success(`User ${!user.isActive ? 'activated' : 'deactivated'} successfully`)
       fetchUsers()
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update status')
+      toast.error(error.message || 'Failed to update status')
     }
   }
 
@@ -150,20 +211,23 @@ export default function UsersPage() {
 
     try {
       setCreating(true)
-      await api.post('/center-admin/users', {
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
-        password: newUser.password,
-        role: newUser.role,
-        assignedBranch: newUser.role === 'branch_manager' || newUser.role === 'staff' ? newUser.branchId : undefined
+      await apiCall('/center-admin/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          password: newUser.password,
+          role: newUser.role,
+          assignedBranch: newUser.role === 'branch_manager' || newUser.role === 'staff' ? newUser.branchId : undefined
+        })
       })
       toast.success('User created successfully')
       setShowCreateModal(false)
       setNewUser({ name: '', email: '', phone: '', password: '', role: 'staff', branchId: '' })
       fetchUsers()
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create user')
+      toast.error(error.message || 'Failed to create user')
     } finally {
       setCreating(false)
     }
@@ -227,27 +291,27 @@ export default function UsersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-purple-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-purple-600">{users.length}</div>
-          <div className="text-sm text-gray-600">Total Users</div>
+        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">{users.length}</div>
+          <div className="text-sm text-purple-100">Total Users</div>
         </div>
-        <div className="bg-blue-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
             {users.filter(u => u.role === 'branch_manager').length}
           </div>
-          <div className="text-sm text-gray-600">Branch Managers</div>
+          <div className="text-sm text-blue-100">Branch Managers</div>
         </div>
-        <div className="bg-green-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-green-600">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
             {users.filter(u => u.role === 'staff').length}
           </div>
-          <div className="text-sm text-gray-600">Staff</div>
+          <div className="text-sm text-green-100">Staff</div>
         </div>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-gray-600">
+        <div className="bg-gradient-to-br from-gray-600 to-slate-700 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <div className="text-2xl font-bold text-white">
             {users.filter(u => u.isActive).length}
           </div>
-          <div className="text-sm text-gray-600">Active Users</div>
+          <div className="text-sm text-gray-200">Active Users</div>
         </div>
       </div>
 
@@ -318,10 +382,10 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      {user.branch ? (
+                      {(user.assignedBranch || user.branch) ? (
                         <div className="flex items-center text-sm text-gray-600">
                           <Building2 className="w-3 h-3 mr-1" />
-                          {user.branch.name}
+                          {user.assignedBranch?.name || user.branch?.name}
                         </div>
                       ) : (
                         <span className="text-gray-400 text-sm">-</span>
@@ -550,6 +614,32 @@ export default function UsersPage() {
                 ))}
               </select>
             </div>
+
+            {/* Branch Selection (for branch_manager and staff) */}
+            {(editRole === 'branch_manager' || editRole === 'staff') && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned Branch {editRole === 'branch_manager' && <span className="text-red-500">*</span>}
+                </label>
+                <select
+                  value={editBranchId}
+                  onChange={(e) => setEditBranchId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Select a branch</option>
+                  {branches.map(branch => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+                {editRole === 'branch_manager' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Branch manager will only see orders and data for this branch
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Status Toggle */}
             <div className="mb-6">

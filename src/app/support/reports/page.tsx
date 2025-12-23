@@ -118,16 +118,16 @@ export default function SupportReportsPage() {
         {stats.map((stat) => (
           <div
             key={stat.name}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            className={`bg-gradient-to-br ${stat.color} rounded-xl shadow-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1`}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                 <stat.icon className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="text-2xl font-bold text-gray-800 mb-1">{stat.value}</div>
-            <div className="text-sm text-gray-600 mb-1">{stat.name}</div>
-            <div className="text-xs text-gray-500">{stat.description}</div>
+            <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+            <div className="text-sm text-white/90 mb-1">{stat.name}</div>
+            <div className="text-xs text-white/70">{stat.description}</div>
           </div>
         ))}
       </div>

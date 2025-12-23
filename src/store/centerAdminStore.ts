@@ -32,11 +32,13 @@ interface CenterAdminState {
   token: string | null
   session: Session | null
   isAuthenticated: boolean
+  sidebarCollapsed: boolean
   
   // Actions
   setAdmin: (admin: CenterAdmin) => void
   setToken: (token: string) => void
   setSession: (session: Session) => void
+  setSidebarCollapsed: (collapsed: boolean) => void
   logout: () => void
   clearAll: () => void
 }
@@ -48,6 +50,7 @@ export const useCenterAdminStore = create<CenterAdminState>()(
       token: null,
       session: null,
       isAuthenticated: false,
+      sidebarCollapsed: false,
 
       setAdmin: (admin) => set({ 
         admin, 
@@ -57,6 +60,8 @@ export const useCenterAdminStore = create<CenterAdminState>()(
       setToken: (token) => set({ token }),
 
       setSession: (session) => set({ session }),
+
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
 
       logout: () => set({ 
         admin: null, 
@@ -78,7 +83,8 @@ export const useCenterAdminStore = create<CenterAdminState>()(
         admin: state.admin,
         token: state.token,
         session: state.session,
-        isAuthenticated: state.isAuthenticated
+        isAuthenticated: state.isAuthenticated,
+        sidebarCollapsed: state.sidebarCollapsed
       })
     }
   )

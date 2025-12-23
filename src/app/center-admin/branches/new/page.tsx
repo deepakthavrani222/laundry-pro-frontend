@@ -151,14 +151,17 @@ export default function NewBranchPage() {
     e.preventDefault()
     
     if (!validateForm()) {
+      toast.error('Please fill all required fields correctly')
       return
     }
 
     try {
       await createBranch(formData)
+      toast.success('Branch created successfully!')
       router.push('/center-admin/branches')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create branch error:', error)
+      toast.error(error.message || 'Failed to create branch')
     }
   }
 

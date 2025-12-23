@@ -128,7 +128,10 @@ export default function CustomerSidebar({
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto min-h-0">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          // Exact match for specific routes, or starts with for parent routes (but not for /customer/orders when on /customer/orders/new)
+          const isExactMatch = pathname === item.href
+          const isParentMatch = item.href !== '/customer/orders' && pathname.startsWith(item.href + '/')
+          const isActive = isExactMatch || isParentMatch
           const Icon = item.icon
           
           return (

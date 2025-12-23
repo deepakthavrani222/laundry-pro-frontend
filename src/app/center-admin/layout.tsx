@@ -13,7 +13,7 @@ export default function CenterAdminLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { isAuthenticated, admin } = useCenterAdminStore()
+  const { isAuthenticated, admin, sidebarCollapsed } = useCenterAdminStore()
 
   useEffect(() => {
     // Check if user is authenticated
@@ -52,7 +52,7 @@ export default function CenterAdminLayout({
       <CenterAdminSidebar />
       
       {/* Main Content */}
-      <div className="lg:pl-64">
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
         {/* Header */}
         <CenterAdminHeader />
         

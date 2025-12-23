@@ -165,48 +165,44 @@ export default function AdminBranchesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Branches</p>
-              <p className="text-2xl font-bold text-gray-800">{pagination.total || totalBranches}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Building2 className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-blue-100">Total Branches</p>
+            <p className="text-3xl font-bold">{pagination.total || totalBranches}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Branches</p>
-              <p className="text-2xl font-bold text-green-600">{activeBranches}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-emerald-100">Active Branches</p>
+            <p className="text-3xl font-bold">{activeBranches}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Capacity</p>
-              <p className="text-2xl font-bold text-purple-600">{totalCapacity}/day</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Package className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-purple-100">Total Capacity</p>
+            <p className="text-3xl font-bold">{totalCapacity}/day</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Staff</p>
-              <p className="text-2xl font-bold text-orange-600">{totalStaff}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-amber-100">Total Staff</p>
+            <p className="text-3xl font-bold">{totalStaff}</p>
           </div>
         </div>
       </div>
@@ -280,23 +276,23 @@ export default function AdminBranchesPage() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {branch.address?.city}, {branch.address?.pincode}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{branch.address?.city}, {branch.address?.pincode}</span>
                         </div>
-                        <div className="flex items-center">
-                          <Phone className="w-4 h-4 mr-1" />
-                          {branch.contact?.phone || 'N/A'}
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{branch.contact?.phone || 'N/A'}</span>
                         </div>
-                        <div className="flex items-center">
-                          <Mail className="w-4 h-4 mr-1" />
-                          {branch.contact?.email || 'N/A'}
+                        <div className="flex items-center gap-1">
+                          <Mail className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{branch.contact?.email || 'N/A'}</span>
                         </div>
                         {branch.manager && (
-                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-1" />
-                            {branch.manager.name}
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{branch.manager.name}</span>
                           </div>
                         )}
                       </div>

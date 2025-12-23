@@ -11,7 +11,7 @@ import {
   CheckCircle,
   AlertTriangle,
   User,
-  DollarSign,
+  IndianRupee,
   Play,
   Check,
   RefreshCw,
@@ -68,17 +68,18 @@ export default function BranchOrdersPage() {
       
       const response = await branchApi.getOrders(params)
       if (response.success) {
-        setOrders(response.data.data || [])
+        const ordersData = response.data.data || response.data.orders || []
+        setOrders(ordersData)
         setPagination({
-          page: response.data.page,
-          totalPages: response.data.totalPages,
-          total: response.data.total
+          page: response.data.page || 1,
+          totalPages: response.data.totalPages || 1,
+          total: response.data.total || ordersData.length
         })
         
         // Calculate stats from all orders
         const allOrdersRes = await branchApi.getOrders({ limit: 1000 })
         if (allOrdersRes.success) {
-          const allOrders = allOrdersRes.data.data || []
+          const allOrders = allOrdersRes.data.data || allOrdersRes.data.orders || []
           setStats({
             pending: allOrders.filter((o: Order) => ['assigned_to_branch', 'picked'].includes(o.status)).length,
             processing: allOrders.filter((o: Order) => o.status === 'in_process').length,
@@ -219,7 +220,7 @@ export default function BranchOrdersPage() {
   }
 
   return (
-    <div className="space-y-6 mt-16">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -240,43 +241,51 @@ export default function BranchOrdersPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
+              <p className="text-sm text-orange-100">Pending</p>
+              <p className="text-2xl font-bold text-white">{stats.pending}</p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-orange-500" />
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-white" />
+            </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Processing</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.processing}</p>
+              <p className="text-sm text-blue-100">Processing</p>
+              <p className="text-2xl font-bold text-white">{stats.processing}</p>
             </div>
-            <Clock className="w-8 h-8 text-blue-500" />
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Ready</p>
-              <p className="text-2xl font-bold text-green-600">{stats.ready}</p>
+              <p className="text-sm text-green-100">Ready</p>
+              <p className="text-2xl font-bold text-white">{stats.ready}</p>
             </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.completed}</p>
+              <p className="text-sm text-purple-100">Completed</p>
+              <p className="text-2xl font-bold text-white">{stats.completed}</p>
             </div>
-            <Package className="w-8 h-8 text-gray-500" />
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <Package className="w-6 h-6 text-white" />
+            </div>
           </div>
         </div>
       </div>
@@ -320,7 +329,7 @@ export default function BranchOrdersPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">
-            Orders ({pagination.total})
+            Orders ({pagination.total || orders.length})
           </h2>
         </div>
         
@@ -366,8 +375,8 @@ export default function BranchOrdersPage() {
                           {order.items?.length || 0} items
                         </div>
                         <div className="flex items-center">
-                          <DollarSign className="w-4 h-4 mr-1" />
-                          ₹{order.pricing?.total?.toLocaleString() || 0}
+                          <IndianRupee className="w-4 h-4 mr-1" />
+                          {order.pricing?.total?.toLocaleString() || 0}
                         </div>
                         <div className="flex items-center">
                           <Clock className="w-4 h-4 mr-1" />
@@ -396,6 +405,37 @@ export default function BranchOrdersPage() {
                       Details
                     </Button>
                     
+                    {/* Status Change Dropdown - like admin */}
+                    {['placed', 'assigned_to_branch', 'picked', 'in_process', 'ready', 'out_for_delivery'].includes(order.status) && (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleUpdateStatus(order._id, e.target.value)
+                          }
+                        }}
+                        disabled={actionLoading === order._id}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                      >
+                        <option value="">Change Status</option>
+                        {order.status === 'placed' && (
+                          <option value="in_process">Start Processing</option>
+                        )}
+                        {['assigned_to_branch', 'picked'].includes(order.status) && (
+                          <option value="in_process">Start Processing</option>
+                        )}
+                        {order.status === 'in_process' && (
+                          <option value="ready">Mark Ready</option>
+                        )}
+                        {order.status === 'ready' && (
+                          <option value="out_for_delivery">Out for Delivery</option>
+                        )}
+                        {order.status === 'out_for_delivery' && (
+                          <option value="delivered">Mark Delivered</option>
+                        )}
+                      </select>
+                    )}
+                    
                     {['assigned_to_branch', 'picked'].includes(order.status) && (
                       <Button 
                         size="sm" 
@@ -405,30 +445,6 @@ export default function BranchOrdersPage() {
                       >
                         {actionLoading === order._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 mr-1" />}
                         Assign Staff
-                      </Button>
-                    )}
-                    
-                    {order.status === 'in_process' && (
-                      <Button 
-                        size="sm" 
-                        className="bg-green-500 hover:bg-green-600 text-white"
-                        onClick={() => handleUpdateStatus(order._id, 'ready')}
-                        disabled={actionLoading === order._id}
-                      >
-                        {actionLoading === order._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
-                        Mark Ready
-                      </Button>
-                    )}
-                    
-                    {order.status === 'ready' && (
-                      <Button 
-                        size="sm" 
-                        className="bg-blue-500 hover:bg-blue-600 text-white"
-                        onClick={() => handleUpdateStatus(order._id, 'out_for_delivery')}
-                        disabled={actionLoading === order._id}
-                      >
-                        {actionLoading === order._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
-                        Out for Delivery
                       </Button>
                     )}
                   </div>

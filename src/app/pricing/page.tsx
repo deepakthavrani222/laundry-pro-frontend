@@ -39,23 +39,23 @@ function FAQItem({ question, answer, isOpen, onToggle }: {
   onToggle: () => void
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+        className={`w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200 ${
+          isOpen 
+            ? 'bg-teal-500 hover:bg-teal-500' 
+            : 'bg-slate-700 hover:bg-slate-600'
+        }`}
       >
-        <h4 className="text-lg font-semibold text-gray-800 pr-4">{question}</h4>
+        <h4 className="text-base font-medium text-white pr-4">{question}</h4>
         <div className="flex-shrink-0">
-          {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-teal-500 transition-transform duration-200" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-200" />
-          )}
+          <ChevronDown className={`w-5 h-5 text-white transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="px-6 pb-5">
-          <p className="text-gray-600 leading-relaxed">{answer}</p>
+      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="px-8 py-6 bg-white border-x border-b border-gray-200">
+          <p className="text-gray-600 text-base leading-relaxed">{answer}</p>
         </div>
       </div>
     </div>
@@ -231,7 +231,7 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
 
 export default function PricingPage() {
   const { isAuthenticated } = useAuthStore()
-  const [openFAQ, setOpenFAQ] = useState<number | null>(0)
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null)
 
   const faqData = [
     {
@@ -314,7 +314,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="max-w-6xl mx-auto space-y-2">
             {faqData.map((faq, index) => (
               <FAQItem
                 key={index}

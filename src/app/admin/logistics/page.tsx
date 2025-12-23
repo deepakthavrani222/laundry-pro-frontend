@@ -34,11 +34,10 @@ interface LogisticsPartner {
   contactPerson: {
     name: string
     phone: string
-    email: string
+    email?: string
   }
-  coverageAreas: (string | CoverageArea)[]
+  coverageAreas: CoverageArea[]
   isActive: boolean
-  vehicleCount: number
   sla: {
     pickupTime: number
     deliveryTime: number
@@ -48,6 +47,11 @@ interface LogisticsPartner {
     totalDeliveries: number
     onTimeRate: number
     activeOrders: number
+  }
+  rateCard?: {
+    perOrder: number
+    perKm: number
+    flatRate: number
   }
   createdAt: string
 }
@@ -68,11 +72,13 @@ export default function AdminLogisticsPage() {
   const fetchPartners = async () => {
     try {
       setLoading(true)
+      setError(null)
       const authData = localStorage.getItem('laundry-auth')
       let token = null
       if (authData) {
         const parsed = JSON.parse(authData)
-        token = parsed.token
+        // Zustand persist wraps data in 'state' object
+        token = parsed.state?.token || parsed.token
       }
 
       const response = await fetch('http://localhost:5000/api/admin/logistics-partners', {
@@ -84,47 +90,16 @@ export default function AdminLogisticsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPartners(data.data?.partners || data.data || [])
+        const partnersData = data.data?.partners || data.partners || []
+        setPartners(partnersData)
       } else {
-        // Use mock data
-        setPartners([
-          {
-            _id: '1',
-            companyName: 'FastDelivery Express',
-            contactPerson: { name: 'Amit Kumar', phone: '9876543210', email: 'amit@fastdelivery.com' },
-            coverageAreas: ['110001', '110002', '110003', '110004', '110005'],
-            isActive: true,
-            vehicleCount: 15,
-            sla: { pickupTime: 60, deliveryTime: 120 },
-            performance: { rating: 4.8, totalDeliveries: 2500, onTimeRate: 96, activeOrders: 45 },
-            createdAt: '2024-01-10'
-          },
-          {
-            _id: '2',
-            companyName: 'QuickLogistics',
-            contactPerson: { name: 'Priya Sharma', phone: '9876543220', email: 'priya@quicklogistics.com' },
-            coverageAreas: ['110048', '110049', '110050', '110051'],
-            isActive: true,
-            vehicleCount: 10,
-            sla: { pickupTime: 45, deliveryTime: 90 },
-            performance: { rating: 4.5, totalDeliveries: 1800, onTimeRate: 92, activeOrders: 32 },
-            createdAt: '2024-02-15'
-          },
-          {
-            _id: '3',
-            companyName: 'SpeedyPickup Services',
-            contactPerson: { name: 'Rahul Verma', phone: '9876543230', email: 'rahul@speedypickup.com' },
-            coverageAreas: ['201301', '201302', '201303'],
-            isActive: false,
-            vehicleCount: 8,
-            sla: { pickupTime: 90, deliveryTime: 180 },
-            performance: { rating: 4.2, totalDeliveries: 950, onTimeRate: 88, activeOrders: 0 },
-            createdAt: '2024-03-20'
-          }
-        ])
+        const errorData = await response.json()
+        setError(errorData.message || 'Failed to fetch logistics partners')
+        setPartners([])
       }
     } catch (err) {
-      setError('Failed to fetch logistics partners')
+      setError('Failed to connect to server. Please check if backend is running.')
+      setPartners([])
     } finally {
       setLoading(false)
     }
@@ -144,16 +119,9 @@ export default function AdminLogisticsPage() {
     setShowModal(true)
   }
 
-  // Helper function to get pincode from coverage area (handles both string and object)
-  const getPincode = (area: string | CoverageArea): string => {
-    if (typeof area === 'string') return area
+  // Helper function to get pincode from coverage area
+  const getPincode = (area: CoverageArea): string => {
     return area.pincode || 'N/A'
-  }
-
-  // Helper function to get area name
-  const getAreaName = (area: string | CoverageArea): string => {
-    if (typeof area === 'string') return area
-    return area.area || area.pincode || 'N/A'
   }
 
   const getRatingColor = (rating: number) => {
@@ -189,52 +157,44 @@ export default function AdminLogisticsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Partners</p>
-              <p className="text-2xl font-bold text-gray-800">{partners.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Truck className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-blue-100">Total Partners</p>
+            <p className="text-3xl font-bold">{partners.length}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Partners</p>
-              <p className="text-2xl font-bold text-green-600">{partners.filter(p => p.isActive).length}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-emerald-100">Active Partners</p>
+            <p className="text-3xl font-bold">{partners.filter(p => p.isActive).length}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Orders</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {partners.reduce((sum, p) => sum + (p.performance?.activeOrders || 0), 0)}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Package className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-purple-100">Active Orders</p>
+            <p className="text-3xl font-bold">{partners.reduce((sum, p) => sum + (p.performance?.activeOrders || 0), 0)}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Avg Rating</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {(partners.reduce((sum, p) => sum + (p.performance?.rating || 0), 0) / partners.length || 0).toFixed(1)}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mb-4">
               <Star className="w-6 h-6 text-white" />
             </div>
+            <p className="text-sm text-amber-100">Avg Rating</p>
+            <p className="text-3xl font-bold">{(partners.reduce((sum, p) => sum + (p.performance?.rating || 0), 0) / partners.length || 0).toFixed(1)}</p>
           </div>
         </div>
       </div>
@@ -320,8 +280,8 @@ export default function AdminLogisticsPage() {
                           {partner.contactPerson.phone}
                         </div>
                         <div className="flex items-center">
-                          <Truck className="w-4 h-4 mr-1" />
-                          {partner.vehicleCount} vehicles
+                          <Clock className="w-4 h-4 mr-1" />
+                          SLA: {partner.sla.pickupTime}h / {partner.sla.deliveryTime}h
                         </div>
                         <div className="flex items-center">
                           <MapPin className="w-4 h-4 mr-1" />
@@ -343,7 +303,7 @@ export default function AdminLogisticsPage() {
                           {partner.performance.activeOrders} active
                         </div>
                         <div className="text-gray-500">
-                          SLA: {partner.sla.pickupTime}min pickup / {partner.sla.deliveryTime}min delivery
+                          Rate: ₹{partner.rateCard?.flatRate || 50}/order
                         </div>
                       </div>
                     </div>
@@ -452,27 +412,31 @@ export default function AdminLogisticsPage() {
                 </div>
               </div>
 
-              {/* SLA & Fleet */}
+              {/* SLA & Rate Card */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">SLA Commitments</h3>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Pickup Time</span>
-                      <span className="font-medium">{selectedPartner.sla.pickupTime} minutes</span>
+                      <span className="font-medium">{selectedPartner.sla.pickupTime} hours</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Delivery Time</span>
-                      <span className="font-medium">{selectedPartner.sla.deliveryTime} minutes</span>
+                      <span className="font-medium">{selectedPartner.sla.deliveryTime} hours</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Fleet Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Rate Card</h3>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total Vehicles</span>
-                      <span className="font-medium">{selectedPartner.vehicleCount}</span>
+                      <span className="text-gray-600">Flat Rate</span>
+                      <span className="font-medium">₹{selectedPartner.rateCard?.flatRate || 50}/order</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Per Km Rate</span>
+                      <span className="font-medium">₹{selectedPartner.rateCard?.perKm || 0}/km</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Partner Since</span>

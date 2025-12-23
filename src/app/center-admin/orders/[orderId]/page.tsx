@@ -102,10 +102,31 @@ export default function OrderDetailPage() {
     fetchOrderDetails()
   }, [orderId])
 
+  const getAuthToken = () => {
+    // First try center-admin-storage (Zustand persist format)
+    const centerAdminData = localStorage.getItem('center-admin-storage')
+    if (centerAdminData) {
+      try {
+        const parsed = JSON.parse(centerAdminData)
+        if (parsed.state?.token) return parsed.state.token
+      } catch (e) {}
+    }
+    // Fallback to laundry-auth
+    const authData = localStorage.getItem('laundry-auth')
+    if (authData) {
+      try {
+        const parsed = JSON.parse(authData)
+        return parsed.state?.token || parsed.token
+      } catch (e) {}
+    }
+    // Legacy fallback
+    return localStorage.getItem('center-admin-token') || localStorage.getItem('token')
+  }
+
   const fetchOrderDetails = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('center-admin-token')
+      const token = getAuthToken()
       const response = await fetch(`http://localhost:5000/api/center-admin/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

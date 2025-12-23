@@ -173,7 +173,7 @@ export default function BranchDashboard() {
 
   if (error || !data) {
     return (
-      <div className="mt-16 p-8 bg-red-50 rounded-2xl text-center border border-red-200">
+      <div className="p-8 bg-red-50 rounded-2xl text-center border border-red-200">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-8 h-8 text-red-500" />
         </div>
@@ -191,7 +191,7 @@ export default function BranchDashboard() {
   ]
 
   return (
-    <div className="space-y-6 mt-16 w-full pb-8">
+    <div className="space-y-6 w-full pb-8">
       {/* Welcome */}
       <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 rounded-2xl p-6 lg:p-8 text-white shadow-xl">
         <div className="absolute inset-0 opacity-10">

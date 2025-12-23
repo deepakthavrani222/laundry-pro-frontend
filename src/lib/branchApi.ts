@@ -158,6 +158,190 @@ class BranchAPI {
     })
     return this.handleResponse(response)
   }
+
+  // Worker Management
+  async getWorkerTypes() {
+    const response = await fetch(`${API_BASE_URL}/branch/worker-types`, {
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async addWorker(data: {
+    name: string
+    email: string
+    phone: string
+    password?: string
+    workerType: string
+  }) {
+    const response = await fetch(`${API_BASE_URL}/branch/workers`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  async updateWorker(workerId: string, data: {
+    name?: string
+    phone?: string
+    workerType?: string
+    isActive?: boolean
+  }) {
+    const response = await fetch(`${API_BASE_URL}/branch/workers/${workerId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  async deleteWorker(workerId: string) {
+    const response = await fetch(`${API_BASE_URL}/branch/workers/${workerId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  // Notifications
+  async getNotifications(params?: { page?: number; limit?: number; unreadOnly?: boolean }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      if (params.page) searchParams.append('page', params.page.toString())
+      if (params.limit) searchParams.append('limit', params.limit.toString())
+      if (params.unreadOnly) searchParams.append('unreadOnly', 'true')
+    }
+    const response = await fetch(`${API_BASE_URL}/branch/notifications?${searchParams}`, {
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async getUnreadNotificationCount() {
+    const response = await fetch(`${API_BASE_URL}/branch/notifications/unread-count`, {
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async markNotificationsAsRead(notificationIds: string[]) {
+    const response = await fetch(`${API_BASE_URL}/branch/notifications/mark-read`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ notificationIds })
+    })
+    return this.handleResponse(response)
+  }
+
+  async markAllNotificationsAsRead() {
+    const response = await fetch(`${API_BASE_URL}/branch/notifications/mark-all-read`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  // Services Management
+  async getServices() {
+    const response = await fetch(`${API_BASE_URL}/branch/services`, {
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async createService(data: {
+    name: string
+    displayName: string
+    description?: string
+    category?: string
+    icon?: string
+    turnaroundTime?: { standard: number; express: number }
+    isExpressAvailable?: boolean
+  }) {
+    const response = await fetch(`${API_BASE_URL}/branch/services`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  async deleteService(serviceId: string) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async toggleService(serviceId: string) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}/toggle`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async updateServiceSettings(serviceId: string, data: { 
+    priceMultiplier?: number
+    customTurnaround?: { standard?: number; express?: number }
+    displayName?: string
+    description?: string
+    category?: string
+    icon?: string
+  }) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}/settings`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  // Service Items Management
+  async getServiceItems(serviceId: string) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}/items`, {
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
+
+  async addServiceItem(serviceId: string, data: {
+    name: string
+    category: string
+    basePrice: number
+    description?: string
+  }) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}/items`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  async updateServiceItem(serviceId: string, itemId: string, data: {
+    name?: string
+    category?: string
+    basePrice?: number
+    description?: string
+  }) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}/items/${itemId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    return this.handleResponse(response)
+  }
+
+  async deleteServiceItem(serviceId: string, itemId: string) {
+    const response = await fetch(`${API_BASE_URL}/branch/services/${serviceId}/items/${itemId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    })
+    return this.handleResponse(response)
+  }
 }
 
 export const branchApi = new BranchAPI()
