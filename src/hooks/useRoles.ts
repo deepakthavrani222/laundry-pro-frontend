@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 interface Permission {
   module: string
@@ -99,7 +99,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.getRoles(filters)
+      const response = await superAdminApi.getRoles(filters)
       setRoles(response.data.roles)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -116,7 +116,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.getRole(roleId)
+      const response = await superAdminApi.getRole(roleId)
       setSelectedRole(response.data.role)
       return response.data
     } catch (err: any) {
@@ -134,7 +134,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.getRoleHierarchy()
+      const response = await superAdminApi.getRoleHierarchy()
       setRoleHierarchy(response.data.hierarchy)
       return response.data
     } catch (err: any) {
@@ -151,7 +151,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.createRole(roleData)
+      const response = await superAdminApi.createRole(roleData)
       
       // Refresh roles list
       await fetchRoles()
@@ -172,7 +172,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.updateRole(roleId, roleData)
+      const response = await superAdminApi.updateRole(roleId, roleData)
       
       // Update local state
       setRoles(prev => 
@@ -201,7 +201,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      await centerAdminApi.deleteRole(roleId)
+      await superAdminApi.deleteRole(roleId)
       
       // Remove from local state
       setRoles(prev => prev.filter(role => role._id !== roleId))
@@ -226,7 +226,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.addRolePermission(roleId, permissionData)
+      const response = await superAdminApi.addRolePermission(roleId, permissionData)
       
       // Update local state
       setRoles(prev => 
@@ -255,7 +255,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.removeRolePermission(roleId, module, action)
+      const response = await superAdminApi.removeRolePermission(roleId, module, action)
       
       // Update local state
       setRoles(prev => 
@@ -284,7 +284,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.assignRole(userId, roleId)
+      const response = await superAdminApi.assignRole(userId, roleId)
       return response.data
     } catch (err: any) {
       setError(err.message)
@@ -301,7 +301,7 @@ export const useRoles = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.initializeDefaultRoles()
+      const response = await superAdminApi.initializeDefaultRoles()
       
       // Refresh roles list
       await fetchRoles()

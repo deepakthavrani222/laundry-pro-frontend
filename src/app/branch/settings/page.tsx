@@ -570,11 +570,11 @@ function ProfileSettings({ user, branch }: any) {
             <span className="text-2xl font-bold">{user?.name?.charAt(0)?.toUpperCase() || 'B'}</span>
           </div>
           <div>
-            <h3 className="text-xl font-bold">{user?.name || 'Branch Manager'}</h3>
+            <h3 className="text-xl font-bold">{user?.name || 'Center Admin'}</h3>
             <p className="text-green-100">{branch?.name || 'Branch'}</p>
             <div className="flex items-center mt-1">
               <Shield className="w-4 h-4 mr-1" />
-              <span className="text-sm text-green-100">Branch Manager</span>
+              <span className="text-sm text-green-100">Center Admin</span>
             </div>
           </div>
         </div>
@@ -614,7 +614,7 @@ function ProfileSettings({ user, branch }: any) {
             <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
             <input
               type="text"
-              value="Branch Manager"
+              value="Center Admin"
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
             />

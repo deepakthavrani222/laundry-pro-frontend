@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   Ticket, 
   Search, 
@@ -22,6 +23,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSupportTickets } from '@/hooks/useSupport'
+
+const ITEMS_PER_PAGE = 8
 
 const statusOptions = [
   { value: '', label: 'All Status' },
@@ -53,7 +56,7 @@ const categoryOptions = [
 export default function SupportTicketsPage() {
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 20,
+    limit: ITEMS_PER_PAGE,
     status: '',
     priority: '',
     category: '',
@@ -76,6 +79,11 @@ export default function SupportTicketsPage() {
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
+  }
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleTakeTicket = async (ticketId: string) => {
@@ -417,30 +425,15 @@ export default function SupportTicketsPage() {
         </div>
 
         {/* Pagination */}
-        {pagination.pages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Page {pagination.current} of {pagination.pages}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', pagination.current - 1)}
-                disabled={pagination.current === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', pagination.current + 1)}
-                disabled={pagination.current === pagination.pages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+        {pagination.total > ITEMS_PER_PAGE && (
+          <Pagination
+            current={pagination.current}
+            pages={pagination.pages}
+            total={pagination.total}
+            limit={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            itemName="tickets"
+          />
         )}
       </div>
 

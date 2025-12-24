@@ -16,15 +16,17 @@ import {
   Sparkles
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/store/authStore'
 
+// Map navigation items to permission modules
 const navigation = [
-  { name: 'Dashboard', href: '/branch/dashboard', icon: Home },
-  { name: 'Orders', href: '/branch/orders', icon: ShoppingBag },
-  { name: 'Services', href: '/branch/services', icon: Sparkles },
-  { name: 'Staff Management', href: '/branch/staff', icon: Users },
-  { name: 'Inventory', href: '/branch/inventory', icon: Package2 },
-  { name: 'Performance', href: '/branch/performance', icon: BarChart3 },
-  { name: 'Settings', href: '/branch/settings', icon: Settings },
+  { name: 'Dashboard', href: '/branch/dashboard', icon: Home, module: null }, // Always visible
+  { name: 'Orders', href: '/branch/orders', icon: ShoppingBag, module: 'orders' },
+  { name: 'Services', href: '/branch/services', icon: Sparkles, module: 'services' },
+  { name: 'Staff Management', href: '/branch/staff', icon: Users, module: 'staff' },
+  { name: 'Inventory', href: '/branch/inventory', icon: Package2, module: 'inventory' },
+  { name: 'Performance', href: '/branch/performance', icon: BarChart3, module: 'performance' },
+  { name: 'Settings', href: '/branch/settings', icon: Settings, module: 'settings' },
 ]
 
 interface BranchSidebarProps {
@@ -35,6 +37,7 @@ interface BranchSidebarProps {
 export function BranchSidebar({ collapsed: externalCollapsed, onCollapsedChange }: BranchSidebarProps) {
   const pathname = usePathname()
   const [internalCollapsed, setInternalCollapsed] = useState(false)
+  const { user } = useAuthStore()
   
   const collapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed
   
@@ -46,6 +49,18 @@ export function BranchSidebar({ collapsed: externalCollapsed, onCollapsedChange 
       setInternalCollapsed(newValue)
     }
   }
+
+  // Check if user has view permission for a module
+  const hasModuleAccess = (module: string | null) => {
+    if (!module) return true // Dashboard is always visible
+    // Admin and SuperAdmin have full access
+    if (user?.role === 'admin' || user?.role === 'superadmin') return true
+    if (!user?.permissions) return false
+    return user.permissions[module]?.view === true
+  }
+
+  // Filter navigation based on permissions
+  const visibleNavigation = navigation.filter(item => hasModuleAccess(item.module))
 
   return (
     <div className={cn(
@@ -70,7 +85,7 @@ export function BranchSidebar({ collapsed: externalCollapsed, onCollapsedChange 
                   <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                     <Leaf className="w-5 h-5 text-white" />
                   </div>
-                  <span className="font-semibold text-gray-800">Branch Manager</span>
+                  <span className="font-semibold text-gray-800">Center Admin</span>
                 </div>
                 <ChevronLeft className="w-5 h-5 text-gray-500" />
               </div>
@@ -80,7 +95,7 @@ export function BranchSidebar({ collapsed: externalCollapsed, onCollapsedChange 
 
         <div className="flex-1 flex flex-col min-h-0">
           <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link

@@ -14,6 +14,17 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { supportApi } from '@/lib/supportApi'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+
+const CATEGORY_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
+const STATUS_COLORS = {
+  open: '#EF4444',
+  in_progress: '#3B82F6',
+  overdue: '#F97316',
+  resolved: '#10B981',
+  escalated: '#F59E0B',
+  closed: '#6B7280'
+}
 
 export default function SupportReportsPage() {
   const [loading, setLoading] = useState(true)
@@ -134,7 +145,7 @@ export default function SupportReportsPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Distribution */}
+        {/* Category Distribution Bar Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Tickets by Category</h2>
           {categoryData.length === 0 ? (
@@ -142,58 +153,85 @@ export default function SupportReportsPage() {
               No category data available
             </div>
           ) : (
-            <div className="space-y-4">
-              {categoryData.map((cat, index) => {
-                const total = categoryData.reduce((sum, c) => sum + c.count, 0)
-                const percentage = total > 0 ? Math.round((cat.count / total) * 100) : 0
-                const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-purple-500', 'bg-pink-500']
-                return (
-                  <div key={cat._id || index}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 capitalize">{cat._id?.replace('_', ' ') || 'Other'}</span>
-                      <span className="font-medium">{cat.count} ({percentage}%)</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`${colors[index % colors.length]} h-2 rounded-full transition-all`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoryData.map((cat, index) => ({
+                    name: cat._id?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Other',
+                    count: cat.count,
+                    fill: CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+                  }))}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={75} />
+                  <Tooltip 
+                    formatter={(value: number) => [value, 'Tickets']}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                  />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                    {categoryData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>
 
-        {/* Status Distribution */}
+        {/* Status Distribution Pie Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Tickets by Status</h2>
-          <div className="space-y-4">
-            {[
-              { label: 'Open', value: metrics?.openTickets || 0, color: 'bg-red-500' },
-              { label: 'In Progress', value: metrics?.inProgressTickets || 0, color: 'bg-blue-500' },
-              { label: 'Overdue', value: metrics?.overdueTickets || 0, color: 'bg-orange-500' },
-              { label: 'Resolved', value: (metrics?.totalTickets || 0) - (metrics?.openTickets || 0) - (metrics?.inProgressTickets || 0), color: 'bg-green-500' },
-            ].map((item) => {
-              const total = metrics?.totalTickets || 1
-              const percentage = Math.round((item.value / total) * 100)
+          {(() => {
+            const statusData = [
+              { name: 'Open', value: metrics?.openTickets || 0, color: STATUS_COLORS.open },
+              { name: 'In Progress', value: metrics?.inProgressTickets || 0, color: STATUS_COLORS.in_progress },
+              { name: 'Overdue', value: metrics?.overdueTickets || 0, color: STATUS_COLORS.overdue },
+              { name: 'Resolved', value: (metrics?.totalTickets || 0) - (metrics?.openTickets || 0) - (metrics?.inProgressTickets || 0) - (metrics?.overdueTickets || 0), color: STATUS_COLORS.resolved },
+            ].filter(item => item.value > 0)
+            
+            const total = statusData.reduce((sum, item) => sum + item.value, 0)
+            
+            if (total === 0) {
               return (
-                <div key={item.label}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">{item.label}</span>
-                    <span className="font-medium">{item.value} ({percentage}%)</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`${item.color} h-2 rounded-full transition-all`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+                <div className="text-center py-12 text-gray-500">
+                  No status data available
                 </div>
               )
-            })}
-          </div>
+            }
+            
+            return (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      labelLine={true}
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [value, 'Tickets']}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )
+          })()}
         </div>
       </div>
 

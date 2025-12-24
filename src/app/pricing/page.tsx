@@ -6,7 +6,8 @@ import {
   Truck,
   ChevronDown,
   ChevronUp,
-  Loader2
+  Loader2,
+  Phone
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useState, useEffect } from 'react'
@@ -324,6 +325,39 @@ export default function PricingPage() {
                 onToggle={() => toggleFAQ(index)}
               />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-teal-500 to-cyan-600">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
+          <p className="text-teal-100 mb-8 max-w-xl mx-auto">
+            Schedule your first pickup today and experience the convenience of professional laundry service.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            {isAuthenticated ? (
+              <Link href="/customer/orders/new">
+                <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
+                  <Truck className="w-5 h-5 mr-2" />
+                  Book Now
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth/login?redirect=/customer/orders/new">
+                <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
+                  <Truck className="w-5 h-5 mr-2" />
+                  Get Started
+                </Button>
+              </Link>
+            )}
+            <Link href="tel:+919876543210">
+              <Button size="lg" className="bg-white/20 border-2 border-white text-white hover:bg-white hover:text-teal-600">
+                <Phone className="w-5 h-5 mr-2" />
+                Call Us
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

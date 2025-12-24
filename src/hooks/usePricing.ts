@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 interface PricingConfiguration {
   _id: string
@@ -58,7 +58,7 @@ export function usePricing(filters: PricingFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getPricingConfigurations(filters)
+      const response = await superAdminApi.getPricingConfigurations(filters)
       setPricingConfigs(response.data.pricingConfigs)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -74,7 +74,7 @@ export function usePricing(filters: PricingFilters = {}) {
 
   const createPricingConfiguration = async (pricingData: any) => {
     try {
-      const response = await centerAdminApi.createPricingConfiguration(pricingData)
+      const response = await superAdminApi.createPricingConfiguration(pricingData)
       await fetchPricingConfigurations()
       return response
     } catch (err: any) {
@@ -84,7 +84,7 @@ export function usePricing(filters: PricingFilters = {}) {
 
   const updatePricingConfiguration = async (pricingId: string, pricingData: any) => {
     try {
-      const response = await centerAdminApi.updatePricingConfiguration(pricingId, pricingData)
+      const response = await superAdminApi.updatePricingConfiguration(pricingId, pricingData)
       await fetchPricingConfigurations()
       return response
     } catch (err: any) {
@@ -94,7 +94,7 @@ export function usePricing(filters: PricingFilters = {}) {
 
   const approvePricingConfiguration = async (pricingId: string, makeActive: boolean = false) => {
     try {
-      const response = await centerAdminApi.approvePricingConfiguration(pricingId, makeActive)
+      const response = await superAdminApi.approvePricingConfiguration(pricingId, makeActive)
       await fetchPricingConfigurations()
       return response
     } catch (err: any) {
@@ -104,7 +104,7 @@ export function usePricing(filters: PricingFilters = {}) {
 
   const activatePricingConfiguration = async (pricingId: string) => {
     try {
-      const response = await centerAdminApi.activatePricingConfiguration(pricingId)
+      const response = await superAdminApi.activatePricingConfiguration(pricingId)
       await fetchPricingConfigurations()
       return response
     } catch (err: any) {
@@ -114,7 +114,7 @@ export function usePricing(filters: PricingFilters = {}) {
 
   const clonePricingConfiguration = async (pricingId: string, newVersion: string, newName?: string) => {
     try {
-      const response = await centerAdminApi.clonePricingConfiguration(pricingId, newVersion, newName)
+      const response = await superAdminApi.clonePricingConfiguration(pricingId, newVersion, newName)
       await fetchPricingConfigurations()
       return response
     } catch (err: any) {
@@ -145,7 +145,7 @@ export function useActivePricing() {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getActivePricing()
+      const response = await superAdminApi.getActivePricing()
       setActivePricing(response.data.pricing)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch active pricing')
@@ -175,7 +175,7 @@ export function usePriceCalculation() {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.calculatePrice(items, options)
+      const response = await superAdminApi.calculatePrice(items, options)
       return response.data
     } catch (err: any) {
       setError(err.message || 'Failed to calculate price')
@@ -189,7 +189,7 @@ export function usePriceCalculation() {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.validateDiscountCode(code, orderValue, customerInfo)
+      const response = await superAdminApi.validateDiscountCode(code, orderValue, customerInfo)
       return response.data
     } catch (err: any) {
       setError(err.message || 'Failed to validate discount code')
@@ -216,7 +216,7 @@ export function useServiceItems(category?: string) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getServiceItems(category)
+      const response = await superAdminApi.getServiceItems(category)
       setServiceItems(response.data.serviceItems)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch service items')
@@ -246,7 +246,7 @@ export function useDiscountPolicies(active: boolean = true) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getDiscountPolicies(active)
+      const response = await superAdminApi.getDiscountPolicies(active)
       setDiscountPolicies(response.data.discountPolicies)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch discount policies')

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   Package, 
   Plus, 
@@ -21,6 +22,8 @@ import {
   ArrowLeft
 } from 'lucide-react'
 import { useOrders } from '@/hooks/useOrders'
+
+const ITEMS_PER_PAGE = 8
 
 const statusConfig: Record<string, { color: string; icon: any; text: string }> = {
   placed: { color: 'text-blue-600 bg-blue-50', icon: Package, text: 'Placed' },
@@ -40,6 +43,7 @@ export default function OrdersPage() {
   const { orders, loading, fetchOrders } = useOrders()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Read search query from URL on mount
   useEffect(() => {
@@ -59,6 +63,23 @@ export default function OrdersPage() {
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const getStatusIcon = (status: string) => {
     const config = statusConfig[status]
@@ -155,7 +176,7 @@ export default function OrdersPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredOrders.map((order) => {
+            {paginatedOrders.map((order) => {
               const StatusIcon = getStatusIcon(order.status)
               return (
                 <div key={order._id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
@@ -212,6 +233,20 @@ export default function OrdersPage() {
                 </div>
               )
             })}
+            
+            {/* Pagination */}
+            {filteredOrders.length > ITEMS_PER_PAGE && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <Pagination
+                  current={currentPage}
+                  pages={totalPages}
+                  total={filteredOrders.length}
+                  limit={ITEMS_PER_PAGE}
+                  onPageChange={handlePageChange}
+                  itemName="orders"
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

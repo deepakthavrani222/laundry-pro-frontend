@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   MessageSquare, 
   Search, 
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react'
 import { useAdminComplaints, useSupportAgents } from '@/hooks/useAdmin'
 import toast from 'react-hot-toast'
+
+const ITEMS_PER_PAGE = 8
 
 const statusOptions = [
   { value: '', label: 'All Status' },
@@ -50,7 +53,7 @@ const categoryOptions = [
 export default function AdminComplaintsPage() {
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 20,
+    limit: ITEMS_PER_PAGE,
     status: '',
     priority: '',
     category: '',
@@ -69,6 +72,11 @@ export default function AdminComplaintsPage() {
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
+  }
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleViewComplaint = (complaint: any) => {
@@ -387,32 +395,14 @@ export default function AdminComplaintsPage() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total} results
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', pagination.current - 1)}
-                disabled={pagination.current === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-700">
-                Page {pagination.current} of {pagination.pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', pagination.current + 1)}
-                disabled={pagination.current === pagination.pages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            current={pagination.current}
+            pages={pagination.pages}
+            total={pagination.total}
+            limit={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            itemName="complaints"
+          />
         )}
       </div>
 

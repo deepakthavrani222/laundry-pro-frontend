@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   Package, 
   Search, 
@@ -26,7 +28,11 @@ import {
   Loader2,
   XCircle,
   Edit,
-  Ban
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react'
 import { useAdminOrders, useLogisticsPartners } from '@/hooks/useAdmin'
 import toast from 'react-hot-toast'
@@ -68,6 +74,14 @@ interface Order {
   pickupDate: string
   estimatedDeliveryDate?: string
   items: any[]
+  // Service type fields for self drop/pickup
+  serviceType?: string
+  pickupType?: 'self' | 'logistics'
+  deliveryType?: 'self' | 'logistics'
+  selectedBranch?: {
+    _id: string
+    name: string
+  }
   pickupAddress: {
     addressLine1: string
     city: string
@@ -83,13 +97,22 @@ interface Order {
 }
 
 export default function AdminOrdersPage() {
+  const { canView, canUpdate, canAssign, canCancel, hasPermission } = usePermissions('orders')
+  const canExportReports = hasPermission('reports', 'export')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Get initial page from URL
+  const initialPage = parseInt(searchParams.get('page') || '1', 10)
+  
   const [filters, setFilters] = useState({
-    page: 1,
-    limit: 20,
-    status: '',
-    search: '',
+    page: initialPage,
+    limit: 8,
+    status: searchParams.get('status') || '',
+    search: searchParams.get('search') || '',
     isExpress: undefined as boolean | undefined
   })
+  const [goToPage, setGoToPage] = useState('')
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [logisticsType, setLogisticsType] = useState<'pickup' | 'delivery'>('pickup')
   const [selectedOrderForAssign, setSelectedOrderForAssign] = useState<string>('')
@@ -119,7 +142,58 @@ export default function AdminOrdersPage() {
   }, [])
 
   const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
+    const newFilters = { ...filters, [key]: value, page: 1 }
+    setFilters(newFilters)
+    updateURL(newFilters)
+  }
+
+  const updateURL = (newFilters: typeof filters) => {
+    const params = new URLSearchParams()
+    if (newFilters.page > 1) params.set('page', newFilters.page.toString())
+    if (newFilters.status) params.set('status', newFilters.status)
+    if (newFilters.search) params.set('search', newFilters.search)
+    const queryString = params.toString()
+    router.push(queryString ? `?${queryString}` : '/admin/orders', { scroll: false })
+  }
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > pagination.pages) return
+    const newFilters = { ...filters, page }
+    setFilters(newFilters)
+    updateURL(newFilters)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleGoToPage = (e: React.FormEvent) => {
+    e.preventDefault()
+    const page = parseInt(goToPage, 10)
+    if (page >= 1 && page <= pagination.pages) {
+      handlePageChange(page)
+      setGoToPage('')
+    }
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+    const current = pagination.current
+    const total = pagination.pages
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      if (current > 3) pages.push('...')
+      
+      const start = Math.max(2, current - 1)
+      const end = Math.min(total - 1, current + 1)
+      
+      for (let i = start; i <= end; i++) pages.push(i)
+      
+      if (current < total - 2) pages.push('...')
+      pages.push(total)
+    }
+    return pages
   }
 
   const handleAssignLogistics = (orderId: string, type: 'pickup' | 'delivery') => {
@@ -286,14 +360,21 @@ export default function AdminOrdersPage() {
     return 'border-l-blue-500'
   }
 
-  const getNextStatuses = (currentStatus: string) => {
+  const getNextStatuses = (currentStatus: string, order?: Order) => {
+    // Check if order uses self pickup or self delivery
+    const isSelfPickup = order?.pickupType === 'self'
+    const isSelfDelivery = order?.deliveryType === 'self'
+    
+    // Status flow based on service type
     const statusFlow: Record<string, string[]> = {
-      'placed': ['in_process', 'cancelled'],
+      // For self pickup: skip logistics pickup statuses, go directly to in_process
+      'placed': isSelfPickup ? ['in_process', 'cancelled'] : ['in_process', 'cancelled'],
       'assigned_to_branch': ['in_process', 'cancelled'],
       'assigned_to_logistics_pickup': ['picked', 'cancelled'],
       'picked': ['in_process', 'cancelled'],
       'in_process': ['ready', 'cancelled'],
-      'ready': ['out_for_delivery', 'cancelled'],
+      // For self delivery: skip logistics delivery, go directly to delivered
+      'ready': isSelfDelivery ? ['delivered', 'cancelled'] : ['out_for_delivery', 'cancelled'],
       'assigned_to_logistics_delivery': ['out_for_delivery', 'cancelled'],
       'out_for_delivery': ['delivered', 'cancelled'],
     }
@@ -329,10 +410,12 @@ export default function AdminOrdersPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {canExportReports && (
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          )}
         </div>
       </div>
 
@@ -377,7 +460,17 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Orders List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 relative">
+        {/* Loading overlay for page changes */}
+        {loading && orders.length > 0 && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-xl">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <span className="text-sm text-gray-600">Loading...</span>
+            </div>
+          </div>
+        )}
+        
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">Orders {pagination.total > 0 ? `(${pagination.total})` : ''}</h2>
         </div>
@@ -401,7 +494,7 @@ export default function AdminOrdersPage() {
           ) : (
             orders.map((order) => {
               const StatusIcon = getStatusIcon(order.status)
-              const nextStatuses = getNextStatuses(order.status)
+              const nextStatuses = getNextStatuses(order.status, order)
               return (
                 <div key={order._id} className={`p-6 hover:bg-gray-50 transition-colors border-l-4 ${getPriorityColor(order)}`}>
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -426,6 +519,16 @@ export default function AdminOrdersPage() {
                               <Crown className="w-3 h-3 mr-1" />VIP
                             </span>
                           )}
+                          {order.pickupType === 'self' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
+                              Self Drop
+                            </span>
+                          )}
+                          {order.deliveryType === 'self' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                              Self Pickup
+                            </span>
+                          )}
                         </div>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
@@ -448,22 +551,22 @@ export default function AdminOrdersPage() {
                         <Eye className="w-4 h-4 mr-1" />View
                       </Button>
                       
-                      {/* Assign Logistics for Pickup - when order is placed (customer already selected branch) */}
-                      {order.status === 'placed' && (
+                      {/* Assign Logistics for Pickup - only when order uses logistics pickup (not self drop) */}
+                      {order.status === 'placed' && canAssign && order.pickupType !== 'self' && (
                         <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => handleAssignLogistics(order._id, 'pickup')}>
                           <Truck className="w-4 h-4 mr-1" />Assign Pickup
                         </Button>
                       )}
                       
-                      {/* Assign Logistics for Delivery - when order is ready */}
-                      {order.status === 'ready' && (
+                      {/* Assign Logistics for Delivery - only when order uses logistics delivery (not self pickup) */}
+                      {order.status === 'ready' && canAssign && order.deliveryType !== 'self' && (
                         <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleAssignLogistics(order._id, 'delivery')}>
                           <Truck className="w-4 h-4 mr-1" />Assign Delivery
                         </Button>
                       )}
                       
                       {/* Status Change Dropdown */}
-                      {nextStatuses.length > 0 && (
+                      {nextStatuses.length > 0 && canUpdate && (
                         <select
                           value=""
                           onChange={(e) => {
@@ -492,14 +595,94 @@ export default function AdminOrdersPage() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-700">
-              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total}
+              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total} orders
             </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => handleFilterChange('page', pagination.current - 1)} disabled={pagination.current === 1}>Previous</Button>
-              <span className="text-sm text-gray-700">Page {pagination.current} of {pagination.pages}</span>
-              <Button variant="outline" size="sm" onClick={() => handleFilterChange('page', pagination.current + 1)} disabled={pagination.current === pagination.pages}>Next</Button>
+            
+            <div className="flex items-center gap-2">
+              {/* First Page */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(1)} 
+                disabled={pagination.current === 1}
+                className="hidden sm:flex"
+                title="First Page"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </Button>
+              
+              {/* Previous */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.current - 1)} 
+                disabled={pagination.current === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline ml-1">Previous</span>
+              </Button>
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-gray-500">...</span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={pagination.current === page ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handlePageChange(page as number)}
+                      className={`min-w-[36px] ${pagination.current === page ? 'bg-blue-600 text-white' : ''}`}
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+              </div>
+              
+              {/* Next */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.current + 1)} 
+                disabled={pagination.current === pagination.pages}
+              >
+                <span className="hidden sm:inline mr-1">Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              
+              {/* Last Page */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.pages)} 
+                disabled={pagination.current === pagination.pages}
+                className="hidden sm:flex"
+                title="Last Page"
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </Button>
+              
+              {/* Go to Page - only show when more than 10 pages */}
+              {pagination.pages > 10 && (
+                <form onSubmit={handleGoToPage} className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-200">
+                  <input
+                    type="number"
+                    min="1"
+                    max={pagination.pages}
+                    value={goToPage}
+                    onChange={(e) => setGoToPage(e.target.value)}
+                    placeholder="#"
+                    className="w-14 px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                  />
+                  <Button type="submit" variant="outline" size="sm" disabled={!goToPage}>
+                    Go
+                  </Button>
+                </form>
+              )}
             </div>
           </div>
         )}
@@ -533,6 +716,16 @@ export default function AdminOrdersPage() {
                 {selectedOrder.customer?.isVIP && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                     <Crown className="w-4 h-4 mr-1" />VIP Customer
+                  </span>
+                )}
+                {selectedOrder.pickupType === 'self' && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-cyan-100 text-cyan-800">
+                    Self Drop
+                  </span>
+                )}
+                {selectedOrder.deliveryType === 'self' && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-teal-100 text-teal-800">
+                    Self Pickup
                   </span>
                 )}
               </div>
@@ -690,15 +883,15 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-              {/* Assign Logistics for Pickup */}
-              {selectedOrder.status === 'placed' && (
+              {/* Assign Logistics for Pickup - only when order uses logistics pickup */}
+              {selectedOrder.status === 'placed' && canAssign && selectedOrder.pickupType !== 'self' && (
                 <Button className="bg-purple-500 hover:bg-purple-600 text-white" onClick={() => { handleAssignLogistics(selectedOrder._id, 'pickup'); setShowViewModal(false) }}>
                   <Truck className="w-4 h-4 mr-2" />Assign Pickup Partner
                 </Button>
               )}
               
-              {/* Assign Logistics for Delivery */}
-              {selectedOrder.status === 'ready' && (
+              {/* Assign Logistics for Delivery - only when order uses logistics delivery */}
+              {selectedOrder.status === 'ready' && canAssign && selectedOrder.deliveryType !== 'self' && (
                 <Button className="bg-green-500 hover:bg-green-600 text-white" onClick={() => { handleAssignLogistics(selectedOrder._id, 'delivery'); setShowViewModal(false) }}>
                   <Truck className="w-4 h-4 mr-2" />Assign Delivery Partner
                 </Button>

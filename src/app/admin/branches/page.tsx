@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   Building2, 
   Search, 
@@ -18,6 +19,8 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { adminApi } from '@/lib/adminApi'
+
+const ITEMS_PER_PAGE = 8
 
 interface Branch {
   _id: string
@@ -66,7 +69,7 @@ export default function AdminBranchesPage() {
     current: 1,
     pages: 1,
     total: 0,
-    limit: 10
+    limit: ITEMS_PER_PAGE
   })
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
@@ -75,6 +78,11 @@ export default function AdminBranchesPage() {
     fetchBranches()
   }, [search, statusFilter, pagination.current])
 
+  const handlePageChange = (page: number) => {
+    setPagination(p => ({ ...p, current: page }))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const fetchBranches = async () => {
     try {
       setLoading(true)
@@ -82,7 +90,7 @@ export default function AdminBranchesPage() {
       
       const response = await adminApi.getBranchesWithStats({
         page: pagination.current,
-        limit: pagination.limit,
+        limit: ITEMS_PER_PAGE,
         search: search || undefined,
         status: statusFilter || undefined
       })
@@ -336,32 +344,14 @@ export default function AdminBranchesPage() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total} results
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(p => ({ ...p, current: p.current - 1 }))}
-                disabled={pagination.current === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-700">
-                Page {pagination.current} of {pagination.pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(p => ({ ...p, current: p.current + 1 }))}
-                disabled={pagination.current === pagination.pages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            current={pagination.current}
+            pages={pagination.pages}
+            total={pagination.total}
+            limit={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            itemName="branches"
+          />
         )}
       </div>
 

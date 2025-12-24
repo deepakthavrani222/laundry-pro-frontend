@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 interface FinancialOverview {
   totalRevenue: number
@@ -119,7 +119,7 @@ export function useFinancialOverview(timeframe: string = '30d') {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getFinancialOverview(timeframe)
+      const response = await superAdminApi.getFinancialOverview(timeframe)
       setOverview(response.data.overview)
       setRevenueTrend(response.data.revenueTrend)
     } catch (err: any) {
@@ -157,7 +157,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getTransactions(filters)
+      const response = await superAdminApi.getTransactions(filters)
       setTransactions(response.data.transactions)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -173,7 +173,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
   const approveRefund = async (transactionId: string, notes?: string) => {
     try {
-      const response = await centerAdminApi.approveRefund(transactionId, notes)
+      const response = await superAdminApi.approveRefund(transactionId, notes)
       await fetchTransactions()
       return response
     } catch (err: any) {
@@ -183,7 +183,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
   const rejectRefund = async (transactionId: string, reason: string) => {
     try {
-      const response = await centerAdminApi.rejectRefund(transactionId, reason)
+      const response = await superAdminApi.rejectRefund(transactionId, reason)
       await fetchTransactions()
       return response
     } catch (err: any) {
@@ -211,7 +211,7 @@ export function useTransaction(transactionId: string) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getTransaction(transactionId)
+      const response = await superAdminApi.getTransaction(transactionId)
       setTransaction(response.data.transaction)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch transaction')
@@ -249,7 +249,7 @@ export function useSettlements(filters: SettlementFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getSettlements(filters)
+      const response = await superAdminApi.getSettlements(filters)
       setSettlements(response.data.settlements)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -265,7 +265,7 @@ export function useSettlements(filters: SettlementFilters = {}) {
 
   const createSettlement = async (settlementData: any) => {
     try {
-      const response = await centerAdminApi.createSettlement(settlementData)
+      const response = await superAdminApi.createSettlement(settlementData)
       await fetchSettlements()
       return response
     } catch (err: any) {
@@ -275,7 +275,7 @@ export function useSettlements(filters: SettlementFilters = {}) {
 
   const approveSettlement = async (settlementId: string, comments?: string) => {
     try {
-      const response = await centerAdminApi.approveSettlement(settlementId, comments)
+      const response = await superAdminApi.approveSettlement(settlementId, comments)
       await fetchSettlements()
       return response
     } catch (err: any) {
@@ -309,7 +309,7 @@ export function useFinancialReports(filters: ReportFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getFinancialReports(filters)
+      const response = await superAdminApi.getFinancialReports(filters)
       setReports(response.data.reports)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -330,7 +330,7 @@ export function useFinancialReports(filters: ReportFilters = {}) {
     filters?: any
   }) => {
     try {
-      const response = await centerAdminApi.generateFinancialReport(reportData)
+      const response = await superAdminApi.generateFinancialReport(reportData)
       await fetchReports()
       return response
     } catch (err: any) {
@@ -357,7 +357,7 @@ export function useFinancialReport(reportId: string) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getFinancialReport(reportId)
+      const response = await superAdminApi.getFinancialReport(reportId)
       setReport(response.data.report)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch report')

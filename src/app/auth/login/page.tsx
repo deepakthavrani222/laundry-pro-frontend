@@ -55,9 +55,9 @@ export default function LoginPage() {
       const roleRoutes = {
         customer: '/', // Customers go to homepage
         admin: '/admin/dashboard',
-        branch_manager: '/branch/dashboard',
+        center_admin: '/center-admin/dashboard',  // center_admin = old branch_manager
         support_agent: '/support/dashboard',
-        center_admin: '/center-admin/dashboard',
+        superadmin: '/superadmin/dashboard',
       }
 
       const redirectPath = roleRoutes[user.role as keyof typeof roleRoutes] || '/'
@@ -233,7 +233,7 @@ export default function LoginPage() {
           <div className="space-y-2 text-xs text-gray-600">
             <div><strong>Customer:</strong> testcustomer@demo.com / password123</div>
             <div><strong>Admin:</strong> admin@laundrypro.com / admin123</div>
-            <div><strong>Branch Manager:</strong> branch@laundrypro.com / branch123</div>
+            <div><strong>Center Admin:</strong> branch@laundrypro.com / branch123</div>
             <div><strong>Support:</strong> support@laundrypro.com / support123</div>
           </div>
         </div>

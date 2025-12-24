@@ -68,11 +68,52 @@ interface BranchService {
 
 const STEPS = [
   { id: 1, title: 'Select Branch' },
-  { id: 2, title: 'Select Service' },
-  { id: 3, title: 'Select Items' },
-  { id: 4, title: 'Address' },
-  { id: 5, title: 'Schedule' },
-  { id: 6, title: 'Confirm' },
+  { id: 2, title: 'Service Type' },
+  { id: 3, title: 'Select Service' },
+  { id: 4, title: 'Select Items' },
+  { id: 5, title: 'Address' },
+  { id: 6, title: 'Schedule' },
+  { id: 7, title: 'Confirm' },
+]
+
+// Service type options
+const SERVICE_TYPES = [
+  {
+    id: 'full_service',
+    title: 'Full Service',
+    subtitle: 'Home Pickup + Home Delivery',
+    description: 'Our logistics partner will pick up and deliver your clothes',
+    icon: 'truck',
+    discount: 0,
+    discountLabel: ''
+  },
+  {
+    id: 'self_drop_self_pickup',
+    title: 'Self Drop & Pickup',
+    subtitle: 'Drop at Branch + Pickup from Branch',
+    description: 'Drop your clothes at branch and pick them up when ready',
+    icon: 'building',
+    discount: 50,
+    discountLabel: 'Save upto ₹50'
+  },
+  {
+    id: 'self_drop_home_delivery',
+    title: 'Self Drop + Home Delivery',
+    subtitle: 'Drop at Branch + Home Delivery',
+    description: 'Drop your clothes at branch, we deliver to your home',
+    icon: 'home',
+    discount: 25,
+    discountLabel: 'Save upto ₹25'
+  },
+  {
+    id: 'home_pickup_self_pickup',
+    title: 'Home Pickup + Self Pickup',
+    subtitle: 'Home Pickup + Pickup from Branch',
+    description: 'We pick up from your home, you collect from branch',
+    icon: 'package',
+    discount: 25,
+    discountLabel: 'Save upto ₹25'
+  }
 ]
 
 // Icon mapping for services
@@ -134,6 +175,16 @@ export default function NewOrderPage() {
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [createdOrder, setCreatedOrder] = useState<any>(null)
+  
+  // Service type state (self drop-off / self pickup feature)
+  const [serviceType, setServiceType] = useState<'full_service' | 'self_drop_self_pickup' | 'self_drop_home_delivery' | 'home_pickup_self_pickup'>('full_service')
+  
+  // Helper to check if pickup address is needed
+  const needsPickupAddress = serviceType === 'full_service' || serviceType === 'home_pickup_self_pickup'
+  // Helper to check if delivery address is needed
+  const needsDeliveryAddress = serviceType === 'full_service' || serviceType === 'self_drop_home_delivery'
+  // Get current service type discount
+  const getServiceTypeDiscount = () => SERVICE_TYPES.find(s => s.id === serviceType)?.discount || 0
   const [newAddress, setNewAddress] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -388,14 +439,17 @@ export default function NewOrderPage() {
 
     const orderData = {
       items: orderItems,
-      pickupAddressId,
-      deliveryAddressId,
+      pickupAddressId: needsPickupAddress ? pickupAddressId : undefined,
+      deliveryAddressId: needsDeliveryAddress ? deliveryAddressId : undefined,
       pickupDate: selectedDate,
       pickupTimeSlot: selectedTimeSlot,
       paymentMethod,
       isExpress,
       specialInstructions,
       branchId: selectedBranchId,
+      // Service type for self drop-off / self pickup
+      serviceType,
+      selectedBranchId,
       // Include delivery details from distance calculation
       deliveryDetails: deliveryInfo ? {
         distance: deliveryInfo.distance,
@@ -419,18 +473,33 @@ export default function NewOrderPage() {
         // Must select a branch
         return selectedBranchId !== ''
       case 2:
+        // Service type is always selected (has default value)
+        return true
+      case 3:
         // Must select a service
         return selectedService !== ''
-      case 3:
+      case 4:
         // Must have items selected
         return getTotalItems() > 0
-      case 4:
-        // Must have address and area must be serviceable
-        return pickupAddressId && deliveryAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
       case 5:
+        // Address requirements depend on service type
+        if (serviceType === 'self_drop_self_pickup') {
+          // No address needed for full self service
+          return true
+        } else if (serviceType === 'self_drop_home_delivery') {
+          // Only delivery address needed
+          return deliveryAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
+        } else if (serviceType === 'home_pickup_self_pickup') {
+          // Only pickup address needed
+          return pickupAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
+        } else {
+          // Full service - both addresses needed
+          return pickupAddressId && deliveryAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
+        }
+      case 6:
         // Must have date and time slot
         return selectedDate && selectedTimeSlot
-      case 6:
+      case 7:
         return true
       default:
         return false
@@ -438,9 +507,9 @@ export default function NewOrderPage() {
   }
 
   const nextStep = () => {
-    if (canProceed() && currentStep < 6) {
+    if (canProceed() && currentStep < 7) {
       setCurrentStep(currentStep + 1)
-    } else if (currentStep === 6) {
+    } else if (currentStep === 7) {
       handleSubmit()
     }
   }
@@ -613,8 +682,88 @@ export default function NewOrderPage() {
             </div>
           )}
 
-          {/* Step 2: Select Service */}
+          {/* Step 2: Service Type (Self Drop-off / Self Pickup) */}
           {currentStep === 2 && (
+            <div className="space-y-4">
+              <div className="p-3 bg-teal-50 rounded-lg mb-4">
+                <div className="flex items-center text-sm text-teal-700">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  <span className="font-medium">{branches.find(b => b._id === selectedBranchId)?.name}</span>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                How would you like to handle pickup and delivery?
+              </p>
+              
+              <div className="space-y-3">
+                {SERVICE_TYPES.map((type) => {
+                  const IconComponent = type.icon === 'truck' ? Truck : 
+                                       type.icon === 'building' ? Building2 : 
+                                       type.icon === 'home' ? Home : Package
+                  return (
+                    <div
+                      key={type.id}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        serviceType === type.id
+                          ? 'border-teal-500 bg-teal-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setServiceType(type.id as any)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <IconComponent className="w-5 h-5 text-teal-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-medium text-gray-800">{type.title}</h3>
+                              {type.discount > 0 && (
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                  {type.discountLabel}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-teal-600 font-medium">{type.subtitle}</p>
+                            <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                          </div>
+                        </div>
+                        {serviceType === type.id && (
+                          <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* Info about selected service type */}
+              {serviceType !== 'full_service' && (
+                <div className="p-3 bg-amber-50 rounded-lg mt-4">
+                  <div className="flex items-start space-x-2">
+                    <MapPin className="w-4 h-4 text-amber-600 mt-0.5" />
+                    <div className="text-sm text-amber-700">
+                      {serviceType === 'self_drop_self_pickup' && (
+                        <span>You will drop off and pick up your clothes at the selected branch. No address needed!</span>
+                      )}
+                      {serviceType === 'self_drop_home_delivery' && (
+                        <span>Drop your clothes at the branch. We'll deliver them to your home address.</span>
+                      )}
+                      {serviceType === 'home_pickup_self_pickup' && (
+                        <span>We'll pick up from your home. Collect your clothes from the branch when ready.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Select Service */}
+          {currentStep === 3 && (
             <div className="space-y-4">
               <div className="p-3 bg-teal-50 rounded-lg mb-4">
                 <div className="flex items-center text-sm text-teal-700">
@@ -683,8 +832,8 @@ export default function NewOrderPage() {
             </div>
           )}
 
-          {/* Step 3: Select Items */}
-          {currentStep === 3 && (
+          {/* Step 4: Select Items */}
+          {currentStep === 4 && (
             <div className="space-y-4">
               {/* Selected Service Info */}
               <div className="p-3 bg-teal-50 rounded-lg mb-4">
@@ -755,8 +904,8 @@ export default function NewOrderPage() {
           )}
 
 
-          {/* Step 4: Address */}
-          {currentStep === 4 && (
+          {/* Step 5: Address */}
+          {currentStep === 5 && (
             <div className="space-y-4">
               {/* Selected Branch & Service Summary */}
               <div className="p-3 bg-teal-50 rounded-lg mb-4">
@@ -768,125 +917,253 @@ export default function NewOrderPage() {
                   <Sparkles className="w-4 h-4 mr-2" />
                   <span>{branchServices.find(s => s.code === selectedService)?.displayName || selectedService}</span>
                 </div>
+                {/* Service Type Info */}
+                <div className="flex items-center text-sm text-teal-600 mt-1">
+                  <Truck className="w-4 h-4 mr-2" />
+                  <span>{SERVICE_TYPES.find(s => s.id === serviceType)?.title}</span>
+                  {getServiceTypeDiscount() > 0 && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      Save ₹{getServiceTypeDiscount()}
+                    </span>
+                  )}
+                </div>
               </div>
               
-              {addressesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
-                </div>
-              ) : addresses.length === 0 ? (
+              {/* Self Drop & Self Pickup - No address needed */}
+              {serviceType === 'self_drop_self_pickup' && (
                 <div className="text-center py-8">
-                  <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">No addresses saved</p>
-                  <Button onClick={() => setShowAddressForm(true)} className="bg-teal-500 hover:bg-teal-600">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Address
-                  </Button>
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-10 h-10 text-green-500" />
+                  </div>
+                  <h3 className="font-medium text-gray-800 mb-2">No Address Required!</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    You will drop off and pick up your clothes at:
+                  </p>
+                  <div className="p-4 bg-teal-50 rounded-lg inline-block">
+                    <div className="flex items-center text-teal-700">
+                      <Building2 className="w-5 h-5 mr-2" />
+                      <span className="font-medium">{branches.find(b => b._id === selectedBranchId)?.name}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {branches.find(b => b._id === selectedBranchId)?.address?.addressLine1}
+                      {branches.find(b => b._id === selectedBranchId)?.address?.city && `, ${branches.find(b => b._id === selectedBranchId)?.address?.city}`}
+                    </p>
+                  </div>
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                    <p className="text-sm text-green-700">
+                      🎉 You save ₹{getServiceTypeDiscount()} with self service!
+                    </p>
+                  </div>
                 </div>
-              ) : (
+              )}
+              
+              {/* Need at least one address */}
+              {serviceType !== 'self_drop_self_pickup' && (
                 <>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Pickup Address</label>
-                  <div className="space-y-3">
-                    {addresses.map((address) => (
-                      <div
-                        key={address._id}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          pickupAddressId === address._id
-                            ? 'border-teal-500 bg-teal-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => {
-                          setPickupAddressId(address._id)
-                          setDeliveryAddressId(address._id)
-                        }}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-medium text-gray-800">{address.name}</span>
-                              {address.isDefault && (
-                                <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">
-                                  Default
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-500 mb-1">
-                              <Phone className="w-3 h-3 mr-1" />
-                              {address.phone}
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {address.addressLine1}, {address.city} - {address.pincode}
-                            </p>
+                  {addressesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+                    </div>
+                  ) : addresses.length === 0 && (needsPickupAddress || needsDeliveryAddress) ? (
+                    <div className="text-center py-8">
+                      <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-4">No addresses saved</p>
+                      <Button onClick={() => setShowAddressForm(true)} className="bg-teal-500 hover:bg-teal-600">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Address
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Pickup Address - only for full_service and home_pickup_self_pickup */}
+                      {needsPickupAddress && (
+                        <>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Home className="w-4 h-4 inline mr-1" />
+                            Select Pickup Address
+                          </label>
+                          <div className="space-y-3">
+                            {addresses.map((address) => (
+                              <div
+                                key={address._id}
+                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                  pickupAddressId === address._id
+                                    ? 'border-teal-500 bg-teal-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                                onClick={() => {
+                                  setPickupAddressId(address._id)
+                                  if (needsDeliveryAddress) setDeliveryAddressId(address._id)
+                                }}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <span className="font-medium text-gray-800">{address.name}</span>
+                                      {address.isDefault && (
+                                        <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500 mb-1">
+                                      <Phone className="w-3 h-3 mr-1" />
+                                      {address.phone}
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                      {address.addressLine1}, {address.city} - {address.pincode}
+                                    </p>
+                                  </div>
+                                  {pickupAddressId === address._id && (
+                                    <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          {pickupAddressId === address._id && (
-                            <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-white" />
+                        </>
+                      )}
+                      
+                      {/* Delivery Address - only for full_service and self_drop_home_delivery */}
+                      {needsDeliveryAddress && !needsPickupAddress && (
+                        <>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Truck className="w-4 h-4 inline mr-1" />
+                            Select Delivery Address
+                          </label>
+                          <div className="space-y-3">
+                            {addresses.map((address) => (
+                              <div
+                                key={address._id}
+                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                  deliveryAddressId === address._id
+                                    ? 'border-teal-500 bg-teal-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                                onClick={() => setDeliveryAddressId(address._id)}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <span className="font-medium text-gray-800">{address.name}</span>
+                                      {address.isDefault && (
+                                        <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500 mb-1">
+                                      <Phone className="w-3 h-3 mr-1" />
+                                      {address.phone}
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                      {address.addressLine1}, {address.city} - {address.pincode}
+                                    </p>
+                                  </div>
+                                  {deliveryAddressId === address._id && (
+                                    <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* Self pickup info */}
+                      {serviceType === 'home_pickup_self_pickup' && (
+                        <div className="p-3 bg-amber-50 rounded-lg mt-4">
+                          <div className="flex items-start space-x-2">
+                            <Building2 className="w-4 h-4 text-amber-600 mt-0.5" />
+                            <div className="text-sm text-amber-700">
+                              <span className="font-medium">Pickup Location:</span> You will collect your clothes from {branches.find(b => b._id === selectedBranchId)?.name}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Self drop info */}
+                      {serviceType === 'self_drop_home_delivery' && (
+                        <div className="p-3 bg-amber-50 rounded-lg mb-4">
+                          <div className="flex items-start space-x-2">
+                            <Building2 className="w-4 h-4 text-amber-600 mt-0.5" />
+                            <div className="text-sm text-amber-700">
+                              <span className="font-medium">Drop-off Location:</span> Drop your clothes at {branches.find(b => b._id === selectedBranchId)?.name}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setShowAddressForm(true)}
+                        className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-teal-500 hover:text-teal-600 flex items-center justify-center"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Address
+                      </button>
+                    </>
+                  )}
+
+                  {/* Distance & Delivery Charge Info - only show for logistics delivery */}
+                  {(needsPickupAddress || needsDeliveryAddress) && (pickupAddressId || deliveryAddressId) && selectedBranchId && (
+                    <div className="mt-4">
+                      {deliveryLoading ? (
+                        <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
+                          <Loader2 className="w-4 h-4 animate-spin text-teal-500 mr-2" />
+                          <span className="text-sm text-gray-500">Calculating delivery charge...</span>
+                        </div>
+                      ) : deliveryInfo ? (
+                        <div className={`p-4 rounded-lg ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
+                          {deliveryInfo.isServiceable ? (
+                            <>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center">
+                                  <Truck className="w-4 h-4 text-teal-600 mr-2" />
+                                  <span className="font-medium text-gray-800">Delivery Charge</span>
+                                </div>
+                                <span className="font-bold text-teal-600">
+                                  {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
+                                </span>
+                              </div>
+                              {deliveryInfo.distance && (
+                                <div className="text-sm text-gray-600">
+                                  📍 Distance: {deliveryInfo.distance} km
+                                </div>
+                              )}
+                              <div className="text-sm text-teal-600 mt-1">
+                                {deliveryInfo.message}
+                              </div>
+                              {getServiceTypeDiscount() > 0 && (
+                                <div className="text-sm text-green-600 mt-1">
+                                  🎉 Self service discount: ₹{getServiceTypeDiscount()}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-center">
+                              <div className="text-red-600 font-medium mb-1">❌ Area Not Serviceable</div>
+                              <div className="text-sm text-red-500">{deliveryInfo.message}</div>
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setShowAddressForm(true)}
-                    className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-teal-500 hover:text-teal-600 flex items-center justify-center"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Address
-                  </button>
-                </>
-              )}
-
-              {/* Distance & Delivery Charge Info */}
-              {pickupAddressId && selectedBranchId && (
-                <div className="mt-4">
-                  {deliveryLoading ? (
-                    <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
-                      <Loader2 className="w-4 h-4 animate-spin text-teal-500 mr-2" />
-                      <span className="text-sm text-gray-500">Calculating delivery charge...</span>
-                    </div>
-                  ) : deliveryInfo ? (
-                    <div className={`p-4 rounded-lg ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
-                      {deliveryInfo.isServiceable ? (
-                        <>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center">
-                              <Truck className="w-4 h-4 text-teal-600 mr-2" />
-                              <span className="font-medium text-gray-800">Delivery Charge</span>
-                            </div>
-                            <span className="font-bold text-teal-600">
-                              {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
-                            </span>
-                          </div>
-                          {deliveryInfo.distance && (
-                            <div className="text-sm text-gray-600">
-                              📍 Distance: {deliveryInfo.distance} km
-                            </div>
-                          )}
-                          <div className="text-sm text-teal-600 mt-1">
-                            {deliveryInfo.message}
-                          </div>
-                        </>
                       ) : (
-                        <div className="text-center">
-                          <div className="text-red-600 font-medium mb-1">❌ Area Not Serviceable</div>
-                          <div className="text-sm text-red-500">{deliveryInfo.message}</div>
+                        <div className="p-4 bg-amber-50 rounded-lg text-sm text-amber-700">
+                          ⚠️ Could not calculate delivery charge. Please ensure your address is complete.
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <div className="p-4 bg-amber-50 rounded-lg text-sm text-amber-700">
-                      ⚠️ Could not calculate delivery charge. Please ensure your address is complete.
-                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           )}
 
-          {/* Step 5: Schedule */}
-          {currentStep === 5 && (
+          {/* Step 6: Schedule */}
+          {currentStep === 6 && (
             <div className="space-y-6">
               {/* Selected Branch Summary */}
               {selectedBranchId && (
@@ -905,16 +1182,21 @@ export default function NewOrderPage() {
                       Change Branch
                     </button>
                   </div>
+                  {/* Service Type */}
+                  <div className="flex items-center text-sm text-teal-600">
+                    <Truck className="w-4 h-4 mr-2" />
+                    <span>{SERVICE_TYPES.find(s => s.id === serviceType)?.title}</span>
+                  </div>
                 </div>
               )}
 
-              {/* Selected Address Summary */}
-              {getSelectedAddress() && (
+              {/* Selected Address Summary - only show if address is needed */}
+              {serviceType !== 'self_drop_self_pickup' && getSelectedAddress() && (
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-medium text-gray-800">{getSelectedAddress()?.name}</span>
                     <button 
-                      onClick={() => setCurrentStep(4)}
+                      onClick={() => setCurrentStep(5)}
                       className="text-sm text-teal-600 hover:underline"
                     >
                       Change Address
@@ -927,6 +1209,16 @@ export default function NewOrderPage() {
                   <div className="flex items-start text-sm text-gray-600">
                     <MapPin className="w-3 h-3 mr-1 mt-0.5" />
                     {getSelectedAddress()?.addressLine1}, {getSelectedAddress()?.city} - {getSelectedAddress()?.pincode}
+                  </div>
+                </div>
+              )}
+              
+              {/* Self service info */}
+              {serviceType === 'self_drop_self_pickup' && (
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="flex items-center text-sm text-green-700">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    <span>Self Drop & Pickup at branch - No address needed</span>
                   </div>
                 </div>
               )}
@@ -981,8 +1273,8 @@ export default function NewOrderPage() {
           )}
 
 
-          {/* Step 6: Confirm */}
-          {currentStep === 6 && (
+          {/* Step 7: Confirm */}
+          {currentStep === 7 && (
             <div className="space-y-4">
               {/* Order Summary */}
               <div className="space-y-3">
@@ -1015,14 +1307,66 @@ export default function NewOrderPage() {
                   </div>
                 </div>
 
-                {/* Address */}
+                {/* Service Type */}
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <div className="text-sm text-gray-500 mb-1">Pickup Address</div>
-                  <div className="font-medium text-gray-800">{getSelectedAddress()?.name}</div>
-                  <div className="text-sm text-gray-600">
-                    {getSelectedAddress()?.addressLine1}, {getSelectedAddress()?.city}
+                  <div className="text-sm text-gray-500 mb-1">Service Type</div>
+                  <div className="font-medium text-gray-800 flex items-center">
+                    <Truck className="w-4 h-4 mr-2 text-teal-600" />
+                    {SERVICE_TYPES.find(s => s.id === serviceType)?.title}
                   </div>
+                  <div className="text-sm text-gray-600">
+                    {SERVICE_TYPES.find(s => s.id === serviceType)?.subtitle}
+                  </div>
+                  {getServiceTypeDiscount() > 0 && (
+                    <div className="text-sm text-green-600 mt-1">
+                      🎉 Self service discount: ₹{getServiceTypeDiscount()}
+                    </div>
+                  )}
                 </div>
+
+                {/* Address - conditional based on service type */}
+                {serviceType === 'self_drop_self_pickup' ? (
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <div className="text-sm text-gray-500 mb-1">Drop-off & Pickup Location</div>
+                    <div className="font-medium text-gray-800 flex items-center">
+                      <Building2 className="w-4 h-4 mr-2 text-green-600" />
+                      {branches.find(b => b._id === selectedBranchId)?.name}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {branches.find(b => b._id === selectedBranchId)?.address?.addressLine1}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {needsPickupAddress && getSelectedAddress() && (
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <div className="text-sm text-gray-500 mb-1">Pickup Address</div>
+                        <div className="font-medium text-gray-800">{getSelectedAddress()?.name}</div>
+                        <div className="text-sm text-gray-600">
+                          {getSelectedAddress()?.addressLine1}, {getSelectedAddress()?.city}
+                        </div>
+                      </div>
+                    )}
+                    {serviceType === 'self_drop_home_delivery' && (
+                      <div className="p-4 bg-amber-50 rounded-lg">
+                        <div className="text-sm text-gray-500 mb-1">Drop-off Location</div>
+                        <div className="font-medium text-gray-800 flex items-center">
+                          <Building2 className="w-4 h-4 mr-2 text-amber-600" />
+                          {branches.find(b => b._id === selectedBranchId)?.name}
+                        </div>
+                      </div>
+                    )}
+                    {serviceType === 'home_pickup_self_pickup' && (
+                      <div className="p-4 bg-amber-50 rounded-lg">
+                        <div className="text-sm text-gray-500 mb-1">Pickup Location (Collect from)</div>
+                        <div className="font-medium text-gray-800 flex items-center">
+                          <Building2 className="w-4 h-4 mr-2 text-amber-600" />
+                          {branches.find(b => b._id === selectedBranchId)?.name}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Schedule */}
                 <div className="p-4 bg-gray-50 rounded-lg">
@@ -1073,8 +1417,8 @@ export default function NewOrderPage() {
                       <span className="text-gray-600">Subtotal</span>
                       <span>₹{calculatedPricing.orderTotal.subtotal}</span>
                     </div>
-                    {/* Distance-based delivery charge */}
-                    {deliveryInfo && deliveryInfo.isServiceable && (
+                    {/* Distance-based delivery charge - only for logistics delivery */}
+                    {serviceType !== 'self_drop_self_pickup' && deliveryInfo && deliveryInfo.isServiceable && (
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-gray-600">
                           Delivery {deliveryInfo.distance ? `(${deliveryInfo.distance} km)` : ''}
@@ -1082,6 +1426,13 @@ export default function NewOrderPage() {
                         <span className={deliveryInfo.deliveryCharge === 0 ? 'text-green-600' : ''}>
                           {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
                         </span>
+                      </div>
+                    )}
+                    {/* Self service discount */}
+                    {getServiceTypeDiscount() > 0 && (
+                      <div className="flex justify-between text-sm mb-1 text-green-600">
+                        <span>Self Service Discount</span>
+                        <span>-₹{getServiceTypeDiscount()}</span>
                       </div>
                     )}
                     {calculatedPricing.orderTotal.tax > 0 && (
@@ -1094,7 +1445,7 @@ export default function NewOrderPage() {
                     <div className="flex justify-between font-bold">
                       <span>Total</span>
                       <span className="text-teal-600">
-                        ₹{getCalculatedTotal() + (deliveryInfo?.deliveryCharge || 0)}
+                        ₹{Math.max(0, getCalculatedTotal() + (serviceType !== 'self_drop_self_pickup' ? (deliveryInfo?.deliveryCharge || 0) : 0) - getServiceTypeDiscount())}
                       </span>
                     </div>
                   </div>
@@ -1116,7 +1467,7 @@ export default function NewOrderPage() {
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Processing...
               </>
-            ) : currentStep === 6 ? (
+            ) : currentStep === 7 ? (
               <>
                 Confirm Order
                 <ArrowRight className="w-4 h-4 ml-2" />

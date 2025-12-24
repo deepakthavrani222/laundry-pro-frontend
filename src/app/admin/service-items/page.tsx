@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { Plus, Edit2, Trash2, Loader2, Search, X, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const API_URL = 'http://localhost:5000/api'
+const ITEMS_PER_PAGE = 8
 
 const SERVICES = [
   { id: 'wash_fold', name: 'Wash & Fold' },
@@ -44,6 +46,7 @@ export default function ServiceItemsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formStep, setFormStep] = useState(1)
@@ -253,6 +256,20 @@ export default function ServiceItemsPage() {
     return matchesSearch && matchesCategory
   })
 
+  // Pagination
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE)
+  const paginatedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterCategory])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const getCategoryName = (id: string) => CATEGORIES.find(c => c.id === id)?.name || id
 
   return (
@@ -317,7 +334,7 @@ export default function ServiceItemsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredItems.map((item, idx) => (
+              {paginatedItems.map((item, idx) => (
                 <tr key={idx} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-800">{item.name}</div>
@@ -373,6 +390,18 @@ export default function ServiceItemsPage() {
           </table>
           {filteredItems.length === 0 && (
             <div className="text-center py-8 text-gray-500">No items found</div>
+          )}
+          
+          {/* Pagination */}
+          {filteredItems.length > ITEMS_PER_PAGE && (
+            <Pagination
+              current={currentPage}
+              pages={totalPages}
+              total={filteredItems.length}
+              limit={ITEMS_PER_PAGE}
+              onPageChange={handlePageChange}
+              itemName="items"
+            />
           )}
         </div>
       )}

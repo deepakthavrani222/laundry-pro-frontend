@@ -72,7 +72,7 @@ export default function TopBranches({ branches, loading }: TopBranchesProps) {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Top Performing Branches</h3>
         <Link 
-          href="/center-admin/branches"
+          href="/superadmin/branches"
           className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center space-x-1 transition-colors"
         >
           <span>View All</span>
@@ -188,7 +188,7 @@ export default function TopBranches({ branches, loading }: TopBranchesProps) {
           </div>
           
           <Link
-            href="/center-admin/analytics"
+            href="/superadmin/analytics"
             className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
           >
             View Analytics →

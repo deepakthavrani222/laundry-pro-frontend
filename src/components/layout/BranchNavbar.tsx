@@ -260,7 +260,7 @@ export function BranchNavbar() {
                 </div>
                 <div className="hidden md:block text-left">
                   <div className="text-sm font-medium text-gray-700">{user?.name}</div>
-                  <div className="text-xs text-gray-500">Branch Manager</div>
+                  <div className="text-xs text-gray-500">Center Admin</div>
                 </div>
               </button>
 

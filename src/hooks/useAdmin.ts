@@ -104,8 +104,15 @@ export function useAdminDashboard() {
       const response = await adminApi.getDashboard()
       setMetrics(response.data.metrics)
       setRecentOrders(response.data.recentOrders)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data')
+    } catch (err: any) {
+      // Don't show error for permission denied - handle silently
+      if (err?.response?.status === 403) {
+        console.log('Dashboard: Permission denied, showing limited view')
+        setMetrics(null)
+        setRecentOrders([])
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data')
+      }
     } finally {
       setLoading(false)
     }
@@ -139,7 +146,7 @@ export function useAdminOrders(filters?: {
     current: 1,
     pages: 1,
     total: 0,
-    limit: 20
+    limit: 8
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -150,7 +157,14 @@ export function useAdminOrders(filters?: {
       setError(null)
       const response = await adminApi.getOrders(filters)
       setOrders(response.data.data)
-      setPagination(response.data.pagination)
+      // Map backend pagination keys to frontend format
+      const backendPagination = response.data.pagination
+      setPagination({
+        current: backendPagination.currentPage,
+        pages: backendPagination.totalPages,
+        total: backendPagination.totalItems,
+        limit: backendPagination.itemsPerPage
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch orders')
     } finally {
@@ -219,7 +233,7 @@ export function useAdminCustomers(filters?: {
     current: 1,
     pages: 1,
     total: 0,
-    limit: 20
+    limit: 8
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -230,7 +244,14 @@ export function useAdminCustomers(filters?: {
       setError(null)
       const response = await adminApi.getCustomers(filters)
       setCustomers(response.data.data)
-      setPagination(response.data.pagination)
+      // Map backend pagination keys to frontend format
+      const backendPagination = response.data.pagination
+      setPagination({
+        current: backendPagination.currentPage,
+        pages: backendPagination.totalPages,
+        total: backendPagination.totalItems,
+        limit: backendPagination.itemsPerPage
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch customers')
     } finally {

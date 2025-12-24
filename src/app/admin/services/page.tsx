@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   Sparkles, 
   Search, 
@@ -21,6 +22,8 @@ import {
   Package,
   Loader2
 } from 'lucide-react'
+
+const ITEMS_PER_PAGE = 8
 
 // Toast notification component
 interface Toast {
@@ -127,6 +130,7 @@ export default function AdminServicesPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
   const [showBranchModal, setShowBranchModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -421,6 +425,20 @@ export default function AdminServicesPage() {
     return matchesSearch && matchesCategory
   })
 
+  // Pagination
+  const totalPages = Math.ceil(filteredServices.length / ITEMS_PER_PAGE)
+  const paginatedServices = filteredServices.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, categoryFilter])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const getCategoryBadgeColor = (category: string) => {
     switch (category) {
       case 'laundry': return 'bg-blue-100 text-blue-800'
@@ -671,7 +689,7 @@ export default function AdminServicesPage() {
               <p className="text-gray-600">Create your first service to get started.</p>
             </div>
           ) : (
-            filteredServices.map((service) => (
+            paginatedServices.map((service) => (
               <div key={service._id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-start space-x-4">
@@ -762,6 +780,18 @@ export default function AdminServicesPage() {
             ))
           )}
         </div>
+        
+        {/* Pagination */}
+        {filteredServices.length > ITEMS_PER_PAGE && (
+          <Pagination
+            current={currentPage}
+            pages={totalPages}
+            total={filteredServices.length}
+            limit={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            itemName="services"
+          />
+        )}
       </div>
 
       {/* Create/Edit Service Modal */}

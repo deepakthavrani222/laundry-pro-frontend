@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-export type UserRole = 'customer' | 'admin' | 'branch_manager' | 'support_agent' | 'center_admin'
+export type UserRole = 'customer' | 'admin' | 'center_admin' | 'support_agent' | 'superadmin'
 
 interface User {
   _id: string
@@ -12,6 +12,7 @@ interface User {
   isActive: boolean
   isVIP?: boolean
   assignedBranch?: string
+  permissions?: Record<string, Record<string, boolean>>
 }
 
 interface AuthState {

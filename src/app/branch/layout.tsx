@@ -7,43 +7,67 @@ import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
 export default function BranchLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, user, _hasHydrated } = useAuthStore()
+  const { isAuthenticated, user, token, _hasHydrated, updateUser } = useAuthStore()
   const router = useRouter()
   const [isReady, setIsReady] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
+  // Refresh user permissions from backend
+  useEffect(() => {
+    const refreshPermissions = async () => {
+      if (!token || !user || user.role !== 'center_admin') return
+      
+      try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data?.user?.permissions) {
+            // Update permissions in store if they changed
+            const newPermissions = data.data.user.permissions
+            if (JSON.stringify(newPermissions) !== JSON.stringify(user.permissions)) {
+              updateUser({ permissions: newPermissions })
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to refresh permissions:', error)
+      }
+    }
+
+    if (_hasHydrated && isAuthenticated && user?.role === 'center_admin') {
+      refreshPermissions()
+    }
+  }, [_hasHydrated, isAuthenticated, user?.role, token])
+
   useEffect(() => {
     // Wait for store to hydrate from localStorage
     if (!_hasHydrated) {
-      console.log('🔥 Waiting for hydration...')
       return
     }
-
-    console.log('🔥 Branch layout check:', { 
-      isAuthenticated, 
-      user, 
-      userRole: user?.role,
-      _hasHydrated
-    })
     
     if (!isAuthenticated || !user) {
-      console.log('🔥 Not authenticated, redirecting to login')
       router.push('/auth/login')
       return
     }
     
-    if (user.role !== 'branch_manager') {
-      console.log('🔥 Wrong role for branch:', user.role)
+    if (user.role !== 'center_admin') {
       router.push('/auth/login')
       return
     }
     
-    console.log('🔥 Branch auth check passed')
     setIsReady(true)
   }, [isAuthenticated, user, router, _hasHydrated])
 

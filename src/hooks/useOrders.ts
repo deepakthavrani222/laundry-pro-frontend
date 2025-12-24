@@ -13,13 +13,22 @@ interface OrderItem {
 
 interface CreateOrderData {
   items: OrderItem[]
-  pickupAddressId: string
-  deliveryAddressId: string
+  pickupAddressId?: string
+  deliveryAddressId?: string
   pickupDate: string
   pickupTimeSlot: string
   paymentMethod: 'online' | 'cod'
   isExpress: boolean
   specialInstructions?: string
+  branchId?: string
+  // Service type for self drop-off / self pickup
+  serviceType?: 'full_service' | 'self_drop_self_pickup' | 'self_drop_home_delivery' | 'home_pickup_self_pickup'
+  selectedBranchId?: string
+  deliveryDetails?: {
+    distance: number | null
+    deliveryCharge: number
+    isFallbackPricing?: boolean
+  }
 }
 
 export function useOrders() {

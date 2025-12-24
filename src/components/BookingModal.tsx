@@ -56,11 +56,20 @@ interface BookingModalProps {
 
 const STEPS = [
   { id: 1, title: 'Branch', icon: Building2 },
-  { id: 2, title: 'Service', icon: Sparkles },
-  { id: 3, title: 'Items', icon: Package },
-  { id: 4, title: 'Address', icon: MapPin },
-  { id: 5, title: 'Schedule', icon: Calendar },
-  { id: 6, title: 'Payment', icon: CreditCard },
+  { id: 2, title: 'Service Type', icon: Truck },
+  { id: 3, title: 'Service', icon: Sparkles },
+  { id: 4, title: 'Items', icon: Package },
+  { id: 5, title: 'Address', icon: MapPin },
+  { id: 6, title: 'Schedule', icon: Calendar },
+  { id: 7, title: 'Payment', icon: CreditCard },
+]
+
+// Service type options for self drop-off / self pickup
+const SERVICE_TYPES = [
+  { id: 'full_service', title: 'Full Service', subtitle: 'Home Pickup + Home Delivery', icon: 'truck', discount: 0 },
+  { id: 'self_drop_self_pickup', title: 'Self Drop & Pickup', subtitle: 'Drop & Pickup at Branch', icon: 'building', discount: 50, discountLabel: 'Save upto ₹50' },
+  { id: 'self_drop_home_delivery', title: 'Self Drop + Delivery', subtitle: 'Drop at Branch + Home Delivery', icon: 'home', discount: 25, discountLabel: 'Save upto ₹25' },
+  { id: 'home_pickup_self_pickup', title: 'Pickup + Self Collect', subtitle: 'Home Pickup + Collect from Branch', icon: 'package', discount: 25, discountLabel: 'Save upto ₹25' },
 ]
 
 export default function BookingModal({ isOpen, onClose, onLoginRequired }: BookingModalProps) {
@@ -85,6 +94,14 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('cod')
   const [specialInstructions, setSpecialInstructions] = useState('')
+  
+  // Service type state (self drop-off / self pickup)
+  const [serviceType, setServiceType] = useState<'full_service' | 'self_drop_self_pickup' | 'self_drop_home_delivery' | 'home_pickup_self_pickup'>('full_service')
+  
+  // Helper functions for service type
+  const needsPickupAddress = serviceType === 'full_service' || serviceType === 'home_pickup_self_pickup'
+  const needsDeliveryAddress = serviceType === 'full_service' || serviceType === 'self_drop_home_delivery'
+  const getServiceTypeDiscount = () => SERVICE_TYPES.find(s => s.id === serviceType)?.discount || 0
   
   // Order states
   const [isExpress, setIsExpress] = useState(false)
@@ -301,14 +318,17 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
     
     const orderData = {
       items: orderItems,
-      pickupAddressId: selectedAddressId,
-      deliveryAddressId: selectedAddressId,
+      pickupAddressId: needsPickupAddress ? selectedAddressId : undefined,
+      deliveryAddressId: needsDeliveryAddress ? selectedAddressId : undefined,
       pickupDate: selectedDate,
       pickupTimeSlot: selectedTimeSlot,
       paymentMethod,
       isExpress,
       specialInstructions,
       branchId: selectedBranch?._id,
+      // Service type for self drop-off / self pickup
+      serviceType,
+      selectedBranchId: selectedBranch?._id,
       deliveryDetails: deliveryInfo ? {
         distance: deliveryInfo.distance,
         deliveryCharge: deliveryInfo.deliveryCharge,
@@ -365,21 +385,25 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
   const canProceed = () => {
     switch (step) {
       case 1: return !!selectedBranch
-      case 2: return !!selectedService
-      case 3: return getTotalItems() > 0
-      case 4: return !!selectedAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
-      case 5: return !!selectedDate && !!selectedTimeSlot
-      case 6: return true
+      case 2: return true // Service type always has default
+      case 3: return !!selectedService
+      case 4: return getTotalItems() > 0
+      case 5: 
+        // Address requirements depend on service type
+        if (serviceType === 'self_drop_self_pickup') return true
+        return !!selectedAddressId && (!deliveryInfo || deliveryInfo.isServiceable)
+      case 6: return !!selectedDate && !!selectedTimeSlot
+      case 7: return true
       default: return false
     }
   }
 
   const handleNext = () => {
-    if (step === 3 && !isAuthenticated) {
+    if (step === 4 && !isAuthenticated) {
       onLoginRequired()
       return
     }
-    if (step < 6) setStep(step + 1)
+    if (step < 7) setStep(step + 1)
     else handleSubmitOrder()
   }
 
@@ -398,6 +422,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
     setCreatedOrder(null)
     setCalculatedPricing(null)
     setDeliveryInfo(null)
+    setServiceType('full_service')
   }
 
   const handleClose = () => {
@@ -474,7 +499,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Quick Book</h2>
-              <p className="text-xs text-white/80">Step {step} of 6 - {STEPS[step-1].title}</p>
+              <p className="text-xs text-white/80">Step {step} of 7 - {STEPS[step-1].title}</p>
             </div>
           </div>
           <button onClick={handleClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
@@ -538,8 +563,63 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
                 </div>
               )}
 
-              {/* Step 2: Select Service */}
+              {/* Step 2: Service Type (Self Drop-off / Self Pickup) */}
               {step === 2 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-teal-500" />
+                    Service Type
+                  </h3>
+                  <p className="text-sm text-gray-500">How would you like pickup & delivery?</p>
+                  
+                  <div className="space-y-2">
+                    {SERVICE_TYPES.map((type) => {
+                      const IconComp = type.icon === 'truck' ? Truck : type.icon === 'building' ? Building2 : type.icon === 'home' ? Home : Package
+                      return (
+                        <div key={type.id} onClick={() => setServiceType(type.id as any)}
+                          className={`p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                            serviceType === type.id ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'
+                          }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                                <IconComp className="w-5 h-5 text-teal-600" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-gray-800">{type.title}</p>
+                                  {type.discount > 0 && (
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                      {type.discountLabel}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500">{type.subtitle}</p>
+                              </div>
+                            </div>
+                            {serviceType === type.id && (
+                              <div className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  
+                  {serviceType !== 'full_service' && (
+                    <div className="p-3 bg-amber-50 rounded-xl text-sm text-amber-700">
+                      {serviceType === 'self_drop_self_pickup' && '📍 Drop & collect your clothes at the branch. No address needed!'}
+                      {serviceType === 'self_drop_home_delivery' && '📍 Drop at branch, we deliver to your home.'}
+                      {serviceType === 'home_pickup_self_pickup' && '📍 We pick up from home, you collect from branch.'}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: Select Service */}
+              {step === 3 && (
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-teal-500" />
@@ -581,8 +661,8 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
                 </div>
               )}
 
-              {/* Step 3: Select Items */}
-              {step === 3 && (
+              {/* Step 4: Select Items */}
+              {step === 4 && (
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <Package className="w-5 h-5 text-teal-500" />
@@ -644,88 +724,128 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
                 </div>
               )}
 
-              {/* Step 4: Address */}
-              {step === 4 && (
+              {/* Step 5: Address */}
+              {step === 5 && (
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-teal-500" />
-                    Pickup Address
+                    {serviceType === 'self_drop_self_pickup' ? 'Branch Location' : 'Pickup Address'}
                   </h3>
                   
-                  {addresses.length === 0 ? (
+                  {/* Self Drop & Self Pickup - No address needed */}
+                  {serviceType === 'self_drop_self_pickup' ? (
                     <div className="text-center py-6">
-                      <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 mb-4">No addresses saved</p>
-                      <Button onClick={() => setShowAddressForm(true)} className="bg-teal-500 hover:bg-teal-600">
-                        <Plus className="w-4 h-4 mr-2" /> Add Address
-                      </Button>
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="w-10 h-10 text-green-500" />
+                      </div>
+                      <h4 className="font-medium text-gray-800 mb-2">No Address Required!</h4>
+                      <p className="text-sm text-gray-600 mb-4">Drop off and pick up at:</p>
+                      <div className="p-4 bg-teal-50 rounded-xl inline-block">
+                        <div className="flex items-center text-teal-700">
+                          <Building2 className="w-5 h-5 mr-2" />
+                          <span className="font-medium">{selectedBranch?.name}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {selectedBranch?.address?.addressLine1 || selectedBranch?.address?.city}
+                        </p>
+                      </div>
+                      <div className="mt-4 p-3 bg-green-50 rounded-xl">
+                        <p className="text-sm text-green-700">🎉 You save ₹{getServiceTypeDiscount()} with self service!</p>
+                      </div>
                     </div>
                   ) : (
                     <>
-                      <div className="space-y-2">
-                        {addresses.map((address) => (
-                          <div key={address._id} onClick={() => setSelectedAddressId(address._id)}
-                            className={`p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                              selectedAddressId === address._id ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'
-                            }`}>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-gray-800">{address.name}</span>
-                                  {address.isDefault && (
-                                    <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">Default</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center text-sm text-gray-500 mb-1">
-                                  <Phone className="w-3 h-3 mr-1" />{address.phone}
-                                </div>
-                                <p className="text-sm text-gray-600">{address.addressLine1}, {address.city} - {address.pincode}</p>
-                              </div>
-                              {selectedAddressId === address._id && (
-                                <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
-                                  <Check className="w-3 h-3 text-white" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <button onClick={() => setShowAddressForm(true)}
-                        className="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-teal-500 hover:text-teal-600 flex items-center justify-center">
-                        <Plus className="w-4 h-4 mr-2" /> Add New Address
-                      </button>
-                    </>
-                  )}
-
-                  {/* Delivery Info */}
-                  {selectedAddressId && deliveryInfo && (
-                    <div className={`p-4 rounded-xl ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
-                      {deliveryInfo.isServiceable ? (
-                        <>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center">
-                              <Truck className="w-4 h-4 text-teal-600 mr-2" />
-                              <span className="font-medium text-gray-800">Delivery Charge</span>
-                            </div>
-                            <span className="font-bold text-teal-600">
-                              {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
-                            </span>
-                          </div>
-                          {deliveryInfo.distance && <p className="text-sm text-gray-600">📍 Distance: {deliveryInfo.distance} km</p>}
-                        </>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-red-600 font-medium">❌ Area Not Serviceable</p>
-                          <p className="text-sm text-red-500">{deliveryInfo.message}</p>
+                      {/* Service type info */}
+                      {serviceType !== 'full_service' && (
+                        <div className="p-3 bg-amber-50 rounded-xl text-sm text-amber-700 mb-2">
+                          {serviceType === 'self_drop_home_delivery' && (
+                            <>📍 Drop at <strong>{selectedBranch?.name}</strong>, we deliver to your address</>
+                          )}
+                          {serviceType === 'home_pickup_self_pickup' && (
+                            <>📍 We pick up from your address, collect from <strong>{selectedBranch?.name}</strong></>
+                          )}
                         </div>
                       )}
-                    </div>
+                      
+                      {addresses.length === 0 ? (
+                        <div className="text-center py-6">
+                          <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-4">No addresses saved</p>
+                          <Button onClick={() => setShowAddressForm(true)} className="bg-teal-500 hover:bg-teal-600">
+                            <Plus className="w-4 h-4 mr-2" /> Add Address
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            {addresses.map((address) => (
+                              <div key={address._id} onClick={() => setSelectedAddressId(address._id)}
+                                className={`p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                                  selectedAddressId === address._id ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-gray-800">{address.name}</span>
+                                      {address.isDefault && (
+                                        <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">Default</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500 mb-1">
+                                      <Phone className="w-3 h-3 mr-1" />{address.phone}
+                                    </div>
+                                    <p className="text-sm text-gray-600">{address.addressLine1}, {address.city} - {address.pincode}</p>
+                                  </div>
+                                  {selectedAddressId === address._id && (
+                                    <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <button onClick={() => setShowAddressForm(true)}
+                            className="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-teal-500 hover:text-teal-600 flex items-center justify-center">
+                            <Plus className="w-4 h-4 mr-2" /> Add New Address
+                          </button>
+                        </>
+                      )}
+
+                      {/* Delivery Info */}
+                      {selectedAddressId && deliveryInfo && (
+                        <div className={`p-4 rounded-xl ${deliveryInfo.isServiceable ? 'bg-teal-50' : 'bg-red-50'}`}>
+                          {deliveryInfo.isServiceable ? (
+                            <>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center">
+                                  <Truck className="w-4 h-4 text-teal-600 mr-2" />
+                                  <span className="font-medium text-gray-800">Delivery Charge</span>
+                                </div>
+                                <span className="font-bold text-teal-600">
+                                  {deliveryInfo.deliveryCharge === 0 ? 'FREE' : `₹${deliveryInfo.deliveryCharge}`}
+                                </span>
+                              </div>
+                              {deliveryInfo.distance && <p className="text-sm text-gray-600">📍 Distance: {deliveryInfo.distance} km</p>}
+                              {getServiceTypeDiscount() > 0 && (
+                                <p className="text-sm text-green-600 mt-1">🎉 Self service discount: ₹{getServiceTypeDiscount()}</p>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-center">
+                              <p className="text-red-600 font-medium">❌ Area Not Serviceable</p>
+                              <p className="text-sm text-red-500">{deliveryInfo.message}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
 
-              {/* Step 5: Schedule */}
-              {step === 5 && (
+              {/* Step 6: Schedule */}
+              {step === 6 && (
                 <div className="space-y-4">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-teal-500" />
@@ -782,8 +902,8 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
                 </div>
               )}
 
-              {/* Step 6: Payment & Confirm */}
-              {step === 6 && (
+              {/* Step 7: Payment & Confirm */}
+              {step === 7 && (
                 <div className="space-y-4">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-teal-500" />
@@ -877,9 +997,9 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
               className="flex-1 bg-teal-500 hover:bg-teal-600">
               {submitting ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
-              ) : step === 6 ? (
+              ) : step === 7 ? (
                 <><Check className="w-4 h-4 mr-1" /> Place Order</>
-              ) : step === 3 && !isAuthenticated ? (
+              ) : step === 4 && !isAuthenticated ? (
                 'Login to Continue'
               ) : (
                 <>Continue <ChevronRight className="w-4 h-4 ml-1" /></>

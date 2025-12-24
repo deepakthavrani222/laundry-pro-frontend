@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   Truck, 
   Search, 
@@ -20,6 +21,8 @@ import {
   Calendar,
   X
 } from 'lucide-react'
+
+const ITEMS_PER_PAGE = 8
 
 interface CoverageArea {
   pincode: string
@@ -62,6 +65,7 @@ export default function AdminLogisticsPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState(1)
   const [selectedPartner, setSelectedPartner] = useState<LogisticsPartner | null>(null)
   const [showModal, setShowModal] = useState(false)
 
@@ -113,6 +117,20 @@ export default function AdminLogisticsPage() {
                          (statusFilter === 'inactive' && !partner.isActive)
     return matchesSearch && matchesStatus
   })
+
+  // Pagination
+  const totalPages = Math.ceil(filteredPartners.length / ITEMS_PER_PAGE)
+  const paginatedPartners = filteredPartners.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleViewDetails = (partner: LogisticsPartner) => {
     setSelectedPartner(partner)
@@ -247,7 +265,7 @@ export default function AdminLogisticsPage() {
               <p className="text-gray-600">No logistics partners match your search criteria.</p>
             </div>
           ) : (
-            filteredPartners.map((partner) => (
+            paginatedPartners.map((partner) => (
               <div key={partner._id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-start space-x-4">
@@ -324,6 +342,18 @@ export default function AdminLogisticsPage() {
             ))
           )}
         </div>
+        
+        {/* Pagination */}
+        {filteredPartners.length > ITEMS_PER_PAGE && (
+          <Pagination
+            current={currentPage}
+            pages={totalPages}
+            total={filteredPartners.length}
+            limit={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            itemName="partners"
+          />
+        )}
       </div>
 
       {/* View Details Modal */}

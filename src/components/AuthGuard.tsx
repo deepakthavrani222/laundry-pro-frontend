@@ -33,9 +33,9 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
       const roleRoutes = {
         customer: '/customer/dashboard',
         admin: '/admin/dashboard',
-        branch_manager: '/branch/dashboard',
+        center_admin: '/center-admin/dashboard',  // center_admin = old branch_manager
         support_agent: '/support/dashboard',
-        center_admin: '/center-admin/dashboard',
+        superadmin: '/superadmin/dashboard',
       }
       
       const redirectPath = roleRoutes[user.role as keyof typeof roleRoutes]
