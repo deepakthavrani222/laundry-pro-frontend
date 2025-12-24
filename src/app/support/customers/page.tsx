@@ -20,8 +20,11 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { supportApi } from '@/lib/supportApi'
 import Link from 'next/link'
+
+const ITEMS_PER_PAGE = 8
 
 interface Customer {
   _id: string
@@ -46,7 +49,8 @@ interface CustomerDetail extends Customer {
     _id: string
     orderNumber: string
     status: string
-    totalAmount: number
+    pricing?: { total: number }
+    totalAmount?: number
     createdAt: string
   }>
   tickets: Array<{
@@ -68,6 +72,7 @@ export default function CustomersPage() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalCustomers, setTotalCustomers] = useState(0)
   const [showVIPOnly, setShowVIPOnly] = useState(false)
 
   useEffect(() => {
@@ -90,17 +95,27 @@ export default function CustomersPage() {
     try {
       const response = await supportApi.getCustomers({
         page,
-        limit: 20,
+        limit: ITEMS_PER_PAGE,
         search: searchQuery || undefined,
-        isVIP: showVIPOnly || undefined,
+        isVIP: showVIPOnly ? 'true' : undefined,
       })
-      setCustomers(response.data.data || [])
-      setTotalPages(response.data.pagination?.pages || 1)
+      const data = response.data.data || []
+      setCustomers(data)
+      // Map backend pagination keys to frontend format
+      const backendPagination = response.data.pagination || {}
+      setTotalPages(backendPagination.totalPages || backendPagination.pages || 1)
+      // Use data.length as fallback if pagination total is not available
+      setTotalCustomers(backendPagination.totalItems ?? backendPagination.total ?? data.length)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch customers')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const fetchCustomerDetail = async (customerId: string) => {
@@ -202,7 +217,7 @@ export default function CustomersPage() {
         {/* Customer List */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <h2 className="font-semibold text-gray-800">All Customers ({customers.length})</h2>
+            <h2 className="font-semibold text-gray-800">All Customers ({totalCustomers})</h2>
           </div>
 
           {loading ? (
@@ -259,28 +274,15 @@ export default function CustomersPage() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-              <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+          {totalCustomers > ITEMS_PER_PAGE && (
+            <Pagination
+              current={page}
+              pages={totalPages}
+              total={totalCustomers}
+              limit={ITEMS_PER_PAGE}
+              onPageChange={handlePageChange}
+              itemName="customers"
+            />
           )}
         </div>
 
@@ -380,7 +382,7 @@ export default function CustomersPage() {
                             <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(order.status)}`}>
                               {order.status}
                             </span>
-                            <p className="text-sm font-medium text-gray-800 mt-1">{formatCurrency(order.totalAmount)}</p>
+                            <p className="text-sm font-medium text-gray-800 mt-1">{formatCurrency(order.pricing?.total || order.totalAmount || 0)}</p>
                           </div>
                         </div>
                       ))}

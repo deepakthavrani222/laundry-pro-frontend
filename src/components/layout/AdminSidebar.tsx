@@ -25,21 +25,29 @@ import { cn } from '@/lib/utils'
 import { useState, useEffect, createContext, useContext } from 'react'
 import { useAuthStore } from '@/store/authStore'
 
+// Navigation items with permission requirements
 const navigation = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
-  { name: 'Customers', href: '/admin/customers', icon: Users },
-  { name: 'Branches', href: '/admin/branches', icon: Building2 },
-  { name: 'Services', href: '/admin/services', icon: Sparkles },
-  { name: 'Logistics', href: '/admin/logistics', icon: Truck },
-  { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare },
-  { name: 'Refunds', href: '/admin/refunds', icon: RefreshCw },
-  { name: 'Payments', href: '/admin/payments', icon: CreditCard },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  { name: 'Users', href: '/admin/staff', icon: UserCheck },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
-  { name: 'Help', href: '/admin/support', icon: HelpCircle },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: Home, permission: null }, // Always visible
+  { name: 'Orders', href: '/admin/orders', icon: ShoppingBag, permission: { module: 'orders', action: 'view' } },
+  { name: 'Customers', href: '/admin/customers', icon: Users, permission: { module: 'customers', action: 'view' } },
+  { name: 'Branches', href: '/admin/branches', icon: Building2, permission: { module: 'branches', action: 'view' } },
+  { name: 'Services', href: '/admin/services', icon: Sparkles, permission: { module: 'services', action: 'view' } },
+  { name: 'Logistics', href: '/admin/logistics', icon: Truck, permission: { module: 'orders', action: 'assign' } },
+  { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare, permission: { module: 'customers', action: 'view' } },
+  { name: 'Refunds', href: '/admin/refunds', icon: RefreshCw, permission: { module: 'orders', action: 'refund' } },
+  { name: 'Payments', href: '/admin/payments', icon: CreditCard, permission: { module: 'financial', action: 'view' } },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, permission: { module: 'reports', action: 'view' } },
+  { name: 'Users', href: '/admin/staff', icon: UserCheck, permission: { module: 'users', action: 'view' } },
+  { name: 'Settings', href: '/admin/settings', icon: Settings, permission: { module: 'settings', action: 'view' } },
+  { name: 'Help', href: '/admin/support', icon: HelpCircle, permission: null }, // Always visible
 ]
+
+// Helper to check if user has permission
+const hasPermission = (user: any, permission: { module: string; action: string } | null) => {
+  if (!permission) return true // No permission required
+  if (!user?.permissions) return false
+  return user.permissions[permission.module]?.[permission.action] === true
+}
 
 // Context for sidebar state
 interface SidebarContextType {
@@ -150,7 +158,9 @@ export function AdminSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto min-h-0">
-        {navigation.map((item) => {
+        {navigation
+          .filter(item => hasPermission(user, item.permission))
+          .map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           const Icon = item.icon
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 export interface SystemSettings {
   general: {
@@ -95,7 +95,7 @@ export function useSettings() {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getSystemSettings()
+      const response = await superAdminApi.getSystemSettings()
       setSettings(response.data.settings)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch settings')
@@ -106,7 +106,7 @@ export function useSettings() {
 
   const fetchProfile = async () => {
     try {
-      const response = await centerAdminApi.getProfileSettings()
+      const response = await superAdminApi.getProfileSettings()
       setProfile(response.data.profile)
     } catch (err) {
       console.error('Failed to fetch profile:', err)
@@ -115,7 +115,7 @@ export function useSettings() {
 
   const fetchSystemInfo = async () => {
     try {
-      const response = await centerAdminApi.getSystemInfo()
+      const response = await superAdminApi.getSystemInfo()
       setSystemInfo(response.data.systemInfo)
     } catch (err) {
       console.error('Failed to fetch system info:', err)
@@ -126,7 +126,7 @@ export function useSettings() {
     try {
       setUpdating(true)
       setError(null)
-      const response = await centerAdminApi.updateSystemSettings(category, updatedSettings)
+      const response = await superAdminApi.updateSystemSettings(category, updatedSettings)
       
       // Update local state
       if (settings) {
@@ -150,7 +150,7 @@ export function useSettings() {
     try {
       setUpdating(true)
       setError(null)
-      const response = await centerAdminApi.updateProfile(profileData)
+      const response = await superAdminApi.updateProfile(profileData)
       
       // Update local state
       if (profile) {
@@ -174,7 +174,7 @@ export function useSettings() {
     try {
       setUpdating(true)
       setError(null)
-      const response = await centerAdminApi.changePassword({
+      const response = await superAdminApi.changePassword({
         currentPassword,
         newPassword
       })

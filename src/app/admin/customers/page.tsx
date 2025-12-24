@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   Users, 
   Search, 
@@ -21,7 +23,11 @@ import {
   Clock,
   MapPin,
   Download,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react'
 import { useAdminCustomers } from '@/hooks/useAdmin'
 import toast from 'react-hot-toast'
@@ -46,21 +52,80 @@ interface Customer {
 }
 
 export default function AdminCustomersPage() {
+  const { canUpdate, hasPermission } = usePermissions('customers')
+  const canExportReports = hasPermission('reports', 'export')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Get initial page from URL
+  const initialPage = parseInt(searchParams.get('page') || '1', 10)
+  
   const [filters, setFilters] = useState({
-    page: 1,
-    limit: 20,
-    search: '',
+    page: initialPage,
+    limit: 8,
+    search: searchParams.get('search') || '',
     isActive: undefined as boolean | undefined,
     isVIP: undefined as boolean | undefined
   })
+  const [goToPage, setGoToPage] = useState('')
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
 
   const { customers, pagination, loading, error, toggleStatus, updateVIPStatus, refetch } = useAdminCustomers(filters)
 
+  const updateURL = (newFilters: typeof filters) => {
+    const params = new URLSearchParams()
+    if (newFilters.page > 1) params.set('page', newFilters.page.toString())
+    if (newFilters.search) params.set('search', newFilters.search)
+    const queryString = params.toString()
+    router.push(queryString ? `?${queryString}` : '/admin/customers', { scroll: false })
+  }
+
   const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
+    const newFilters = { ...filters, [key]: value, page: 1 }
+    setFilters(newFilters)
+    updateURL(newFilters)
+  }
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > pagination.pages) return
+    const newFilters = { ...filters, page }
+    setFilters(newFilters)
+    updateURL(newFilters)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleGoToPage = (e: React.FormEvent) => {
+    e.preventDefault()
+    const page = parseInt(goToPage, 10)
+    if (page >= 1 && page <= pagination.pages) {
+      handlePageChange(page)
+      setGoToPage('')
+    }
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+    const current = pagination.current
+    const total = pagination.pages
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      if (current > 3) pages.push('...')
+      
+      const start = Math.max(2, current - 1)
+      const end = Math.min(total - 1, current + 1)
+      
+      for (let i = start; i <= end; i++) pages.push(i)
+      
+      if (current < total - 2) pages.push('...')
+      pages.push(total)
+    }
+    return pages
   }
 
   const handleToggleStatus = async (customerId: string, customerName: string, isActive: boolean) => {
@@ -151,10 +216,12 @@ export default function AdminCustomersPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {canExportReports && (
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          )}
         </div>
       </div>
 
@@ -242,7 +309,17 @@ export default function AdminCustomersPage() {
       </div>
 
       {/* Customers List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 relative">
+        {/* Loading overlay for page changes */}
+        {loading && customers.length > 0 && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-xl">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <span className="text-sm text-gray-600">Loading...</span>
+            </div>
+          </div>
+        )}
+        
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">
             Customers ({pagination.total})
@@ -327,44 +404,48 @@ export default function AdminCustomersPage() {
                       View Profile
                     </Button>
                     
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className={`whitespace-nowrap ${customer.isActive ? "text-red-600 border-red-300 hover:bg-red-50" : "text-green-600 border-green-300 hover:bg-green-50"}`}
-                      onClick={() => handleToggleStatus(customer._id, customer.name, customer.isActive)}
-                      disabled={loadingAction === `status-${customer._id}`}
-                    >
-                      {loadingAction === `status-${customer._id}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : customer.isActive ? (
-                        <>
-                          <UserX className="w-4 h-4 mr-1" />
-                          Deactivate
-                        </>
-                      ) : (
-                        <>
-                          <UserCheck className="w-4 h-4 mr-1" />
-                          Activate
-                        </>
-                      )}
-                    </Button>
+                    {canUpdate && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className={`whitespace-nowrap ${customer.isActive ? "text-red-600 border-red-300 hover:bg-red-50" : "text-green-600 border-green-300 hover:bg-green-50"}`}
+                        onClick={() => handleToggleStatus(customer._id, customer.name, customer.isActive)}
+                        disabled={loadingAction === `status-${customer._id}`}
+                      >
+                        {loadingAction === `status-${customer._id}` ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : customer.isActive ? (
+                          <>
+                            <UserX className="w-4 h-4 mr-1" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="w-4 h-4 mr-1" />
+                            Activate
+                          </>
+                        )}
+                      </Button>
+                    )}
                     
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className={`whitespace-nowrap ${customer.isVIP ? "text-gray-600 border-gray-300 hover:bg-gray-50" : "text-yellow-600 border-yellow-300 hover:bg-yellow-50"}`}
-                      onClick={() => handleToggleVIP(customer._id, customer.name, customer.isVIP)}
-                      disabled={loadingAction === `vip-${customer._id}`}
-                    >
-                      {loadingAction === `vip-${customer._id}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Crown className="w-4 h-4 mr-1" />
-                          {customer.isVIP ? 'Remove VIP' : 'Make VIP'}
-                        </>
-                      )}
-                    </Button>
+                    {canUpdate && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className={`whitespace-nowrap ${customer.isVIP ? "text-gray-600 border-gray-300 hover:bg-gray-50" : "text-yellow-600 border-yellow-300 hover:bg-yellow-50"}`}
+                        onClick={() => handleToggleVIP(customer._id, customer.name, customer.isVIP)}
+                        disabled={loadingAction === `vip-${customer._id}`}
+                      >
+                        {loadingAction === `vip-${customer._id}` ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Crown className="w-4 h-4 mr-1" />
+                            {customer.isVIP ? 'Remove VIP' : 'Make VIP'}
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -374,30 +455,94 @@ export default function AdminCustomersPage() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-700">
-              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total} results
+              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total} customers
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', pagination.current - 1)}
+            
+            <div className="flex items-center gap-2">
+              {/* First Page */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(1)} 
+                disabled={pagination.current === 1}
+                className="hidden sm:flex"
+                title="First Page"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </Button>
+              
+              {/* Previous */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.current - 1)} 
                 disabled={pagination.current === 1}
               >
-                Previous
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline ml-1">Previous</span>
               </Button>
-              <span className="text-sm text-gray-700">
-                Page {pagination.current} of {pagination.pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', pagination.current + 1)}
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-gray-500">...</span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={pagination.current === page ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handlePageChange(page as number)}
+                      className={`min-w-[36px] ${pagination.current === page ? 'bg-blue-600 text-white' : ''}`}
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+              </div>
+              
+              {/* Next */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.current + 1)} 
                 disabled={pagination.current === pagination.pages}
               >
-                Next
+                <span className="hidden sm:inline mr-1">Next</span>
+                <ChevronRight className="w-4 h-4" />
               </Button>
+              
+              {/* Last Page */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.pages)} 
+                disabled={pagination.current === pagination.pages}
+                className="hidden sm:flex"
+                title="Last Page"
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </Button>
+              
+              {/* Go to Page - only show when more than 10 pages */}
+              {pagination.pages > 10 && (
+                <form onSubmit={handleGoToPage} className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-200">
+                  <input
+                    type="number"
+                    min="1"
+                    max={pagination.pages}
+                    value={goToPage}
+                    onChange={(e) => setGoToPage(e.target.value)}
+                    placeholder="#"
+                    className="w-14 px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                  />
+                  <Button type="submit" variant="outline" size="sm" disabled={!goToPage}>
+                    Go
+                  </Button>
+                </form>
+              )}
             </div>
           </div>
         )}
@@ -498,38 +643,42 @@ export default function AdminCustomersPage() {
               <div>
                 <h5 className="text-lg font-semibold text-gray-800 mb-3">Quick Actions</h5>
                 <div className="flex flex-wrap gap-3">
-                  <Button 
-                    variant="outline"
-                    className={selectedCustomer.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}
-                    onClick={() => {
-                      handleToggleStatus(selectedCustomer._id, selectedCustomer.name, selectedCustomer.isActive)
-                      setShowProfileModal(false)
-                    }}
-                  >
-                    {selectedCustomer.isActive ? (
-                      <>
-                        <UserX className="w-4 h-4 mr-2" />
-                        Deactivate Account
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Activate Account
-                      </>
-                    )}
-                  </Button>
+                  {canUpdate && (
+                    <Button 
+                      variant="outline"
+                      className={selectedCustomer.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}
+                      onClick={() => {
+                        handleToggleStatus(selectedCustomer._id, selectedCustomer.name, selectedCustomer.isActive)
+                        setShowProfileModal(false)
+                      }}
+                    >
+                      {selectedCustomer.isActive ? (
+                        <>
+                          <UserX className="w-4 h-4 mr-2" />
+                          Deactivate Account
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Activate Account
+                        </>
+                      )}
+                    </Button>
+                  )}
                   
-                  <Button 
-                    variant="outline"
-                    className={selectedCustomer.isVIP ? "text-gray-600 border-gray-600 hover:bg-gray-50" : "text-yellow-600 border-yellow-600 hover:bg-yellow-50"}
-                    onClick={() => {
-                      handleToggleVIP(selectedCustomer._id, selectedCustomer.name, selectedCustomer.isVIP)
-                      setShowProfileModal(false)
-                    }}
-                  >
-                    <Crown className="w-4 h-4 mr-2" />
-                    {selectedCustomer.isVIP ? 'Remove VIP Status' : 'Make VIP Customer'}
-                  </Button>
+                  {canUpdate && (
+                    <Button 
+                      variant="outline"
+                      className={selectedCustomer.isVIP ? "text-gray-600 border-gray-600 hover:bg-gray-50" : "text-yellow-600 border-yellow-600 hover:bg-yellow-50"}
+                      onClick={() => {
+                        handleToggleVIP(selectedCustomer._id, selectedCustomer.name, selectedCustomer.isVIP)
+                        setShowProfileModal(false)
+                      }}
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      {selectedCustomer.isVIP ? 'Remove VIP Status' : 'Make VIP Customer'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

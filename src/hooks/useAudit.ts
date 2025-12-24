@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 export interface AuditLog {
   _id: string
@@ -88,7 +88,7 @@ export function useAudit(filters?: {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getAuditLogs(filters)
+      const response = await superAdminApi.getAuditLogs(filters)
       setLogs(response.data.logs)
       setPagination(response.data.pagination)
     } catch (err) {
@@ -100,7 +100,7 @@ export function useAudit(filters?: {
 
   const fetchStats = async () => {
     try {
-      const response = await centerAdminApi.getAuditStats(timeframe)
+      const response = await superAdminApi.getAuditStats(timeframe)
       setStats(response.data)
     } catch (err) {
       console.error('Failed to fetch audit stats:', err)
@@ -109,7 +109,7 @@ export function useAudit(filters?: {
 
   const fetchActivitySummary = async () => {
     try {
-      const response = await centerAdminApi.getActivitySummary()
+      const response = await superAdminApi.getActivitySummary()
       setActivitySummary(response.data.summary)
     } catch (err) {
       console.error('Failed to fetch activity summary:', err)
@@ -128,10 +128,10 @@ export function useAudit(filters?: {
 
       // Get token
       let token = null
-      const centerAdminData = localStorage.getItem('center-admin-storage')
-      if (centerAdminData) {
+      const superAdminData = localStorage.getItem('superadmin-storage')
+      if (superAdminData) {
         try {
-          const parsed = JSON.parse(centerAdminData)
+          const parsed = JSON.parse(superAdminData)
           token = parsed.state?.token || parsed.token
         } catch (e) {}
       }
@@ -145,7 +145,7 @@ export function useAudit(filters?: {
         }
       }
 
-      const response = await fetch(`http://localhost:5000/api/center-admin/audit/export?${params}`, {
+      const response = await fetch(`http://localhost:5000/api/superadmin/audit/export?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -211,7 +211,7 @@ export function useAuditLog(logId: string) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getAuditLog(logId)
+      const response = await superAdminApi.getAuditLog(logId)
       setLog(response.data.log)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch audit log')

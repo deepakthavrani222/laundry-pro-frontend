@@ -95,7 +95,7 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
         <Link 
-          href="/center-admin/orders"
+          href="/superadmin/orders"
           className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center space-x-1 transition-colors"
         >
           <span>View All</span>
@@ -180,7 +180,7 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
                   </div>
                   
                   <Link
-                    href={`/center-admin/orders/${order._id}`}
+                    href={`/superadmin/orders/${order._id}`}
                     className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <Eye className="w-4 h-4" />

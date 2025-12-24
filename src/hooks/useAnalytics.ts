@@ -47,34 +47,51 @@ export function useAdminAnalytics() {
   const [serviceDistribution, setServiceDistribution] = useState<ServiceDistributionData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hasPermission, setHasPermission] = useState(true)
 
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const [weeklyRes, statusRes, revenueRes, serviceRes] = await Promise.all([
+      // Fetch each endpoint separately to handle permission errors gracefully
+      const results = await Promise.allSettled([
         api.get('/admin/analytics/weekly-orders'),
         api.get('/admin/analytics/order-status'),
         api.get('/admin/analytics/revenue'),
         api.get('/admin/analytics/service-distribution')
       ])
 
-      if (weeklyRes.data.success) {
-        setWeeklyOrders(weeklyRes.data.data)
+      // Check if all failed due to permission
+      const allForbidden = results.every(r => 
+        r.status === 'rejected' && r.reason?.response?.status === 403
+      )
+      
+      if (allForbidden) {
+        setHasPermission(false)
+        setLoading(false)
+        return
       }
-      if (statusRes.data.success) {
-        setOrderStatus(statusRes.data.data)
+
+      // Process successful results
+      if (results[0].status === 'fulfilled' && results[0].value.data.success) {
+        setWeeklyOrders(results[0].value.data.data)
       }
-      if (revenueRes.data.success) {
-        setRevenueData(revenueRes.data.data)
+      if (results[1].status === 'fulfilled' && results[1].value.data.success) {
+        setOrderStatus(results[1].value.data.data)
       }
-      if (serviceRes.data.success) {
-        setServiceDistribution(serviceRes.data.data)
+      if (results[2].status === 'fulfilled' && results[2].value.data.success) {
+        setRevenueData(results[2].value.data.data)
+      }
+      if (results[3].status === 'fulfilled' && results[3].value.data.success) {
+        setServiceDistribution(results[3].value.data.data)
       }
     } catch (err: any) {
-      console.error('Error fetching analytics:', err)
-      setError(err.response?.data?.message || 'Failed to fetch analytics')
+      // Don't set error for permission issues - handle silently
+      if (err.response?.status !== 403) {
+        console.error('Error fetching analytics:', err)
+        setError(err.response?.data?.message || 'Failed to fetch analytics')
+      }
     } finally {
       setLoading(false)
     }
@@ -91,6 +108,7 @@ export function useAdminAnalytics() {
     serviceDistribution,
     loading,
     error,
+    hasPermission,
     refetch: fetchAnalytics
   }
 }
@@ -141,7 +159,7 @@ export function useBranchAnalytics() {
 
 // Center Admin Analytics Hooks
 
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 interface AnalyticsOverview {
   customerMetrics: {
@@ -200,7 +218,7 @@ export function useAnalyticsOverview(timeframe: string) {
       setLoading(true)
       setError(null)
       
-      const response = await centerAdminApi.getAnalyticsOverview(timeframe)
+      const response = await superAdminApi.getAnalyticsOverview(timeframe)
       
       if (response.success && response.data?.overview) {
         setOverview(response.data.overview)
@@ -236,7 +254,7 @@ export function useAnalytics(filters: AnalyticsFilters) {
       setLoading(true)
       setError(null)
       
-      const response = await centerAdminApi.getAnalytics({
+      const response = await superAdminApi.getAnalytics({
         page: filters.page,
         limit: filters.limit,
         type: filters.type || undefined,
@@ -276,7 +294,7 @@ export function useAnalyticsGeneration() {
     setLoading(true)
     setError(null)
     try {
-      const response = await centerAdminApi.generateCustomerRetentionAnalysis(data)
+      const response = await superAdminApi.generateCustomerRetentionAnalysis(data)
       return response
     } catch (err: any) {
       setError(err.message)
@@ -290,7 +308,7 @@ export function useAnalyticsGeneration() {
     setLoading(true)
     setError(null)
     try {
-      const response = await centerAdminApi.generateBranchPerformanceAnalysis(data)
+      const response = await superAdminApi.generateBranchPerformanceAnalysis(data)
       return response
     } catch (err: any) {
       setError(err.message)
@@ -309,7 +327,7 @@ export function useAnalyticsGeneration() {
     setLoading(true)
     setError(null)
     try {
-      const response = await centerAdminApi.generateRevenueForecast(data)
+      const response = await superAdminApi.generateRevenueForecast(data)
       return response
     } catch (err: any) {
       setError(err.message)
@@ -332,7 +350,7 @@ export function useAnalyticsGeneration() {
     setLoading(true)
     setError(null)
     try {
-      const response = await centerAdminApi.generateExpansionAnalysis(data)
+      const response = await superAdminApi.generateExpansionAnalysis(data)
       return response
     } catch (err: any) {
       setError(err.message)
@@ -350,4 +368,39 @@ export function useAnalyticsGeneration() {
     generateRevenueForecast,
     generateExpansionAnalysis
   }
+}
+
+export function useAnalyticsById(analyticsId: string) {
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchAnalytics = useCallback(async () => {
+    if (!analyticsId) {
+      setLoading(false)
+      return
+    }
+    
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await superAdminApi.getAnalyticsById(analyticsId)
+      
+      if (response.success && response.data) {
+        setAnalytics(response.data.analytics || response.data)
+      }
+    } catch (err: any) {
+      console.error('Error fetching analytics by ID:', err)
+      setError(err.message || 'Failed to fetch analytics')
+    } finally {
+      setLoading(false)
+    }
+  }, [analyticsId])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
+
+  return { analytics, loading, error, refetch: fetchAnalytics }
 }

@@ -120,7 +120,14 @@ export function useSupportTickets(filters?: {
       setError(null)
       const response = await supportApi.getTickets(filters)
       setTickets(response.data.data || [])
-      setPagination(response.data.pagination || { current: 1, pages: 1, total: 0, limit: 20 })
+      // Map backend pagination keys to frontend format
+      const backendPagination = response.data.pagination || {}
+      setPagination({
+        current: backendPagination.currentPage || 1,
+        pages: backendPagination.totalPages || 1,
+        total: backendPagination.totalItems || 0,
+        limit: backendPagination.itemsPerPage || 20
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch tickets')
     } finally {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/Pagination'
 import { 
   CreditCard, 
   Search, 
@@ -22,6 +23,8 @@ import {
   ArrowUpRight
 } from 'lucide-react'
 import { adminApi } from '@/lib/adminApi'
+
+const ITEMS_PER_PAGE = 8
 
 interface Payment {
   _id: string
@@ -49,7 +52,7 @@ interface PaymentStats {
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [stats, setStats] = useState<PaymentStats | null>(null)
-  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0, limit: 20 })
+  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0, limit: ITEMS_PER_PAGE })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -63,6 +66,18 @@ export default function AdminPaymentsPage() {
     fetchStats()
   }, [statusFilter, methodFilter])
 
+  const handlePageChange = (page: number) => {
+    setPagination(p => ({ ...p, current: page }))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Trigger fetch when page changes
+  useEffect(() => {
+    if (pagination.current > 1 || payments.length > 0) {
+      fetchPayments()
+    }
+  }, [pagination.current])
+
   const fetchPayments = async () => {
     try {
       setLoading(true)
@@ -70,7 +85,7 @@ export default function AdminPaymentsPage() {
       
       const params: any = {
         page: pagination.current,
-        limit: 20
+        limit: ITEMS_PER_PAGE
       }
       if (statusFilter) params.status = statusFilter
       if (methodFilter) params.paymentMethod = methodFilter
@@ -80,7 +95,7 @@ export default function AdminPaymentsPage() {
       
       if (response.success) {
         setPayments(response.data.data || [])
-        setPagination(response.data.pagination || { current: 1, pages: 1, total: 0, limit: 20 })
+        setPagination(response.data.pagination || { current: 1, pages: 1, total: 0, limit: ITEMS_PER_PAGE })
       }
     } catch (err) {
       console.error('Error fetching payments:', err)
@@ -341,38 +356,14 @@ export default function AdminPaymentsPage() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing {((pagination.current - 1) * pagination.limit) + 1} to {Math.min(pagination.current * pagination.limit, pagination.total)} of {pagination.total} results
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setPagination(prev => ({ ...prev, current: prev.current - 1 }))
-                  fetchPayments()
-                }}
-                disabled={pagination.current === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-700">
-                Page {pagination.current} of {pagination.pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setPagination(prev => ({ ...prev, current: prev.current + 1 }))
-                  fetchPayments()
-                }}
-                disabled={pagination.current === pagination.pages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            current={pagination.current}
+            pages={pagination.pages}
+            total={pagination.total}
+            limit={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            itemName="payments"
+          />
         )}
       </div>
 

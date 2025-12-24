@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 interface Branch {
   _id: string
@@ -80,7 +80,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.getBranches(filters)
+      const response = await superAdminApi.getBranches(filters)
       setBranches(response.data.branches)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -97,7 +97,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.getBranch(branchId)
+      const response = await superAdminApi.getBranch(branchId)
       setSelectedBranch(response.data.branch)
       return response.data
     } catch (err: any) {
@@ -115,7 +115,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.createBranch(branchData)
+      const response = await superAdminApi.createBranch(branchData)
       
       // Refresh branches list
       await fetchBranches()
@@ -138,7 +138,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.updateBranch(branchId, branchData)
+      const response = await superAdminApi.updateBranch(branchId, branchData)
       
       // Update local state
       setBranches(prev => 
@@ -167,7 +167,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      await centerAdminApi.deleteBranch(branchId, permanent)
+      await superAdminApi.deleteBranch(branchId, permanent)
       
       // Remove from local state
       setBranches(prev => prev.filter(branch => branch._id !== branchId))
@@ -192,7 +192,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.assignManager(branchId, managerId)
+      const response = await superAdminApi.assignManager(branchId, managerId)
       
       // Update local state
       setBranches(prev => 
@@ -221,7 +221,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.addStaff(branchId, staffData)
+      const response = await superAdminApi.addStaff(branchId, staffData)
       
       // Update local state
       setBranches(prev => 
@@ -250,7 +250,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      await centerAdminApi.removeStaff(branchId, userId)
+      await superAdminApi.removeStaff(branchId, userId)
       
       // Refresh branch data
       if (selectedBranch?._id === branchId) {
@@ -277,7 +277,7 @@ export const useBranches = () => {
     setError(null)
     
     try {
-      const response = await centerAdminApi.getBranchAnalytics(branchId, params)
+      const response = await superAdminApi.getBranchAnalytics(branchId, params)
       return response.data
     } catch (err: any) {
       setError(err.message)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { centerAdminApi } from '@/lib/centerAdminApi'
+import { superAdminApi } from '@/lib/superAdminApi'
 
 interface RiskOverview {
   complaintStats: {
@@ -127,7 +127,7 @@ export function useRiskOverview(timeframe: string = '30d') {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getRiskOverview(timeframe)
+      const response = await superAdminApi.getRiskOverview(timeframe)
       setOverview(response.data.overview)
       setEscalatedComplaints(response.data.escalatedComplaints)
       setSlaBreaches(response.data.slaBreaches)
@@ -169,7 +169,7 @@ export function useComplaints(filters: ComplaintFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getComplaints(filters)
+      const response = await superAdminApi.getComplaints(filters)
       setComplaints(response.data.complaints)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -185,7 +185,7 @@ export function useComplaints(filters: ComplaintFilters = {}) {
 
   const escalateComplaint = async (complaintId: string, reason: string, level?: number) => {
     try {
-      const response = await centerAdminApi.escalateComplaint(complaintId, reason, level)
+      const response = await superAdminApi.escalateComplaint(complaintId, reason, level)
       await fetchComplaints()
       return response
     } catch (err: any) {
@@ -195,7 +195,7 @@ export function useComplaints(filters: ComplaintFilters = {}) {
 
   const assignComplaint = async (complaintId: string, assignedTo: string, assignedToModel: string) => {
     try {
-      const response = await centerAdminApi.assignComplaint(complaintId, assignedTo, assignedToModel)
+      const response = await superAdminApi.assignComplaint(complaintId, assignedTo, assignedToModel)
       await fetchComplaints()
       return response
     } catch (err: any) {
@@ -205,7 +205,7 @@ export function useComplaints(filters: ComplaintFilters = {}) {
 
   const resolveComplaint = async (complaintId: string, resolution: string, resolutionType: string, amount?: number) => {
     try {
-      const response = await centerAdminApi.resolveComplaint(complaintId, resolution, resolutionType, amount)
+      const response = await superAdminApi.resolveComplaint(complaintId, resolution, resolutionType, amount)
       await fetchComplaints()
       return response
     } catch (err: any) {
@@ -234,7 +234,7 @@ export function useComplaint(complaintId: string) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getComplaint(complaintId)
+      const response = await superAdminApi.getComplaint(complaintId)
       setComplaint(response.data.complaint)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch complaint')
@@ -272,7 +272,7 @@ export function useBlacklistEntries(filters: BlacklistFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getBlacklistEntries(filters)
+      const response = await superAdminApi.getBlacklistEntries(filters)
       setEntries(response.data.entries)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -288,7 +288,7 @@ export function useBlacklistEntries(filters: BlacklistFilters = {}) {
 
   const createEntry = async (entryData: any) => {
     try {
-      const response = await centerAdminApi.createBlacklistEntry(entryData)
+      const response = await superAdminApi.createBlacklistEntry(entryData)
       await fetchEntries()
       return response
     } catch (err: any) {
@@ -298,7 +298,7 @@ export function useBlacklistEntries(filters: BlacklistFilters = {}) {
 
   const updateEntry = async (entryId: string, entryData: any) => {
     try {
-      const response = await centerAdminApi.updateBlacklistEntry(entryId, entryData)
+      const response = await superAdminApi.updateBlacklistEntry(entryId, entryData)
       await fetchEntries()
       return response
     } catch (err: any) {
@@ -308,7 +308,7 @@ export function useBlacklistEntries(filters: BlacklistFilters = {}) {
 
   const checkBlacklist = async (entityType: string, identifiers: any) => {
     try {
-      const response = await centerAdminApi.checkBlacklist(entityType, identifiers)
+      const response = await superAdminApi.checkBlacklist(entityType, identifiers)
       return response.data
     } catch (err: any) {
       throw new Error(err.message || 'Failed to check blacklist')
@@ -342,7 +342,7 @@ export function useSLAConfigurations(filters: SLAFilters = {}) {
     try {
       setLoading(true)
       setError(null)
-      const response = await centerAdminApi.getSLAConfigurations(filters)
+      const response = await superAdminApi.getSLAConfigurations(filters)
       setConfigs(response.data.configs)
       setPagination(response.data.pagination)
     } catch (err: any) {
@@ -358,7 +358,7 @@ export function useSLAConfigurations(filters: SLAFilters = {}) {
 
   const createConfig = async (configData: any) => {
     try {
-      const response = await centerAdminApi.createSLAConfiguration(configData)
+      const response = await superAdminApi.createSLAConfiguration(configData)
       await fetchConfigs()
       return response
     } catch (err: any) {

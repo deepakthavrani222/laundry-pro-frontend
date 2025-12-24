@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import {
   ShoppingBag,
   Users,
@@ -46,6 +47,9 @@ import {
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
+  const { hasPermission } = usePermissions()
+  const canViewReports = hasPermission('reports', 'view')
+  
   const { metrics, recentOrders, loading, error } = useAdminDashboard()
   const { weeklyOrders, orderStatus, revenueData, loading: analyticsLoading } = useAdminAnalytics()
   const [revenueChartType, setRevenueChartType] = useState<'bar' | 'line' | 'area'>('bar')
@@ -217,7 +221,8 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section - Only show if user has reports.view permission */}
+      {canViewReports && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Orders Bar Chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -317,8 +322,10 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Revenue Chart */}
+      {/* Revenue Chart - Only show if user has reports.view permission */}
+      {canViewReports && (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
@@ -459,6 +466,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

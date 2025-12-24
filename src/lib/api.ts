@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
-import { useCenterAdminStore } from '@/store/centerAdminStore'
+import { useSuperAdminStore } from '@/store/superAdminStore'
 import toast from 'react-hot-toast'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
@@ -16,13 +16,13 @@ export const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    // Check if it's a center-admin route - use center admin token
-    const isCenterAdminRoute = config.url?.includes('center-admin')
+    // Check if it's a superadmin route - use super admin token
+    const isSuperAdminRoute = config.url?.includes('superadmin')
     
-    if (isCenterAdminRoute) {
-      const centerAdminToken = useCenterAdminStore.getState().token
-      if (centerAdminToken) {
-        config.headers.Authorization = `Bearer ${centerAdminToken}`
+    if (isSuperAdminRoute) {
+      const superAdminToken = useSuperAdminStore.getState().token
+      if (superAdminToken) {
+        config.headers.Authorization = `Bearer ${superAdminToken}`
       }
     } else {
       // Use regular auth token for other routes
@@ -44,19 +44,20 @@ api.interceptors.response.use(
   (error) => {
     const message = error.response?.data?.message || 'Something went wrong'
     const requestUrl = error.config?.url || ''
-    const isCenterAdminRoute = requestUrl.includes('center-admin')
+    const isSuperAdminRoute = requestUrl.includes('superadmin')
+    const errorCode = error.response?.data?.code
     
     if (error.response?.status === 401) {
       // Check if store is hydrated before showing session expired
       const authStore = useAuthStore.getState()
-      const centerAdminStore = useCenterAdminStore.getState()
+      const superAdminStore = useSuperAdminStore.getState()
       
-      if (isCenterAdminRoute) {
+      if (isSuperAdminRoute) {
         // Only show session expired if user was actually logged in
-        if (centerAdminStore.token) {
-          centerAdminStore.logout()
+        if (superAdminStore.token) {
+          superAdminStore.logout()
           toast.error('Session expired. Please login again.')
-          window.location.href = '/center-admin/login'
+          window.location.href = '/superadmin/auth/login'
         }
       } else {
         // Only show session expired if user was actually logged in
@@ -67,7 +68,10 @@ api.interceptors.response.use(
         }
       }
     } else if (error.response?.status === 403) {
-      toast.error(message)
+      // Don't show toast for PERMISSION_DENIED errors - let components handle it silently
+      if (errorCode !== 'PERMISSION_DENIED') {
+        toast.error(message)
+      }
     } else if (error.response?.status >= 400) {
       toast.error(message)
     }
