@@ -67,6 +67,9 @@ const statusConfig = {
 }
 
 export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
+  // Add null check for safety and limit to 5 orders
+  const safeOrders = (orders || []).slice(0, 5)
+  
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -105,13 +108,13 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
 
       {/* Orders List */}
       <div className="space-y-4">
-        {orders.length === 0 ? (
+        {safeOrders.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No recent orders found</p>
           </div>
         ) : (
-          orders.map((order) => {
+          safeOrders.map((order) => {
             const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.placed
             const StatusIcon = statusInfo.icon
             const totalItems = Array.isArray(order.items) 
@@ -193,24 +196,24 @@ export default function RecentOrders({ orders, loading }: RecentOrdersProps) {
       </div>
 
       {/* Summary */}
-      {orders.length > 0 && (
+      {safeOrders.length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                {orders.length}
+                {safeOrders.length}
               </div>
               <div className="text-xs text-gray-500">Recent Orders</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ₹{orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()}
+                ₹{safeOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Total Value</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ₹{Math.round(orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0) / orders.length).toLocaleString()}
+                ₹{Math.round(safeOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0) / (safeOrders.length || 1)).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Average Value</div>
             </div>

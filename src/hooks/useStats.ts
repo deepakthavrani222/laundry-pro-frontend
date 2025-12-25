@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
 interface HomepageStats {
   overview: {
     totalCustomers: number
@@ -41,7 +43,9 @@ export function useHomepageStats() {
     const fetchStats = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/stats/homepage')
+        const response = await fetch(`${API_URL}/stats/homepage`, {
+          credentials: 'include'
+        })
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)

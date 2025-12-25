@@ -481,7 +481,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="p-6 space-y-4">
-            {recentOrders && recentOrders.length > 0 ? recentOrders.map((order) => (
+            {recentOrders && recentOrders.length > 0 ? recentOrders.slice(0, 5).map((order) => (
               <div
                 key={order._id}
                 className={`flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 border-l-4 ${getPriorityColor(order)}`}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   MessageSquare, 
   Search, 
@@ -51,6 +52,8 @@ const categoryOptions = [
 ]
 
 export default function AdminComplaintsPage() {
+  const { canUpdate, hasPermission } = usePermissions('customers')
+  const canAssign = hasPermission('orders', 'assign')
   const [filters, setFilters] = useState({
     page: 1,
     limit: ITEMS_PER_PAGE,
@@ -358,7 +361,7 @@ export default function AdminComplaintsPage() {
                         View
                       </Button>
                       
-                      {(complaint.status === 'open' || !complaint.assignedTo) && (
+                      {(complaint.status === 'open' || !complaint.assignedTo) && canAssign && (
                         <Button 
                           size="sm" 
                           className="bg-blue-500 hover:bg-blue-600 text-white"
@@ -372,7 +375,7 @@ export default function AdminComplaintsPage() {
                         </Button>
                       )}
                       
-                      {complaint.status === 'in_progress' && (
+                      {complaint.status === 'in_progress' && canUpdate && (
                         <Button 
                           size="sm" 
                           className="bg-green-500 hover:bg-green-600 text-white"
@@ -626,7 +629,7 @@ export default function AdminComplaintsPage() {
             </div>
 
             <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-              {(selectedComplaint.status === 'open' || !selectedComplaint.assignedTo) && (
+              {(selectedComplaint.status === 'open' || !selectedComplaint.assignedTo) && canAssign && (
                 <Button
                   className="bg-blue-500 hover:bg-blue-600 text-white"
                   onClick={() => {
@@ -638,7 +641,7 @@ export default function AdminComplaintsPage() {
                   Assign
                 </Button>
               )}
-              {selectedComplaint.status === 'in_progress' && (
+              {selectedComplaint.status === 'in_progress' && canUpdate && (
                 <Button
                   className="bg-green-500 hover:bg-green-600 text-white"
                   onClick={() => {

@@ -26,6 +26,9 @@ interface TopBranchesProps {
 }
 
 export default function TopBranches({ branches, loading }: TopBranchesProps) {
+  // Add null check for safety
+  const safeBranches = branches || []
+  
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -82,13 +85,13 @@ export default function TopBranches({ branches, loading }: TopBranchesProps) {
 
       {/* Branches List */}
       <div className="space-y-4">
-        {branches.length === 0 ? (
+        {safeBranches.length === 0 ? (
           <div className="text-center py-8">
             <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No branch data available</p>
           </div>
         ) : (
-          branches.map((branch, index) => (
+          safeBranches.map((branch, index) => (
             <div
               key={branch.branchId}
               className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-purple-200 hover:bg-purple-50/30 transition-all cursor-pointer group"
@@ -144,24 +147,24 @@ export default function TopBranches({ branches, loading }: TopBranchesProps) {
       </div>
 
       {/* Branch Performance Summary */}
-      {branches.length > 0 && (
+      {safeBranches.length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                {branches.reduce((sum, branch) => sum + branch.totalOrders, 0).toLocaleString()}
+                {safeBranches.reduce((sum, branch) => sum + (branch.totalOrders || 0), 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Total Orders</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ₹{branches.reduce((sum, branch) => sum + branch.totalRevenue, 0).toLocaleString()}
+                ₹{safeBranches.reduce((sum, branch) => sum + (branch.totalRevenue || 0), 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Total Revenue</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ₹{Math.round(branches.reduce((sum, branch) => sum + branch.avgOrderValue, 0) / branches.length).toLocaleString()}
+                ₹{Math.round(safeBranches.reduce((sum, branch) => sum + (branch.avgOrderValue || 0), 0) / (safeBranches.length || 1)).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Avg Order Value</div>
             </div>
@@ -170,7 +173,7 @@ export default function TopBranches({ branches, loading }: TopBranchesProps) {
       )}
 
       {/* Performance Indicators */}
-      {branches.length > 0 && (
+      {safeBranches.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">

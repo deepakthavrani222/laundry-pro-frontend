@@ -11,6 +11,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,  // Send cookies with every request
 })
 
 // Request interceptor to add auth token

@@ -29,7 +29,7 @@ interface Session {
 
 interface SuperAdminState {
   admin: SuperAdmin | null
-  token: string | null
+  token: string | null  // Keep for backward compatibility, cookie is primary
   session: Session | null
   isAuthenticated: boolean
   sidebarCollapsed: boolean

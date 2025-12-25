@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   Sparkles, 
   Search, 
@@ -124,6 +125,7 @@ const iconOptions = [
 ]
 
 export default function AdminServicesPage() {
+  const { canCreate, canUpdate, canDelete } = usePermissions('services')
   const [services, setServices] = useState<Service[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
@@ -589,10 +591,12 @@ export default function AdminServicesPage() {
           <h1 className="text-3xl font-bold text-gray-800">Services Management</h1>
           <p className="text-gray-600">Manage laundry services and branch assignments</p>
         </div>
-        <Button onClick={() => { resetForm(); setShowModal(true) }} className="bg-teal-500 hover:bg-teal-600">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Service
-        </Button>
+        {canCreate && (
+          <Button onClick={() => { resetForm(); setShowModal(true) }} className="bg-teal-500 hover:bg-teal-600">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Service
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -732,48 +736,58 @@ export default function AdminServicesPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleOpenItemsModal(service)}
-                      className="text-blue-600 hover:bg-blue-50"
-                    >
-                      <Package className="w-4 h-4 mr-1" />
-                      Items
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => { setSelectedService(service); setShowBranchModal(true) }}
-                    >
-                      <Building2 className="w-4 h-4 mr-1" />
-                      Branches
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openEditModal(service)}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleToggleStatus(service)}
-                      className={service.isActive ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}
-                    >
-                      {service.isActive ? <XCircle className="w-4 h-4 mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
-                      {service.isActive ? 'Disable' : 'Enable'}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openDeleteModal(service)}
-                      className="text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canUpdate && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleOpenItemsModal(service)}
+                        className="text-blue-600 hover:bg-blue-50"
+                      >
+                        <Package className="w-4 h-4 mr-1" />
+                        Items
+                      </Button>
+                    )}
+                    {canUpdate && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => { setSelectedService(service); setShowBranchModal(true) }}
+                      >
+                        <Building2 className="w-4 h-4 mr-1" />
+                        Branches
+                      </Button>
+                    )}
+                    {canUpdate && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openEditModal(service)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                    {canUpdate && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleToggleStatus(service)}
+                        className={service.isActive ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}
+                      >
+                        {service.isActive ? <XCircle className="w-4 h-4 mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
+                        {service.isActive ? 'Disable' : 'Enable'}
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openDeleteModal(service)}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

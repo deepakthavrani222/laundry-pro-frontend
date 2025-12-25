@@ -14,7 +14,7 @@ import {
   Calendar,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 import {
   BarChart,
@@ -72,7 +72,7 @@ export default function BranchPerformancePage() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true)
-      const response = await branchApi.getAnalytics(timeframe)
+      const response = await centerAdminApi.getAnalytics(timeframe)
       if (response.success) {
         setData(response.data)
       }

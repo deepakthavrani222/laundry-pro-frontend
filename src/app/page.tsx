@@ -29,7 +29,9 @@ import {
   LogOut,
   ChevronDown,
   Package,
-  Bell
+  Bell,
+  Menu,
+  X
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import React from 'react'
@@ -70,7 +72,7 @@ function HeroCarousel({
         { icon: CreditCard, text: 'Easy Payment Options' },
         { icon: Headphones, text: 'Dedicated Customer Support' },
       ],
-      image: 'https://spinbee.in/wp-content/uploads/2025/07/slide.png',
+      image: '/images/hero-laundry.jpg',
       discount: '20%',
       primaryButton: { text: 'Book New Order', icon: Truck, action: 'book' },
       secondaryButton: { text: 'Chat on WhatsApp', icon: Phone, href: '#' },
@@ -87,7 +89,7 @@ function HeroCarousel({
         { icon: Award, text: 'Certified Professionals' },
         { icon: Star, text: '5-Star Rated Service' },
       ],
-      image: 'https://spinbee.in/wp-content/uploads/2025/07/women-slider.png',
+      image: '/images/hero-slide-2.jpg',
       discount: '15%',
       primaryButton: { text: 'Book Dry Cleaning', icon: Sparkles, action: 'book' },
       secondaryButton: { text: 'View Services', icon: ArrowRight, href: '#services' },
@@ -141,7 +143,7 @@ function HeroCarousel({
       </button>
 
       {/* Slides Container */}
-      <div className="relative min-h-[500px]">
+      <div className="relative">
         {/* Previous Slide (exits) */}
         {isAnimating && (
           <div
@@ -151,7 +153,7 @@ function HeroCarousel({
                 : 'animate-[slideOutRight_0.6s_ease-in-out_forwards]'
             }`}
           >
-            <div className="grid lg:grid-cols-2 gap-4 items-center min-h-[500px]">
+            <div className="grid lg:grid-cols-2 gap-4 items-center">
               <div className="px-4 lg:pl-16">
                 <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
                   {previousSlideData.title}
@@ -176,12 +178,30 @@ function HeroCarousel({
                   </Button>
                 </div>
               </div>
-              <div className="relative flex justify-center items-end h-[500px] overflow-hidden">
-                <img
-                  src={previousSlideData.image}
-                  alt={previousSlideData.title}
-                  className="w-auto max-h-[520px] object-contain object-bottom"
-                />
+              <div className="relative flex justify-center items-end overflow-visible">
+                {previousSlideData.video ? (
+                  <video
+                    src={previousSlideData.video}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-auto max-h-[520px] object-contain object-bottom"
+                    style={{ 
+                      filter: 'hue-rotate(-50deg) saturate(0.8)',
+                      mixBlendMode: 'multiply'
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={previousSlideData.image}
+                    alt={previousSlideData.title}
+                    className="w-auto max-h-[500px] object-contain object-bottom"
+                    style={{ 
+                      mixBlendMode: 'multiply'
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -197,7 +217,7 @@ function HeroCarousel({
               : ''
           }`}
         >
-          <div className="grid lg:grid-cols-2 gap-4 items-center min-h-[500px]">
+          <div className="grid lg:grid-cols-2 gap-4 items-center">
             <div className="px-4 lg:pl-16">
               <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
                 {currentSlideData.title}
@@ -228,16 +248,30 @@ function HeroCarousel({
                 </Link>
               </div>
             </div>
-            <div className="relative flex justify-center items-end h-[500px] overflow-hidden">
-              <img
-                src={currentSlideData.image}
-                alt={currentSlideData.title}
-                className="w-auto max-h-[520px] object-contain object-bottom"
-                onError={(e) => {
-                  e.currentTarget.src =
-                    'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
-                }}
-              />
+            <div className="relative flex justify-center items-end overflow-visible">
+              {currentSlideData.video ? (
+                <video
+                  src={currentSlideData.video}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-auto max-h-[520px] object-contain object-bottom"
+                  style={{ 
+                    filter: 'hue-rotate(-50deg) saturate(0.8)',
+                    mixBlendMode: 'multiply'
+                  }}
+                />
+              ) : (
+                <img
+                  src={currentSlideData.image}
+                  alt={currentSlideData.title}
+                  className="w-auto max-h-[500px] object-contain object-bottom"
+                  style={{ 
+                    mixBlendMode: 'multiply'
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -346,27 +380,46 @@ function TestimonialsCarousel() {
     }
   }, [currentIndex, testimonials.length])
 
-  const slideWidth = 25 // 25% for 4 items per view
+  // Responsive: 1 item on mobile, 2 on tablet, 4 on desktop
+  const getSlideWidth = () => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 640) return 100 // mobile: 1 item
+      if (window.innerWidth < 1024) return 50 // tablet: 2 items
+      return 25 // desktop: 4 items
+    }
+    return 25
+  }
+
+  const [slideWidth, setSlideWidth] = useState(25)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSlideWidth(getSlideWidth())
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
     <div className="relative">
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center transition-all hover:border-teal-500 hover:text-teal-500"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center transition-all hover:border-teal-500 hover:text-teal-500"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
       <button
         onClick={nextSlide}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center transition-all hover:border-teal-500 hover:text-teal-500"
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center transition-all hover:border-teal-500 hover:text-teal-500"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
       {/* Testimonials Container */}
-      <div className="overflow-hidden mx-8">
+      <div className="overflow-hidden mx-6 sm:mx-8">
         <div 
           className="flex transition-transform duration-500 ease-in-out"
           style={{ 
@@ -376,7 +429,8 @@ function TestimonialsCarousel() {
           {extendedTestimonials.map((testimonial, index) => (
             <div 
               key={`${testimonial.id}-${index}`} 
-              className="w-1/4 flex-shrink-0 px-2"
+              className="flex-shrink-0 px-2"
+              style={{ width: `${slideWidth}%` }}
             >
               <div className="bg-white rounded-xl p-6 text-center h-full">
                 {/* Quote Icon */}
@@ -410,7 +464,7 @@ function TestimonialsCarousel() {
 }
 
 // Scroll Banner & Image Gallery Section
-function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) {
+function ScrollBannerSection({ isAuthenticated, onGalleryVisible }: { isAuthenticated: boolean; onGalleryVisible?: (visible: boolean) => void }) {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [imageRowOffset, setImageRowOffset] = useState(0)
   const [bannerScrolledUp, setBannerScrolledUp] = useState(false)
@@ -445,13 +499,19 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
       // Image row offset - directly based on scroll position for continuous movement
       const scrollY = window.scrollY
       setImageRowOffset(scrollY * 0.5) // Move at half the scroll speed
+      
+      // Notify parent when gallery becomes visible (progress > 0.8)
+      const showGallery = progress > 0.8
+      if (onGalleryVisible) {
+        onGalleryVisible(showGallery)
+      }
     }
 
     window.addEventListener('scroll', handleScroll)
     handleScroll() // Initial call
     
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [onGalleryVisible])
 
   // Banner starts SMALL and GROWS to FULL WIDTH - SLOWER
   // Starts at 40% width, grows to 100%
@@ -496,13 +556,22 @@ function ScrollBannerSection({ isAuthenticated }: { isAuthenticated: boolean }) 
     'https://images.unsplash.com/photo-1604335399105-a0c585fd81a1?w=400&h=300&fit=crop',
   ]
 
+  // Background color transition - white to black as gallery appears
+  const bgColorProgress = Math.max(0, (scrollProgress - 0.6) * 2.5) // 0 to 1 after 60%
+  const bgR = Math.round(255 - (bgColorProgress * 238)) // 255 to 17 (gray-900)
+  const bgG = Math.round(255 - (bgColorProgress * 231)) // 255 to 24
+  const bgB = Math.round(255 - (bgColorProgress * 216)) // 255 to 39
+
   return (
     <div ref={sectionRef} className="relative" style={{ minHeight: isPinned ? '200vh' : 'auto' }}>
-      {/* Background Section - Always white, gallery has black background */}
+      {/* Background Section - Transitions from white to black */}
       <section 
         ref={bannerRef}
-        className={`bg-white py-16 min-h-[100vh] flex items-center justify-center overflow-hidden ${isPinned ? 'sticky top-0' : ''}`}
-        style={{ zIndex: isPinned ? 10 : 1 }}
+        className={`py-16 min-h-[100vh] flex items-center justify-center overflow-hidden transition-colors duration-300 ${isPinned ? 'sticky top-0' : ''}`}
+        style={{ 
+          zIndex: isPinned ? 10 : 1,
+          backgroundColor: `rgb(${bgR}, ${bgG}, ${bgB})`
+        }}
       >
         <div className="w-full flex justify-center">
           <div 
@@ -666,6 +735,8 @@ export default function HomePage() {
   const { user, isAuthenticated } = useAuthStore()
   const { stats, loading: statsLoading, error: statsError } = useHomepageStats()
   const [showBookingModal, setShowBookingModal] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isDarkTheme, setIsDarkTheme] = useState(false)
   const router = useRouter()
 
   const handleBookNow = () => {
@@ -676,30 +747,43 @@ export default function HomePage() {
     setShowBookingModal(false)
     router.push('/auth/login?redirect=/')
   }
+
+  const handleGalleryVisible = (visible: boolean) => {
+    setIsDarkTheme(visible)
+  }
   
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen transition-colors duration-500 ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>
       {/* Booking Modal */}
       <BookingModal 
         isOpen={showBookingModal} 
         onClose={() => setShowBookingModal(false)}
         onLoginRequired={handleLoginRequired}
       />
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
+      {/* Navigation - Fixed */}
+      <nav className={`shadow-sm border-b fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDarkTheme ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-gray-800">LaundryPro</span>
+              <span className={`text-2xl font-bold transition-colors duration-500 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>LaundryPro</span>
             </div>
+            
+            {/* Mobile Menu Button */}
+            <button 
+              className={`md:hidden p-2 rounded-lg transition-colors duration-500 ${isDarkTheme ? 'hover:bg-gray-800 text-white' : 'hover:bg-gray-100 text-gray-800'}`}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+            
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-gray-600 hover:text-teal-500">Home</Link>
-              <Link href="/services" className="text-gray-600 hover:text-teal-500">Services</Link>
-              <Link href="/pricing" className="text-gray-600 hover:text-teal-500">Pricing</Link>
-              <Link href="/help" className="text-gray-600 hover:text-teal-500">Help</Link>
+              <Link href="/" className={`transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`}>Home</Link>
+              <Link href="/services" className={`transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`}>Services</Link>
+              <Link href="/pricing" className={`transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`}>Pricing</Link>
+              <Link href="/help" className={`transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`}>Help</Link>
               
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
@@ -711,7 +795,7 @@ export default function HomePage() {
                     </Button>
                   </Link>
                   <div className="relative group">
-                    <button className="flex items-center space-x-2 text-gray-700 hover:text-teal-500 py-2">
+                    <button className={`flex items-center space-x-2 py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-teal-500'}`}>
                       <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-medium">
                           {user?.name?.charAt(0).toUpperCase()}
@@ -756,7 +840,7 @@ export default function HomePage() {
               ) : (
                 <div className="flex items-center space-x-3">
                   <Link href="/auth/login">
-                    <Button variant="outline" className="border-teal-500 text-teal-600 hover:bg-teal-50">
+                    <Button variant="outline" className={`transition-colors duration-500 ${isDarkTheme ? 'border-teal-400 text-teal-400 hover:bg-teal-400/10' : 'border-teal-500 text-teal-600 hover:bg-teal-50'}`}>
                       Login
                     </Button>
                   </Link>
@@ -769,196 +853,55 @@ export default function HomePage() {
               )}
             </div>
           </div>
+          
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className={`md:hidden border-t mt-4 pt-4 pb-2 transition-colors duration-500 ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex flex-col space-y-3">
+                <Link href="/" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>Home</Link>
+                <Link href="/services" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>Services</Link>
+                <Link href="/pricing" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
+                <Link href="/help" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>Help</Link>
+                
+                {isAuthenticated ? (
+                  <>
+                    <hr className={`my-2 transition-colors duration-500 ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`} />
+                    <Link href="/customer/dashboard" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+                    <Link href="/customer/orders" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
+                    <Link href="/customer/profile" className={`py-2 transition-colors duration-500 ${isDarkTheme ? 'text-gray-300 hover:text-teal-400' : 'text-gray-600 hover:text-teal-500'}`} onClick={() => setMobileMenuOpen(false)}>Profile</Link>
+                    <button 
+                      onClick={() => {
+                        useAuthStore.getState().logout()
+                        setMobileMenuOpen(false)
+                        window.location.href = '/'
+                      }}
+                      className="text-left text-red-600 hover:text-red-700 py-2"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col space-y-2 pt-2">
+                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className={`w-full transition-colors duration-500 ${isDarkTheme ? 'border-teal-400 text-teal-400 hover:bg-teal-400/10' : 'border-teal-500 text-teal-600 hover:bg-teal-50'}`}>
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full bg-teal-500 hover:bg-teal-600 text-white">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Hero Section with Carousel */}
-      <section className="relative bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 py-6 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-20 h-20 bg-teal-500 rounded-full"></div>
-          <div className="absolute top-40 right-20 w-16 h-16 bg-blue-500 rounded-full"></div>
-          <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-cyan-500 rounded-full"></div>
-          <div className="absolute bottom-40 right-1/3 w-8 h-8 bg-teal-400 rounded-full"></div>
-        </div>
-
-        {/* Floating Bubbles Animation - More bubbles for better visibility */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Extra Large Bubbles */}
-          <div className="bubble bubble-xl-1"></div>
-          <div className="bubble bubble-xl-2"></div>
-          <div className="bubble bubble-xl-3"></div>
-          {/* Large Bubbles */}
-          <div className="bubble bubble-1"></div>
-          <div className="bubble bubble-2"></div>
-          <div className="bubble bubble-3"></div>
-          <div className="bubble bubble-4"></div>
-          <div className="bubble bubble-5"></div>
-          <div className="bubble bubble-6"></div>
-          <div className="bubble bubble-7"></div>
-          <div className="bubble bubble-8"></div>
-          {/* Medium Bubbles */}
-          <div className="bubble bubble-9"></div>
-          <div className="bubble bubble-10"></div>
-          <div className="bubble bubble-11"></div>
-          <div className="bubble bubble-12"></div>
-          <div className="bubble bubble-13"></div>
-          <div className="bubble bubble-14"></div>
-          <div className="bubble bubble-15"></div>
-          <div className="bubble bubble-16"></div>
-          {/* Small Bubbles */}
-          <div className="bubble bubble-17"></div>
-          <div className="bubble bubble-18"></div>
-          <div className="bubble bubble-19"></div>
-          <div className="bubble bubble-20"></div>
-          <div className="bubble bubble-21"></div>
-          <div className="bubble bubble-22"></div>
-          <div className="bubble bubble-23"></div>
-          <div className="bubble bubble-24"></div>
-          <div className="bubble bubble-25"></div>
-          {/* Sparkle Stars */}
-          <div className="sparkle sparkle-1">✦</div>
-          <div className="sparkle sparkle-2">✦</div>
-          <div className="sparkle sparkle-3">✦</div>
-          <div className="sparkle sparkle-4">✦</div>
-          <div className="sparkle sparkle-5">✦</div>
-          <div className="sparkle sparkle-6">✦</div>
-        </div>
-
-        <style jsx>{`
-          .bubble {
-            position: absolute;
-            border-radius: 50%;
-            background: 
-              radial-gradient(circle at 25% 25%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 10%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(255,255,255,0.3) 0%, transparent 30%),
-              radial-gradient(circle at 50% 50%, rgba(200,230,255,0.4) 0%, rgba(180,220,255,0.3) 50%, rgba(150,200,255,0.2) 70%, rgba(100,180,255,0.1) 100%);
-            border: 1px solid rgba(255,255,255,0.6);
-            box-shadow: 
-              inset 0 -3px 8px rgba(100,150,200,0.2),
-              inset 0 3px 8px rgba(255,255,255,0.8),
-              0 2px 15px rgba(100,150,200,0.3),
-              0 0 30px rgba(100,180,220,0.15);
-            animation: floatUp ease-in-out infinite;
-          }
-          
-          .bubble::before {
-            content: '';
-            position: absolute;
-            top: 10%;
-            left: 15%;
-            width: 35%;
-            height: 35%;
-            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.6) 50%, transparent 70%);
-            border-radius: 50%;
-          }
-          
-          .bubble::after {
-            content: '';
-            position: absolute;
-            bottom: 15%;
-            right: 20%;
-            width: 15%;
-            height: 15%;
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
-            border-radius: 50%;
-          }
-          
-          /* Extra Large Bubbles */
-          .bubble-xl-1 { width: 100px; height: 100px; left: 8%; bottom: -120px; animation-duration: 15s; animation-delay: 0s; }
-          .bubble-xl-2 { width: 90px; height: 90px; left: 45%; bottom: -110px; animation-duration: 16s; animation-delay: 3s; }
-          .bubble-xl-3 { width: 85px; height: 85px; left: 78%; bottom: -105px; animation-duration: 14s; animation-delay: 6s; }
-          
-          /* Large Bubbles */
-          .bubble-1 { width: 70px; height: 70px; left: 3%; bottom: -90px; animation-duration: 12s; animation-delay: 0s; }
-          .bubble-2 { width: 75px; height: 75px; left: 18%; bottom: -95px; animation-duration: 13s; animation-delay: 1s; }
-          .bubble-3 { width: 65px; height: 65px; left: 28%; bottom: -85px; animation-duration: 11s; animation-delay: 2s; }
-          .bubble-4 { width: 72px; height: 72px; left: 38%; bottom: -92px; animation-duration: 12.5s; animation-delay: 0.5s; }
-          .bubble-5 { width: 68px; height: 68px; left: 52%; bottom: -88px; animation-duration: 11.5s; animation-delay: 1.5s; }
-          .bubble-6 { width: 60px; height: 60px; left: 65%; bottom: -80px; animation-duration: 10.5s; animation-delay: 2.5s; }
-          .bubble-7 { width: 74px; height: 74px; left: 82%; bottom: -94px; animation-duration: 13.5s; animation-delay: 0.8s; }
-          .bubble-8 { width: 62px; height: 62px; left: 92%; bottom: -82px; animation-duration: 11s; animation-delay: 4s; }
-          
-          /* Medium Bubbles */
-          .bubble-9 { width: 50px; height: 50px; left: 6%; bottom: -70px; animation-duration: 9s; animation-delay: 1.2s; }
-          .bubble-10 { width: 45px; height: 45px; left: 15%; bottom: -65px; animation-duration: 8.5s; animation-delay: 2.2s; }
-          .bubble-11 { width: 52px; height: 52px; left: 25%; bottom: -72px; animation-duration: 9.5s; animation-delay: 0.3s; }
-          .bubble-12 { width: 48px; height: 48px; left: 35%; bottom: -68px; animation-duration: 8.8s; animation-delay: 3.3s; }
-          .bubble-13 { width: 55px; height: 55px; left: 48%; bottom: -75px; animation-duration: 10s; animation-delay: 1.8s; }
-          .bubble-14 { width: 42px; height: 42px; left: 58%; bottom: -62px; animation-duration: 8s; animation-delay: 4.5s; }
-          .bubble-15 { width: 50px; height: 50px; left: 72%; bottom: -70px; animation-duration: 9.2s; animation-delay: 2.8s; }
-          .bubble-16 { width: 46px; height: 46px; left: 88%; bottom: -66px; animation-duration: 8.6s; animation-delay: 5s; }
-          
-          /* Small Bubbles */
-          .bubble-17 { width: 30px; height: 30px; left: 2%; bottom: -50px; animation-duration: 7s; animation-delay: 0.5s; }
-          .bubble-18 { width: 25px; height: 25px; left: 12%; bottom: -45px; animation-duration: 6s; animation-delay: 1.5s; }
-          .bubble-19 { width: 32px; height: 32px; left: 22%; bottom: -52px; animation-duration: 7.2s; animation-delay: 2.5s; }
-          .bubble-20 { width: 28px; height: 28px; left: 32%; bottom: -48px; animation-duration: 6.5s; animation-delay: 0.2s; }
-          .bubble-21 { width: 35px; height: 35px; left: 42%; bottom: -55px; animation-duration: 7.5s; animation-delay: 3.2s; }
-          .bubble-22 { width: 24px; height: 24px; left: 55%; bottom: -44px; animation-duration: 5.8s; animation-delay: 1.8s; }
-          .bubble-23 { width: 30px; height: 30px; left: 68%; bottom: -50px; animation-duration: 6.8s; animation-delay: 4.2s; }
-          .bubble-24 { width: 26px; height: 26px; left: 78%; bottom: -46px; animation-duration: 6.2s; animation-delay: 0.8s; }
-          .bubble-25 { width: 22px; height: 22px; left: 95%; bottom: -42px; animation-duration: 5.5s; animation-delay: 2.8s; }
-          
-          @keyframes floatUp {
-            0% {
-              transform: translateY(0) translateX(0) scale(0.8);
-              opacity: 0;
-            }
-            5% {
-              opacity: 1;
-            }
-            25% {
-              transform: translateY(-150px) translateX(15px) scale(1);
-            }
-            50% {
-              transform: translateY(-300px) translateX(-10px) scale(1.05);
-            }
-            75% {
-              transform: translateY(-450px) translateX(20px) scale(1);
-            }
-            95% {
-              opacity: 0.9;
-            }
-            100% {
-              transform: translateY(-600px) translateX(-5px) scale(0.95);
-              opacity: 0;
-            }
-          }
-          
-          .sparkle {
-            position: absolute;
-            color: rgba(100,180,220,0.9);
-            font-size: 16px;
-            animation: sparkleFloat linear infinite;
-            text-shadow: 0 0 10px rgba(100,180,220,0.5);
-          }
-          
-          .sparkle-1 { left: 8%; bottom: -30px; animation-duration: 8s; animation-delay: 0s; font-size: 22px; }
-          .sparkle-2 { left: 25%; bottom: -30px; animation-duration: 9s; animation-delay: 1.5s; font-size: 16px; }
-          .sparkle-3 { left: 42%; bottom: -30px; animation-duration: 7.5s; animation-delay: 3s; font-size: 20px; }
-          .sparkle-4 { left: 60%; bottom: -30px; animation-duration: 8.5s; animation-delay: 0.5s; font-size: 14px; }
-          .sparkle-5 { left: 75%; bottom: -30px; animation-duration: 9.5s; animation-delay: 2s; font-size: 18px; }
-          .sparkle-6 { left: 92%; bottom: -30px; animation-duration: 7s; animation-delay: 4s; font-size: 15px; }
-          
-          @keyframes sparkleFloat {
-            0% {
-              transform: translateY(0) rotate(0deg);
-              opacity: 0;
-            }
-            10% {
-              opacity: 1;
-            }
-            90% {
-              opacity: 0.9;
-            }
-            100% {
-              transform: translateY(-550px) rotate(360deg);
-              opacity: 0;
-            }
-          }
-        `}</style>
-        
+      <section className="relative bg-blue-100 pt-24 pb-0 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <HeroCarousel isAuthenticated={isAuthenticated} user={user} onBookNow={handleBookNow} />
         </div>
@@ -1121,9 +1064,8 @@ export default function HomePage() {
                 muted
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover"
-                poster="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
               >
-                <source src="https://cdn.pixabay.com/video/2020/05/25/40130-424930032_large.mp4" type="video/mp4" />
+                <source src="/images/pricing.mp4" type="video/mp4" />
               </video>
               
               {/* Dark Overlay */}
@@ -1440,7 +1382,7 @@ export default function HomePage() {
       </section>
 
       {/* Scroll Banner & Image Gallery Section */}
-      <ScrollBannerSection isAuthenticated={isAuthenticated} />
+      <ScrollBannerSection isAuthenticated={isAuthenticated} onGalleryVisible={handleGalleryVisible} />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">

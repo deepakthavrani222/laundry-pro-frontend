@@ -271,30 +271,32 @@ export default function OrderDetailsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
               <Link href="/customer/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                <Button variant="outline" size="sm" className="flex-shrink-0">
+                  <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
                   Back
                 </Button>
               </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Order #{order.orderNumber}</h1>
-                <p className="text-gray-600">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Order</h1>
+                <p className="text-sm sm:text-base text-gray-600 font-medium break-all">#{order.orderNumber}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {canCancelOrder() && (
                 <Button
                   variant="outline"
                   onClick={() => setShowCancelModal(true)}
-                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  className="border-red-300 text-red-600 hover:bg-red-50 text-sm"
+                  size="sm"
                 >
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel Order
+                  <X className="w-4 h-4 mr-1 sm:mr-2" />
+                  Cancel
                 </Button>
               )}
               
@@ -302,9 +304,10 @@ export default function OrderDetailsPage() {
                 <Button
                   variant="outline"
                   onClick={handleReorder}
-                  className="border-teal-500 text-teal-600 hover:bg-teal-50"
+                  className="border-teal-500 text-teal-600 hover:bg-teal-50 text-sm"
+                  size="sm"
                 >
-                  <RotateCcw className="w-4 h-4 mr-2" />
+                  <RotateCcw className="w-4 h-4 mr-1 sm:mr-2" />
                   Reorder
                 </Button>
               )}
@@ -312,10 +315,11 @@ export default function OrderDetailsPage() {
               {canRateOrder() && (
                 <Button
                   onClick={() => setShowRatingModal(true)}
-                  className="bg-teal-500 hover:bg-teal-600 text-white"
+                  className="bg-teal-500 hover:bg-teal-600 text-white text-sm"
+                  size="sm"
                 >
-                  <Star className="w-4 h-4 mr-2" />
-                  Rate Order
+                  <Star className="w-4 h-4 mr-1 sm:mr-2" />
+                  Rate
                 </Button>
               )}
             </div>

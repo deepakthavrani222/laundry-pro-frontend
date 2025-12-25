@@ -273,9 +273,8 @@ export default function PricingPage() {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          poster="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
         >
-          <source src="https://cdn.pixabay.com/video/2020/05/25/40130-424930032_large.mp4" type="video/mp4" />
+          <source src="/images/pricing.mp4" type="video/mp4" />
         </video>
         
         <div className="absolute inset-0 bg-teal-900/70"></div>

@@ -1,20 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { superAdminApi } from '@/lib/superAdminApi'
 import { 
   DollarSign,
   TrendingUp,
   TrendingDown,
   CreditCard,
-  Users,
   AlertCircle,
-  CheckCircle,
-  Clock,
-  FileText,
-  Download,
-  Filter,
   RefreshCw
 } from 'lucide-react'
 
@@ -138,7 +131,7 @@ export default function FinancialManagementPage() {
       {overview && (
         <>
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -176,26 +169,6 @@ export default function FinancialManagementPage() {
                 </div>
                 <div className="p-3 bg-white/20 rounded-full">
                   <CreditCard className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-100">Platform Fees</p>
-                  <p className="text-2xl font-bold text-white">
-                    {formatCurrency(overview.totalFees)}
-                  </p>
-                  <p className="text-sm text-purple-100 mt-2">
-                    {overview.totalRevenue > 0 
-                      ? `${((overview.totalFees / overview.totalRevenue) * 100).toFixed(1)}% of revenue`
-                      : '0% of revenue'
-                    }
-                  </p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
             </div>
@@ -295,74 +268,6 @@ export default function FinancialManagementPage() {
           )}
         </>
       )}
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link
-          href="/superadmin/financial/transactions"
-          className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-full mr-4">
-              <CreditCard className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">Transactions</h3>
-              <p className="text-sm text-gray-600">View all transactions</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/superadmin/financial/settlements"
-          className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-full mr-4">
-              <Users className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">Settlements</h3>
-              <p className="text-sm text-gray-600">Manage settlements</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/superadmin/financial/reports"
-          className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-full mr-4">
-              <FileText className="h-6 w-6 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">Reports</h3>
-              <p className="text-sm text-gray-600">Financial reports</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/superadmin/financial/approvals"
-          className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center">
-            <div className="p-3 bg-orange-100 rounded-full mr-4">
-              <CheckCircle className="h-6 w-6 text-orange-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">Approvals</h3>
-              <p className="text-sm text-gray-600">Pending approvals</p>
-              {overview && overview.pendingApprovals.transactions + overview.pendingApprovals.settlements > 0 && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
-                  {overview.pendingApprovals.transactions + overview.pendingApprovals.settlements} pending
-                </span>
-              )}
-            </div>
-          </div>
-        </Link>
-      </div>
     </div>
   )
 }

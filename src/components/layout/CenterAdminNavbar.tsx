@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import { Bell, Menu, User, LogOut, Settings, Building2, CheckCheck, Package, AlertTriangle, Clock } from 'lucide-react'
 
 interface Notification {
@@ -20,10 +20,13 @@ interface Notification {
   }
 }
 
-export function CenterAdminNavbar() {
+interface CenterAdminNavbarProps {
+  onMenuClick?: () => void
+}
+
+export function CenterAdminNavbar({ onMenuClick }: CenterAdminNavbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -141,10 +144,10 @@ export function CenterAdminNavbar() {
           {/* Left side */}
           <div className="flex items-center">
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={onMenuClick}
               className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-6 w-6 pointer-events-none" />
             </button>
             
             <Link href="/center-admin/dashboard" className="flex items-center space-x-2 ml-4 lg:ml-0">

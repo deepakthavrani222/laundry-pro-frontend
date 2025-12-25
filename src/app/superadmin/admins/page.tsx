@@ -8,7 +8,7 @@ import { CenterAdminPermissionMatrix, getDefaultCenterAdminPermissions, getFullC
 import { 
   Shield, Search, Loader2, RefreshCw, Mail, Phone, Building2, X, Check,
   UserPlus, Key, ChevronDown, ChevronUp, UserX, UserCheck, Eye, EyeOff, Edit,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Send, Clock, XCircle, RotateCcw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -28,6 +28,7 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const token = getAuthToken()
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }), ...options.headers }
   })
   const data = await res.json()
@@ -60,6 +61,16 @@ interface Admin {
   assignedBranch?: { _id: string; name: string; code: string }
 }
 
+interface Invitation {
+  _id: string
+  email: string
+  role: string
+  status: 'pending' | 'accepted' | 'expired'
+  expiresAt: string
+  createdAt: string
+  assignedBranch?: { _id: string; name: string; code: string }
+}
+
 const roleColors: Record<string, string> = {
   admin: 'bg-purple-100 text-purple-800', 
   center_admin: 'bg-green-100 text-green-800'
@@ -67,17 +78,17 @@ const roleColors: Record<string, string> = {
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([])
+  const [invitations, setInvitations] = useState<Invitation[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [goToPage, setGoToPage] = useState('')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', phone: '', password: '', assignedBranch: '' })
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviting, setInviting] = useState(false)
+  const [newInvite, setNewInvite] = useState({ email: '', assignedBranch: '' })
   const [newAdminPermissions, setNewAdminPermissions] = useState(getDefaultPermissions())
   const [showPermissions, setShowPermissions] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null)
   const [editPermissions, setEditPermissions] = useState(getDefaultPermissions())
@@ -86,10 +97,11 @@ export default function AdminsPage() {
   const [branches, setBranches] = useState<{_id: string, name: string}[]>([])
   const [createRole, setCreateRole] = useState<'admin' | 'center_admin'>('admin')
   const [newCenterAdminPermissions, setNewCenterAdminPermissions] = useState(getDefaultCenterAdminPermissions())
+  const [activeTab, setActiveTab] = useState<'admins' | 'invitations'>('admins')
 
   useEffect(() => { setCurrentPage(1) }, [searchTerm, roleFilter])
 
-  useEffect(() => { fetchAdmins(); fetchBranches() }, [])
+  useEffect(() => { fetchAdmins(); fetchBranches(); fetchInvitations() }, [])
 
   const fetchBranches = async () => {
     try { const d = await apiCall('/superadmin/branches'); setBranches(d.data?.branches || d.data || []) } catch {}
@@ -101,38 +113,58 @@ export default function AdminsPage() {
     setLoading(false)
   }
 
+  const fetchInvitations = async () => {
+    try { const d = await apiCall('/superadmin/admins/invitations'); setInvitations(d.data?.invitations || []) } catch { setInvitations([]) }
+  }
 
-  const handleCreateAdmin = async () => {
-    if (!newAdmin.name || !newAdmin.email || !newAdmin.phone || !newAdmin.password) {
-      toast.error('Please fill all required fields'); return
+  const handleInviteAdmin = async () => {
+    if (!newInvite.email) {
+      toast.error('Please enter email address'); return
     }
     if (createRole === 'admin') {
       const hasP = Object.values(newAdminPermissions).some(m => Object.values(m).some(v => v))
       if (!hasP) { toast.error('Assign at least one permission'); return }
     } else if (createRole === 'center_admin') {
-      if (!newAdmin.assignedBranch) { toast.error('Center Admin must be assigned to a branch'); return }
+      if (!newInvite.assignedBranch) { toast.error('Center Admin must be assigned to a branch'); return }
       const hasP = Object.values(newCenterAdminPermissions).some(m => Object.values(m).some(v => v))
       if (!hasP) { toast.error('Assign at least one permission'); return }
     }
-    setCreating(true)
+    setInviting(true)
     try {
-      await apiCall('/superadmin/admins', {
+      await apiCall('/superadmin/admins/invite', {
         method: 'POST',
         body: JSON.stringify({ 
-          ...newAdmin, 
+          email: newInvite.email,
           role: createRole,
           permissions: createRole === 'admin' ? newAdminPermissions : newCenterAdminPermissions,
-          assignedBranch: newAdmin.assignedBranch || undefined 
+          assignedBranch: newInvite.assignedBranch || undefined 
         })
       })
-      toast.success(createRole === 'center_admin' ? 'Center Admin created!' : 'Admin created!')
-      setShowCreateModal(false); setShowPassword(false)
-      setNewAdmin({ name: '', email: '', phone: '', password: '', assignedBranch: '' })
+      toast.success('Invitation sent successfully!')
+      setShowInviteModal(false)
+      setNewInvite({ email: '', assignedBranch: '' })
       setNewAdminPermissions(getDefaultPermissions())
       setNewCenterAdminPermissions(getDefaultCenterAdminPermissions())
-      setCreateRole('admin'); fetchAdmins()
+      setCreateRole('admin')
+      fetchInvitations()
     } catch (e: any) { toast.error(e.message) }
-    setCreating(false)
+    setInviting(false)
+  }
+
+  const handleResendInvitation = async (invitationId: string) => {
+    try {
+      await apiCall(`/superadmin/admins/invitations/${invitationId}/resend`, { method: 'POST' })
+      toast.success('Invitation resent!')
+      fetchInvitations()
+    } catch (e: any) { toast.error(e.message) }
+  }
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    try {
+      await apiCall(`/superadmin/admins/invitations/${invitationId}`, { method: 'DELETE' })
+      toast.success('Invitation cancelled')
+      fetchInvitations()
+    } catch (e: any) { toast.error(e.message) }
   }
 
   const openEditModal = async (admin: Admin) => {
@@ -216,20 +248,20 @@ export default function AdminsPage() {
           <p className="text-gray-600">Manage admins and center admins with RBAC permissions</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowCreateModal(true)} className="bg-purple-500 hover:bg-purple-600">
-            <UserPlus className="w-4 h-4 mr-2" />Create Admin
+          <Button onClick={() => setShowInviteModal(true)} className="bg-purple-500 hover:bg-purple-600">
+            <Send className="w-4 h-4 mr-2" />Invite Admin
           </Button>
-          <Button onClick={fetchAdmins} variant="outline">
+          <Button onClick={() => { fetchAdmins(); fetchInvitations() }} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />Refresh
           </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-4">
           <div className="text-2xl font-bold text-white">{admins.filter(a => a.role === 'admin').length}</div>
-          <div className="text-sm text-purple-100">Total Admins</div>
+          <div className="text-sm text-purple-100">Admins</div>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4">
           <div className="text-2xl font-bold text-white">{admins.filter(a => a.role === 'center_admin').length}</div>
@@ -239,13 +271,34 @@ export default function AdminsPage() {
           <div className="text-2xl font-bold text-white">{admins.filter(a => a.isActive).length}</div>
           <div className="text-sm text-teal-100">Active</div>
         </div>
+        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-4">
+          <div className="text-2xl font-bold text-white">{invitations.filter(i => i.status === 'pending').length}</div>
+          <div className="text-sm text-amber-100">Pending Invites</div>
+        </div>
         <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-xl p-4">
           <div className="text-2xl font-bold text-white">{admins.filter(a => !a.isActive).length}</div>
           <div className="text-sm text-red-100">Inactive</div>
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b">
+        <button
+          onClick={() => setActiveTab('admins')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'admins' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          Admins ({admins.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('invitations')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'invitations' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          Invitations ({invitations.length})
+        </button>
+      </div>
+
       {/* Filters */}
+      {activeTab === 'admins' && (
       <div className="bg-white rounded-xl shadow-sm border p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -259,8 +312,10 @@ export default function AdminsPage() {
           </select>
         </div>
       </div>
+      )}
 
       {/* Admins Table */}
+      {activeTab === 'admins' && (
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center py-12"><Loader2 className="w-8 h-8 animate-spin text-purple-500" /></div>
@@ -390,16 +445,98 @@ export default function AdminsPage() {
           </div>
         )}
       </div>
+      )}
 
-      {/* Create Admin Modal */}
-      {showCreateModal && (
+      {/* Invitations Table */}
+      {activeTab === 'invitations' && (
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        {invitations.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">No invitations found</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {invitations.map((inv) => (
+                  <tr key={inv._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-900">{inv.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleColors[inv.role] || 'bg-gray-100 text-gray-800'}`}>
+                        {inv.role === 'center_admin' ? 'Center Admin' : 'Admin'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {inv.assignedBranch ? (
+                        <div className="flex items-center gap-1 text-sm">
+                          <Building2 className="w-4 h-4 text-gray-400" />
+                          {inv.assignedBranch.name}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 w-fit ${
+                        inv.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
+                        inv.status === 'accepted' ? 'bg-green-100 text-green-800' : 
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {inv.status === 'pending' && <Clock className="w-3 h-3" />}
+                        {inv.status === 'accepted' && <Check className="w-3 h-3" />}
+                        {inv.status === 'expired' && <XCircle className="w-3 h-3" />}
+                        {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(inv.expiresAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {inv.status === 'pending' && (
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => handleResendInvitation(inv._id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Resend">
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleCancelInvitation(inv._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Cancel">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* Invite Admin Modal */}
+      {showInviteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-xl font-semibold">Create New Admin</h3>
-              <button onClick={() => { setShowCreateModal(false); setShowPassword(false) }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
+              <h3 className="text-xl font-semibold">Invite Admin</h3>
+              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+                <p>An invitation email will be sent to the admin. They will set their own password when accepting the invitation.</p>
+              </div>
               <div className="flex gap-2 mb-4">
                 <button onClick={() => setCreateRole('admin')} className={`flex-1 py-2 px-4 rounded-lg border ${createRole === 'admin' ? 'bg-purple-500 text-white border-purple-500' : 'border-gray-300'}`}>
                   <Shield className="w-4 h-4 inline mr-2" />Admin
@@ -408,20 +545,13 @@ export default function AdminsPage() {
                   <Building2 className="w-4 h-4 inline mr-2" />Center Admin
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium mb-1">Name *</label><input type="text" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Full name" /></div>
-                <div><label className="block text-sm font-medium mb-1">Email *</label><input type="email" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="email@example.com" /></div>
-                <div><label className="block text-sm font-medium mb-1">Phone *</label><input type="tel" value={newAdmin.phone} onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="+91 9876543210" /></div>
-                <div><label className="block text-sm font-medium mb-1">Password *</label>
-                  <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} className="w-full px-3 py-2 border rounded-lg pr-10" placeholder="Min 8 characters" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-gray-400">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email Address *</label>
+                <input type="email" value={newInvite.email} onChange={(e) => setNewInvite({ ...newInvite, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="admin@example.com" />
               </div>
               {createRole === 'center_admin' && (
                 <div><label className="block text-sm font-medium mb-1">Assign Branch *</label>
-                  <select value={newAdmin.assignedBranch} onChange={(e) => setNewAdmin({ ...newAdmin, assignedBranch: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                  <select value={newInvite.assignedBranch} onChange={(e) => setNewInvite({ ...newInvite, assignedBranch: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
                     <option value="">Select Branch</option>
                     {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
                   </select>
@@ -464,9 +594,9 @@ export default function AdminsPage() {
               )}
             </div>
             <div className="flex justify-end gap-3 p-6 border-t">
-              <Button variant="outline" onClick={() => { setShowCreateModal(false); setShowPassword(false) }}>Cancel</Button>
-              <Button onClick={handleCreateAdmin} disabled={creating} className="bg-purple-500 hover:bg-purple-600">
-                {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : <><UserPlus className="w-4 h-4 mr-2" />Create Admin</>}
+              <Button variant="outline" onClick={() => setShowInviteModal(false)}>Cancel</Button>
+              <Button onClick={handleInviteAdmin} disabled={inviting} className="bg-purple-500 hover:bg-purple-600">
+                {inviting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Send Invitation</>}
               </Button>
             </div>
           </div>

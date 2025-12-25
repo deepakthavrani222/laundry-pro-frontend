@@ -41,22 +41,36 @@ export default function RevenueChart({ data, loading }: RevenueChartProps) {
   const [chartType, setChartType] = useState<'area' | 'bar' | 'pie'>('bar')
   const [timeRange, setTimeRange] = useState('7d')
 
+  // Add null checks for safety
+  if (!data || !data.daily || !data.byService) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
   // Format daily data for charts
   const formatDailyData = (dailyData: RevenueData['daily']) => {
+    if (!dailyData || !Array.isArray(dailyData)) return []
     return dailyData.map(item => ({
-      date: `${item._id.day}/${item._id.month}`,
-      revenue: item.revenue,
-      orders: item.orders,
-      fullDate: new Date(item._id.year, item._id.month - 1, item._id.day)
+      date: `${item._id?.day || 0}/${item._id?.month || 0}`,
+      revenue: item.revenue || 0,
+      orders: item.orders || 0,
+      fullDate: new Date(item._id?.year || 2024, (item._id?.month || 1) - 1, item._id?.day || 1)
     })).sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime())
   }
 
   // Format service data for pie chart
   const formatServiceData = (serviceData: RevenueData['byService']) => {
+    if (!serviceData || !Array.isArray(serviceData)) return []
     return serviceData.map((item, index) => ({
       name: item._id || 'Unknown Service',
-      value: item.revenue,
-      orders: item.orders,
+      value: item.revenue || 0,
+      orders: item.orders || 0,
       color: COLORS[index % COLORS.length]
     }))
   }

@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const { isCollapsed } = useAdminSidebar()
+  const { isCollapsed, setMobileOpen } = useAdminSidebar()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -26,11 +26,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           isCollapsed ? 'lg:pl-16' : 'lg:pl-64'
         )}
       >
-        {/* Header */}
-        <AdminHeader />
+        {/* Header - Fixed */}
+        <AdminHeader onMenuClick={() => setMobileOpen(true)} />
 
-        {/* Page Content */}
-        <main className="p-4 lg:p-6">
+        {/* Page Content - Add padding for fixed header */}
+        <main className="p-4 lg:p-6 pt-20">
           <div className="max-w-full">{children}</div>
         </main>
       </div>

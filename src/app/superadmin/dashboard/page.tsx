@@ -60,7 +60,112 @@ export default function SuperAdminDashboard() {
   }
 
   const handleExport = () => {
-    console.log('Export dashboard data')
+    if (!dashboardData) return
+
+    // Prepare CSV data with proper Excel formatting
+    const csvRows: string[] = []
+    
+    // Report Header
+    csvRows.push('SUPER ADMIN DASHBOARD REPORT')
+    csvRows.push('')
+    csvRows.push('Report Date,' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }))
+    csvRows.push('Report Time,' + new Date().toLocaleTimeString('en-IN'))
+    csvRows.push('Period,' + (timeframe === '24h' ? 'Last 24 Hours' : timeframe === '7d' ? 'Last 7 Days' : timeframe === '30d' ? 'Last 30 Days' : 'Last 90 Days'))
+    csvRows.push('')
+    csvRows.push('')
+    
+    // Overview Summary Section
+    csvRows.push('BUSINESS SUMMARY')
+    csvRows.push('')
+    csvRows.push('Metric,Value')
+    if (dashboardData.overview) {
+      csvRows.push('Total Revenue (₹),' + (dashboardData.overview.totalRevenue || 0))
+      csvRows.push('Total Orders,' + (dashboardData.overview.totalOrders || 0))
+      csvRows.push('Active Customers,' + (dashboardData.overview.activeCustomers || 0))
+      csvRows.push('Active Branches,' + (dashboardData.overview.activeBranches || 0))
+      csvRows.push('Pending Orders,' + (dashboardData.overview.pendingOrders || 0))
+      csvRows.push('Completed Orders,' + (dashboardData.overview.completedOrders || 0))
+      if (dashboardData.overview.totalOrders > 0) {
+        const avgOrderValue = Math.round((dashboardData.overview.totalRevenue || 0) / dashboardData.overview.totalOrders)
+        csvRows.push('Average Order Value (₹),' + avgOrderValue)
+      }
+    }
+    csvRows.push('')
+    csvRows.push('')
+    
+    // Order Status Distribution
+    if (dashboardData.orderDistribution && dashboardData.orderDistribution.length > 0) {
+      csvRows.push('ORDER STATUS BREAKDOWN')
+      csvRows.push('')
+      csvRows.push('Order Status,Number of Orders')
+      dashboardData.orderDistribution.forEach((item: any) => {
+        const statusName = (item._id || 'Unknown')
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (l: string) => l.toUpperCase())
+        csvRows.push(statusName + ',' + item.count)
+      })
+      csvRows.push('')
+      csvRows.push('')
+    }
+    
+    // Top Branches Performance
+    if (dashboardData.topBranches && dashboardData.topBranches.length > 0) {
+      csvRows.push('BRANCH PERFORMANCE')
+      csvRows.push('')
+      csvRows.push('Rank,Branch Name,Branch Code,Total Orders,Revenue (₹)')
+      dashboardData.topBranches.forEach((branch: any, index: number) => {
+        csvRows.push(`${index + 1},${branch.branchName || 'N/A'},${branch.branchCode || 'N/A'},${branch.totalOrders || 0},${branch.totalRevenue || 0}`)
+      })
+      csvRows.push('')
+      csvRows.push('')
+    }
+    
+    // Daily/Weekly Revenue Trend
+    if (dashboardData.revenue && dashboardData.revenue.length > 0) {
+      csvRows.push('REVENUE TREND')
+      csvRows.push('')
+      csvRows.push('Date,Revenue (₹),Number of Orders')
+      dashboardData.revenue.forEach((item: any) => {
+        csvRows.push(`${item._id || item.date},${item.revenue || 0},${item.orders || 0}`)
+      })
+      csvRows.push('')
+      csvRows.push('')
+    }
+    
+    // Recent Orders List
+    if (dashboardData.recentOrders && dashboardData.recentOrders.length > 0) {
+      csvRows.push('RECENT ORDERS')
+      csvRows.push('')
+      csvRows.push('Order ID,Customer Name,Order Status,Amount (₹),Order Date')
+      dashboardData.recentOrders.forEach((order: any) => {
+        const statusName = (order.status || 'Unknown')
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (l: string) => l.toUpperCase())
+        const orderDate = new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+        csvRows.push(`${order.orderNumber},${order.customer?.name || 'N/A'},${statusName},${order.totalAmount || order.pricing?.total || 0},${orderDate}`)
+      })
+      csvRows.push('')
+      csvRows.push('')
+    }
+    
+    // System Status
+    csvRows.push('SYSTEM STATUS')
+    csvRows.push('')
+    csvRows.push('Parameter,Value')
+    csvRows.push('System Uptime,' + (dashboardData.systemHealth?.uptime?.toFixed(1) || 99.9) + '%')
+    csvRows.push('Status,' + ((dashboardData.systemHealth?.uptime || 99.9) >= 99 ? 'All Systems Operational' : 'Some Issues Detected'))
+    
+    // Create and download CSV
+    const csvContent = csvRows.join('\n')
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' }) // BOM for Excel Hindi support
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `Dashboard-Report-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   if (error) {
@@ -114,17 +219,6 @@ export default function SuperAdminDashboard() {
               </div>
             )}
 
-            <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                autoRefresh 
-                  ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
-                  : 'bg-white/10 text-white border border-white/20'
-              }`}
-            >
-              {autoRefresh ? 'Auto ON' : 'Auto OFF'}
-            </button>
-
             <select
               value={timeframe}
               onChange={(e) => handleTimeframeChange(e.target.value)}
@@ -156,7 +250,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      {dashboardData && (
+      {dashboardData?.overview && (
         <StatsCards data={dashboardData.overview} loading={loading} />
       )}
 
@@ -164,11 +258,11 @@ export default function SuperAdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Order Status Pie Chart */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-6">
+          <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-800">Order Status Distribution</h3>
             <p className="text-sm text-gray-500">Current order status breakdown</p>
           </div>
-          <div className="h-64">
+          <div className="h-48">
             {dashboardData?.orderDistribution && dashboardData.orderDistribution.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -180,8 +274,8 @@ export default function SuperAdminDashboard() {
                     }))}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={90}
+                    innerRadius={40}
+                    outerRadius={70}
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -206,11 +300,11 @@ export default function SuperAdminDashboard() {
           </div>
           {/* Legend */}
           {dashboardData?.orderDistribution && (
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-3">
               {dashboardData.orderDistribution.slice(0, 6).map((item: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-2">
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="w-2.5 h-2.5 rounded-full" 
                     style={{ backgroundColor: ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#ef4444'][idx % 6] }}
                   ></div>
                   <span className="text-xs text-gray-600 truncate">
@@ -225,11 +319,11 @@ export default function SuperAdminDashboard() {
 
         {/* Top Branches Bar Chart */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-6">
+          <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-800">Branch Performance</h3>
             <p className="text-sm text-gray-500">Revenue by branch</p>
           </div>
-          <div className="h-64">
+          <div className="h-48">
             {dashboardData?.topBranches && dashboardData.topBranches.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dashboardData.topBranches.map((branch: any) => ({
@@ -238,8 +332,8 @@ export default function SuperAdminDashboard() {
                   orders: branch.totalOrders || 0
                 }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
-                  <YAxis stroke="#9ca3af" fontSize={11} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
+                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={10} />
+                  <YAxis stroke="#9ca3af" fontSize={10} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
                   <Tooltip 
                     contentStyle={{
                       backgroundColor: '#fff',
@@ -248,7 +342,7 @@ export default function SuperAdminDashboard() {
                     }}
                     formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
                   />
-                  <Bar dataKey="revenue" fill="url(#branchGradient)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="revenue" fill="url(#branchGradient)" radius={[4, 4, 0, 0]} />
                   <defs>
                     <linearGradient id="branchGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#8b5cf6" />
@@ -275,7 +369,18 @@ export default function SuperAdminDashboard() {
         </div>
         <div>
           {dashboardData && (
-            <SystemAlerts alerts={dashboardData.alerts} loading={loading} />
+            <SystemAlerts 
+              alerts={dashboardData.alerts} 
+              loading={loading}
+              onDismiss={(alertId) => {
+                console.log('Alert dismissed:', alertId)
+                // Could save to localStorage or API to persist dismissed alerts
+              }}
+              onClearAll={() => {
+                console.log('All alerts cleared')
+                // Could save to localStorage or API to persist cleared state
+              }}
+            />
           )}
         </div>
       </div>
@@ -317,23 +422,39 @@ export default function SuperAdminDashboard() {
         </div>
       </div>
 
-      {/* Footer Info */}
+      {/* Footer Info - System Status */}
       <div className="relative overflow-hidden bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl p-6 border border-purple-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+              (dashboardData?.systemHealth?.uptime || 99.9) >= 99 
+                ? 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-emerald-500/30' 
+                : (dashboardData?.systemHealth?.uptime || 99.9) >= 95
+                  ? 'bg-gradient-to-br from-yellow-500 to-orange-500 shadow-yellow-500/30'
+                  : 'bg-gradient-to-br from-red-500 to-pink-500 shadow-red-500/30'
+            }`}>
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h4 className="text-lg font-bold text-gray-900">System Status: All Good! ✅</h4>
+              <h4 className="text-lg font-bold text-gray-900">
+                System Status: {(dashboardData?.systemHealth?.uptime || 99.9) >= 99 ? 'All Good! ✅' : (dashboardData?.systemHealth?.uptime || 99.9) >= 95 ? 'Minor Issues ⚠️' : 'Issues Detected ❌'}
+              </h4>
               <p className="text-gray-600 text-sm">
-                All services are running smoothly. Last check: {new Date().toLocaleTimeString()}
+                {(dashboardData?.systemHealth?.uptime || 99.9) >= 99 
+                  ? 'All services are running smoothly.' 
+                  : 'Some services may be experiencing issues.'} Last check: {new Date().toLocaleTimeString()}
               </p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              99.9%
+            <div className={`text-3xl font-bold bg-clip-text text-transparent ${
+              (dashboardData?.systemHealth?.uptime || 99.9) >= 99
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
+                : (dashboardData?.systemHealth?.uptime || 99.9) >= 95
+                  ? 'bg-gradient-to-r from-yellow-600 to-orange-600'
+                  : 'bg-gradient-to-r from-red-600 to-pink-600'
+            }`}>
+              {(dashboardData?.systemHealth?.uptime || 99.9).toFixed(1)}%
             </div>
             <div className="text-sm text-gray-600 font-medium">Uptime</div>
           </div>

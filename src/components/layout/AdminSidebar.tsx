@@ -44,9 +44,21 @@ const navigation = [
 
 // Helper to check if user has permission
 const hasPermission = (user: any, permission: { module: string; action: string } | null) => {
-  if (!permission) return true // No permission required
-  if (!user?.permissions) return false
-  return user.permissions[permission.module]?.[permission.action] === true
+  if (!permission) return true // No permission required (Dashboard, Help)
+  if (!user) {
+    console.log('🔐 No user found')
+    return false
+  }
+  
+  // Check specific permissions from user's permissions object
+  if (!user.permissions) {
+    console.log('🔐 No permissions on user:', user.email)
+    return false
+  }
+  
+  const hasIt = user.permissions[permission.module]?.[permission.action] === true
+  console.log(`🔐 Permission check: ${permission.module}.${permission.action} = ${hasIt}`)
+  return hasIt
 }
 
 // Context for sidebar state

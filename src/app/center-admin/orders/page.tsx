@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
+import { useCenterAdminPermissions } from '@/hooks/useCenterAdminPermissions'
 import { 
   Package, 
   Search, 
@@ -21,7 +22,7 @@ import {
   Zap,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 const ITEMS_PER_PAGE = 8
@@ -52,6 +53,7 @@ interface Staff {
 }
 
 export default function BranchOrdersPage() {
+  const { canUpdate, canAssign, canExport } = useCenterAdminPermissions('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [staff, setStaff] = useState<Staff[]>([])
   const [loading, setLoading] = useState(true)
@@ -245,10 +247,12 @@ export default function BranchOrdersPage() {
           <p className="text-gray-600">Manage and process orders at your branch</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {canExport && (
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          )}
           <Button variant="outline" onClick={fetchOrders}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -433,7 +437,7 @@ export default function BranchOrdersPage() {
                     </Button>
                     
                     {/* Status Change Dropdown - like admin */}
-                    {['placed', 'assigned_to_branch', 'picked', 'in_process', 'ready', 'out_for_delivery'].includes(order.status) && (
+                    {canUpdate && ['placed', 'assigned_to_branch', 'picked', 'in_process', 'ready', 'out_for_delivery'].includes(order.status) && (
                       <select
                         value=""
                         onChange={(e) => {
@@ -466,7 +470,7 @@ export default function BranchOrdersPage() {
                       </select>
                     )}
                     
-                    {['assigned_to_branch', 'picked'].includes(order.status) && (
+                    {canAssign && ['assigned_to_branch', 'picked'].includes(order.status) && (
                       <Button 
                         size="sm" 
                         className="bg-green-500 hover:bg-green-600 text-white"

@@ -29,6 +29,14 @@ interface DashboardOverview {
   orderDistribution: any[]
   recentActivities: any[]
   alerts: any[]
+  systemHealth?: {
+    uptime: number
+    status: string
+    totalOperations?: number
+    failedOperations?: number
+    recentErrors?: number
+    lastChecked: string
+  }
   timeframe: string
   generatedAt: string
 }
