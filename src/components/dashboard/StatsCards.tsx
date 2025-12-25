@@ -34,37 +34,48 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ data, loading }: StatsCardsProps) {
+  // Add null checks for safety
+  if (!data || !data.growth || !data.periodStats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-36 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl animate-pulse"></div>
+        ))}
+      </div>
+    )
+  }
+
   const stats = [
     {
       name: 'Total Orders',
-      value: data.totalOrders.toLocaleString(),
-      change: data.growth.orders,
-      changeText: `+${data.periodStats.orders} this period`,
+      value: (data.totalOrders || 0).toLocaleString(),
+      change: data.growth?.orders || 0,
+      changeText: `+${data.periodStats?.orders || 0} this period`,
       icon: ShoppingBag,
       gradient: 'from-blue-500 to-indigo-600',
       shadow: 'shadow-blue-500/30'
     },
     {
       name: 'Total Revenue',
-      value: `₹${data.totalRevenue.toLocaleString()}`,
-      change: data.growth.revenue,
-      changeText: `+₹${data.periodStats.revenue.toLocaleString()}`,
+      value: `₹${(data.totalRevenue || 0).toLocaleString()}`,
+      change: data.growth?.revenue || 0,
+      changeText: `+₹${(data.periodStats?.revenue || 0).toLocaleString()}`,
       icon: DollarSign,
       gradient: 'from-emerald-500 to-teal-600',
       shadow: 'shadow-emerald-500/30'
     },
     {
       name: 'Total Customers',
-      value: data.totalCustomers.toLocaleString(),
-      change: data.growth.customers,
-      changeText: `+${data.periodStats.customers} new`,
+      value: (data.totalCustomers || 0).toLocaleString(),
+      change: data.growth?.customers || 0,
+      changeText: `+${data.periodStats?.customers || 0} new`,
       icon: Users,
       gradient: 'from-purple-500 to-pink-600',
       shadow: 'shadow-purple-500/30'
     },
     {
       name: 'Active Branches',
-      value: data.activeBranches.toString(),
+      value: (data.activeBranches || 0).toString(),
       change: 0,
       changeText: 'Operational',
       icon: Building2,

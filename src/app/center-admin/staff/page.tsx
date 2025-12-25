@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { useCenterAdminPermissions } from '@/hooks/useCenterAdminPermissions'
 import { 
   Users, 
   Search, 
@@ -18,7 +19,7 @@ import {
   Trash2,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 interface StaffMember {
@@ -53,6 +54,7 @@ const WORKER_TYPE_COLORS: Record<string, string> = {
 }
 
 export default function BranchStaffPage() {
+  const { canCreate, canUpdate, canDelete, canExport } = useCenterAdminPermissions('staff')
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [workerTypes, setWorkerTypes] = useState<WorkerType[]>([])
   const [branchInfo, setBranchInfo] = useState<{ name: string; code: string } | null>(null)
@@ -272,24 +274,28 @@ export default function BranchStaffPage() {
           <p className="text-gray-600">{branchInfo?.name || 'Your Branch'} - Manage your team</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {canExport && (
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          )}
           <Button variant="outline" onClick={fetchStaff}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button 
-            onClick={() => {
-              setFormData({ name: '', email: '', phone: '', password: '', workerType: 'general' })
-              setShowAddModal(true)
-            }}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Worker
-          </Button>
+          {canCreate && (
+            <Button 
+              onClick={() => {
+                setFormData({ name: '', email: '', phone: '', password: '', workerType: 'general' })
+                setShowAddModal(true)
+              }}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Worker
+            </Button>
+          )}
         </div>
       </div>
 
@@ -441,27 +447,33 @@ export default function BranchStaffPage() {
 
                     {/* Actions */}
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openEditModal(member)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant={member.isActive ? "outline" : "default"}
-                        size="sm"
-                        onClick={() => handleToggleAvailability(member._id)}
-                        disabled={actionLoading === member._id}
-                        className={member.isActive ? '' : 'bg-green-500 hover:bg-green-600 text-white'}
-                      >
-                        {actionLoading === member._id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : member.isActive ? (
-                          <UserX className="w-4 h-4" />
-                        ) : (
-                          <UserCheck className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => openDeleteModal(member)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {canUpdate && (
+                        <Button variant="outline" size="sm" onClick={() => openEditModal(member)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {canUpdate && (
+                        <Button
+                          variant={member.isActive ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => handleToggleAvailability(member._id)}
+                          disabled={actionLoading === member._id}
+                          className={member.isActive ? '' : 'bg-green-500 hover:bg-green-600 text-white'}
+                        >
+                          {actionLoading === member._id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : member.isActive ? (
+                            <UserX className="w-4 h-4" />
+                          ) : (
+                            <UserCheck className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => openDeleteModal(member)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

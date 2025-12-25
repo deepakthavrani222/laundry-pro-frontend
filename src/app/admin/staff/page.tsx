@@ -3,261 +3,68 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
-import { PermissionMatrix } from '@/components/rbac/PermissionMatrix'
+import { api } from '@/lib/api'
 import { 
   Users, Search, Phone, Mail, Building2, AlertCircle, Shield, Calendar,
-  UserCheck, UserX, RefreshCw, Loader2, Plus, X, Key, ChevronDown, ChevronUp, Check
+  UserCheck, UserX, RefreshCw, Loader2, Key, Eye
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
-const ITEMS_PER_PAGE = 8
-
-const getAuthToken = () => {
-  let token = null
-  try {
-    const data = localStorage.getItem('admin-storage')
-    if (data) { const p = JSON.parse(data); token = p.state?.token || p.token }
-  } catch {}
-  return token || localStorage.getItem('admin-token') || localStorage.getItem('token')
-}
-
-const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-  const token = getAuthToken()
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }), ...options.headers }
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.message || 'API request failed')
-  return data
-}
-
-const getDefaultPermissions = () => ({
-  orders: { view: false, create: false, update: false, delete: false, assign: false, cancel: false, refund: false },
-  customers: { view: false, create: false, update: false, delete: false },
-  branches: { view: false, create: false, update: false, delete: false },
-  services: { view: false, create: false, update: false, delete: false, approveChanges: false },
-  financial: { view: false, create: false, update: false, delete: false, approve: false, export: false },
-  reports: { view: false, create: false, update: false, delete: false, export: false },
-  users: { view: false, create: false, update: false, delete: false, assignRole: false },
-  settings: { view: false, create: false, update: false, delete: false }
-})
+const ITEMS_PER_PAGE = 10
 
 interface Staff {
-  _id: string; name: string; email: string; phone: string; role: string
+  _id: string
+  name: string
+  email: string
+  phone: string
+  role: string
   assignedBranch?: { _id: string; name: string }
   permissions?: Record<string, Record<string, boolean>>
-  isActive: boolean; lastLogin?: string; createdAt: string
-  staffCount?: number
-}
-
-interface AdminProfile {
-  _id: string; name: string; email: string
-  permissions: Record<string, Record<string, boolean>>
-  assignedBranch?: { _id: string; name: string }
+  isActive: boolean
+  lastLogin?: string
+  createdAt: string
 }
 
 export default function AdminStaffPage() {
   const [staff, setStaff] = useState<Staff[]>([])
-  const [centerAdmins, setCenterAdmins] = useState<Staff[]>([])
-  const [branches, setBranches] = useState<{_id: string, name: string}[]>([])
-  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [roleFilter, setRoleFilter] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [loadingAction, setLoadingAction] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'staff' | 'center-admin'>('staff')
-  
-  // Create Staff Modal
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [newStaff, setNewStaff] = useState({ name: '', email: '', phone: '', password: '' })
-  const [newStaffPermissions, setNewStaffPermissions] = useState(getDefaultPermissions())
-  const [showPermissions, setShowPermissions] = useState(true)
-  
-  // Edit Staff Modal
-  const [showEditModal, setShowEditModal] = useState(false)
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null)
-  const [editPermissions, setEditPermissions] = useState(getDefaultPermissions())
-  const [updating, setUpdating] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
 
-  // Create Center Admin Modal
-  const [showCreateCenterAdminModal, setShowCreateCenterAdminModal] = useState(false)
-  const [creatingCenterAdmin, setCreatingCenterAdmin] = useState(false)
-  const [newCenterAdmin, setNewCenterAdmin] = useState({ name: '', email: '', phone: '', password: '', assignedBranch: '' })
-
-  // Check if admin has users permissions
-  const canViewUsers = adminProfile?.permissions?.users?.view
-  const canCreateUsers = adminProfile?.permissions?.users?.create
-  const canDeleteUsers = adminProfile?.permissions?.users?.delete
-  const canUpdateUsers = adminProfile?.permissions?.users?.update
-
-  useEffect(() => { fetchAdminProfile(); fetchStaff(); fetchBranches() }, [])
-  
-  useEffect(() => {
-    if (canViewUsers) fetchCenterAdmins()
-  }, [canViewUsers])
-
-  const fetchAdminProfile = async () => {
-    try {
-      const data = await apiCall('/auth/profile')
-      setAdminProfile(data.data?.user || data.user)
-    } catch (err) { console.error('Error fetching profile:', err) }
-  }
+  useEffect(() => { fetchStaff() }, [])
 
   const fetchStaff = async () => {
-    setLoading(true); setError(null)
+    setLoading(true)
+    setError(null)
     try {
-      const res = await apiCall('/admin/staff')
-      setStaff(res.data?.staff || [])
+      const { data } = await api.get('/admin/staff')
+      const users = data.data?.data || data.data?.staff || data.data || []
+      setStaff(Array.isArray(users) ? users : [])
     } catch (err: any) {
       console.error('Error fetching staff:', err)
-      setError(err.message || 'Failed to fetch staff')
+      setError(err.response?.data?.message || err.message || 'Failed to fetch staff')
       setStaff([])
     }
     setLoading(false)
   }
 
-  const fetchCenterAdmins = async () => {
-    try {
-      const res = await apiCall('/admin/center-admins')
-      setCenterAdmins(res.data?.centerAdmins || [])
-    } catch (err: any) {
-      console.error('Error fetching center admins:', err)
-      setCenterAdmins([])
-    }
-  }
-
-  const fetchBranches = async () => {
-    try {
-      const res = await apiCall('/admin/branches')
-      setBranches(res.data?.branches || res.data || [])
-    } catch { setBranches([]) }
-  }
-
-  const handleCreateStaff = async () => {
-    if (!newStaff.name || !newStaff.email || !newStaff.phone || !newStaff.password) {
-      toast.error('Please fill all required fields'); return
-    }
-    const hasP = Object.values(newStaffPermissions).some(m => Object.values(m).some(v => v))
-    if (!hasP) { toast.error('Assign at least one permission'); return }
-    
-    setCreating(true)
-    try {
-      await apiCall('/admin/staff', {
-        method: 'POST',
-        body: JSON.stringify({ ...newStaff, permissions: newStaffPermissions })
-      })
-      toast.success('Staff created successfully!')
-      setShowCreateModal(false)
-      setNewStaff({ name: '', email: '', phone: '', password: '' })
-      setNewStaffPermissions(getDefaultPermissions())
-      fetchStaff()
-    } catch (e: any) { toast.error(e.message) }
-    setCreating(false)
-  }
-
-  const openEditModal = async (staffMember: Staff) => {
-    try {
-      const data = await apiCall(`/admin/staff/${staffMember._id}`)
-      const fullStaff = data.data?.staff
-      setSelectedStaff(fullStaff)
-      setEditPermissions(fullStaff.permissions || getDefaultPermissions())
-      setShowEditModal(true)
-    } catch { toast.error('Failed to load staff details') }
-  }
-
-  const handleUpdateStaff = async () => {
-    if (!selectedStaff) return
-    setUpdating(true)
-    try {
-      await apiCall(`/admin/staff/${selectedStaff._id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ permissions: editPermissions })
-      })
-      toast.success('Staff updated!')
-      setShowEditModal(false)
-      fetchStaff()
-    } catch (e: any) { toast.error(e.message) }
-    setUpdating(false)
-  }
-
-  const handleToggleStatus = async (staffMember: Staff) => {
-    setLoadingAction(staffMember._id)
-    try {
-      if (staffMember.isActive) {
-        await apiCall(`/admin/staff/${staffMember._id}`, { method: 'DELETE' })
-        toast.success(`${staffMember.name} deactivated`)
-      } else {
-        await apiCall(`/admin/staff/${staffMember._id}/reactivate`, { method: 'PUT' })
-        toast.success(`${staffMember.name} reactivated`)
-      }
-      fetchStaff()
-    } catch (e: any) { toast.error(e.message) }
-    setLoadingAction(null)
-  }
-
-  const handleCreateCenterAdmin = async () => {
-    if (!newCenterAdmin.name || !newCenterAdmin.email || !newCenterAdmin.phone || !newCenterAdmin.password) {
-      toast.error('Please fill all required fields'); return
-    }
-    if (!newCenterAdmin.assignedBranch) {
-      toast.error('Please select a branch'); return
-    }
-    setCreatingCenterAdmin(true)
-    try {
-      await apiCall('/admin/center-admins', {
-        method: 'POST',
-        body: JSON.stringify(newCenterAdmin)
-      })
-      toast.success('Center Admin created successfully!')
-      setShowCreateCenterAdminModal(false)
-      setNewCenterAdmin({ name: '', email: '', phone: '', password: '', assignedBranch: '' })
-      fetchCenterAdmins()
-    } catch (e: any) { toast.error(e.message) }
-    setCreatingCenterAdmin(false)
-  }
-
-  const handleToggleCenterAdminStatus = async (ca: Staff) => {
-    setLoadingAction(ca._id)
-    try {
-      if (ca.isActive) {
-        await apiCall(`/admin/center-admins/${ca._id}`, { method: 'DELETE' })
-        toast.success(`${ca.name} deactivated`)
-      } else {
-        await apiCall(`/admin/center-admins/${ca._id}/reactivate`, { method: 'PUT' })
-        toast.success(`${ca.name} reactivated`)
-      }
-      fetchCenterAdmins()
-    } catch (e: any) { toast.error(e.message) }
-    setLoadingAction(null)
-  }
-
   const filteredStaff = staff.filter(s => {
-    const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = !search || 
+      s.name.toLowerCase().includes(search.toLowerCase()) || 
+      s.email.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = !statusFilter || (statusFilter === 'active' ? s.isActive : !s.isActive)
-    return matchesSearch && matchesStatus
+    const matchesRole = !roleFilter || s.role === roleFilter
+    return matchesSearch && matchesStatus && matchesRole
   })
 
-  const filteredCenterAdmins = centerAdmins.filter(ca => {
-    const matchesSearch = !search || ca.name.toLowerCase().includes(search.toLowerCase()) || ca.email.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = !statusFilter || (statusFilter === 'active' ? ca.isActive : !ca.isActive)
-    return matchesSearch && matchesStatus
-  })
-
-  // Pagination - based on active tab
-  const currentList = activeTab === 'staff' ? filteredStaff : filteredCenterAdmins
-  const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(filteredStaff.length / ITEMS_PER_PAGE)
   const paginatedStaff = filteredStaff.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-  const paginatedCenterAdmins = filteredCenterAdmins.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-  
-  // Reset to page 1 when filters or tab change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, statusFilter, activeTab])
+
+  useEffect(() => { setCurrentPage(1) }, [search, statusFilter, roleFilter])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -269,82 +76,141 @@ export default function AdminStaffPage() {
     return Object.values(perms).reduce((sum, m) => sum + Object.values(m).filter(v => v).length, 0)
   }
 
+  const getRoleBadge = (role: string) => {
+    const roleConfig: Record<string, { label: string; className: string }> = {
+      'admin': { label: 'Admin', className: 'bg-blue-100 text-blue-700' },
+      'center_admin': { label: 'Center Admin', className: 'bg-green-100 text-green-700' },
+      'support_agent': { label: 'Support Agent', className: 'bg-purple-100 text-purple-700' },
+      'superadmin': { label: 'Super Admin', className: 'bg-red-100 text-red-700' },
+    }
+    const config = roleConfig[role] || { label: role?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Staff', className: 'bg-gray-100 text-gray-700' }
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}>{config.label}</span>
+  }
+
+  const viewStaffDetails = (staffMember: Staff) => {
+    setSelectedStaff(staffMember)
+    setShowDetailsModal(true)
+  }
+
+  // Stats
+  const activeCount = staff.filter(s => s.isActive).length
+  const adminCount = staff.filter(s => s.role === 'admin').length
+  const centerAdminCount = staff.filter(s => s.role === 'center_admin').length
+  const supportAgentCount = staff.filter(s => s.role === 'support_agent').length
+
   if (loading && staff.length === 0) {
     return <div className="flex justify-center items-center py-20"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>
   }
 
   return (
     <div className="space-y-6 mt-16">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-          <p className="text-gray-600">Manage staff and center admins</p>
+          <h1 className="text-3xl font-bold text-gray-800">Users</h1>
+          <p className="text-gray-600">View all system users (View Only)</p>
         </div>
-        <div className="flex gap-2">
-          {activeTab === 'staff' && (
-            <Button onClick={() => setShowCreateModal(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />Create Staff
-            </Button>
-          )}
-          {activeTab === 'center-admin' && canCreateUsers && (
-            <Button onClick={() => setShowCreateCenterAdminModal(true)} className="bg-green-600 hover:bg-green-700">
-              <Plus className="w-4 h-4 mr-2" />Create Center Admin
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => { fetchStaff(); fetchCenterAdmins() }}><RefreshCw className="w-4 h-4 mr-2" />Refresh</Button>
-        </div>
+        <Button variant="outline" onClick={fetchStaff}>
+          <RefreshCw className="w-4 h-4 mr-2" />Refresh
+        </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        <button 
-          onClick={() => setActiveTab('staff')} 
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'staff' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          <Users className="w-4 h-4 inline mr-2" />Staff ({staff.length})
-        </button>
-        {canViewUsers && (
-          <button 
-            onClick={() => setActiveTab('center-admin')} 
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'center-admin' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-          >
-            <Building2 className="w-4 h-4 inline mr-2" />Center Admins ({centerAdmins.length})
-          </button>
-        )}
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-blue-800">View Only Access</p>
+          <p className="text-sm text-blue-700">User management (create, edit, delete) is only available to Super Admin.</p>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4"><Users className="w-6 h-6" /></div>
-          <p className="text-sm text-blue-100">Total Staff</p>
-          <p className="text-3xl font-bold">{staff.length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl p-4 border shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{staff.length}</p>
+              <p className="text-xs text-gray-500">Total Users</p>
+            </div>
+          </div>
         </div>
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4"><Building2 className="w-6 h-6" /></div>
-          <p className="text-sm text-green-100">Center Admins</p>
-          <p className="text-3xl font-bold">{centerAdmins.length}</p>
+        <div className="bg-white rounded-xl p-4 border shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{activeCount}</p>
+              <p className="text-xs text-gray-500">Active</p>
+            </div>
+          </div>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4"><UserCheck className="w-6 h-6" /></div>
-          <p className="text-sm text-emerald-100">Active Users</p>
-          <p className="text-3xl font-bold">{staff.filter(s => s.isActive).length + centerAdmins.filter(c => c.isActive).length}</p>
+        <div className="bg-white rounded-xl p-4 border shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{adminCount}</p>
+              <p className="text-xs text-gray-500">Admins</p>
+            </div>
+          </div>
         </div>
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4"><Key className="w-6 h-6" /></div>
-          <p className="text-sm text-purple-100">Your Permissions</p>
-          <p className="text-3xl font-bold">{countPermissions(adminProfile?.permissions)}</p>
+        <div className="bg-white rounded-xl p-4 border shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{centerAdminCount}</p>
+              <p className="text-xs text-gray-500">Center Admins</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 border shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{supportAgentCount}</p>
+              <p className="text-xs text-gray-500">Support Agents</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
+      <div className="bg-white rounded-xl shadow-sm border p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+            <input 
+              type="text" 
+              placeholder="Search by name or email..." 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+              className="w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+            />
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-3 border rounded-lg">
+          <select 
+            value={roleFilter} 
+            onChange={(e) => setRoleFilter(e.target.value)} 
+            className="px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="center_admin">Center Admin</option>
+            <option value="support_agent">Support Agent</option>
+          </select>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)} 
+            className="px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -359,48 +225,50 @@ export default function AdminStaffPage() {
         </div>
       )}
 
-      {/* Staff List */}
-      {activeTab === 'staff' && (
+      {/* Users List */}
       <div className="bg-white rounded-xl shadow-sm border">
-        <div className="p-6 border-b"><h2 className="text-lg font-semibold">Your Staff ({filteredStaff.length})</h2></div>
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold">All Users ({filteredStaff.length})</h2>
+        </div>
         
         {filteredStaff.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Staff Found</h3>
-            <p className="text-gray-600 mb-4">Create your first staff member with permissions</p>
-            <Button onClick={() => setShowCreateModal(true)} className="bg-blue-600 hover:bg-blue-700"><Plus className="w-4 h-4 mr-2" />Create Staff</Button>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
+            <p className="text-gray-600">Try adjusting your search or filters</p>
           </div>
         ) : (
           <div className="divide-y">
             {paginatedStaff.map(s => (
-              <div key={s._id} className="p-6 hover:bg-gray-50">
+              <div key={s._id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-start space-x-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${s.isActive ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gray-400'}`}>
-                      <span className="text-white font-semibold">{s.name?.split(' ').map(n => n[0]).join('')}</span>
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${s.isActive ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gray-400'}`}>
+                      <span className="text-white font-semibold text-sm">{s.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-800">{s.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${s.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{s.isActive ? 'Active' : 'Inactive'}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold text-gray-800">{s.name}</h3>
+                        {getRoleBadge(s.role)}
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${s.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                          {s.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
-                        <div className="flex items-center"><Mail className="w-4 h-4 mr-1" />{s.email}</div>
-                        <div className="flex items-center"><Phone className="w-4 h-4 mr-1" />{s.phone}</div>
-                        <div className="flex items-center"><Calendar className="w-4 h-4 mr-1" />Joined {new Date(s.createdAt).toLocaleDateString()}</div>
-                        {s.assignedBranch && <div className="flex items-center"><Building2 className="w-4 h-4 mr-1" />{s.assignedBranch.name}</div>}
-                      </div>
-                      <div className="mt-2">
-                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded"><Key className="w-3 h-3 inline mr-1" />{countPermissions(s.permissions)} permissions</span>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                        <span className="flex items-center"><Mail className="w-3.5 h-3.5 mr-1" />{s.email}</span>
+                        <span className="flex items-center"><Phone className="w-3.5 h-3.5 mr-1" />{s.phone || 'N/A'}</span>
+                        {s.assignedBranch && (
+                          <span className="flex items-center"><Building2 className="w-3.5 h-3.5 mr-1" />{s.assignedBranch.name}</span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditModal(s)}><Key className="w-4 h-4 mr-1" />Permissions</Button>
-                    <Button variant="outline" size="sm" onClick={() => handleToggleStatus(s)} disabled={loadingAction === s._id}
-                      className={s.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}>
-                      {loadingAction === s._id ? <Loader2 className="w-4 h-4 animate-spin" /> : s.isActive ? <><UserX className="w-4 h-4 mr-1" />Deactivate</> : <><UserCheck className="w-4 h-4 mr-1" />Activate</>}
+                  <div className="flex items-center gap-3 ml-15 lg:ml-0">
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                      <Key className="w-3 h-3 inline mr-1" />{countPermissions(s.permissions)} permissions
+                    </span>
+                    <Button variant="outline" size="sm" onClick={() => viewStaffDetails(s)}>
+                      <Eye className="w-4 h-4 mr-1" />View
                     </Button>
                   </div>
                 </div>
@@ -409,7 +277,6 @@ export default function AdminStaffPage() {
           </div>
         )}
         
-        {/* Pagination */}
         {filteredStaff.length > ITEMS_PER_PAGE && (
           <Pagination
             current={currentPage}
@@ -417,207 +284,90 @@ export default function AdminStaffPage() {
             total={filteredStaff.length}
             limit={ITEMS_PER_PAGE}
             onPageChange={handlePageChange}
-            itemName="staff"
+            itemName="users"
           />
         )}
       </div>
-      )}
 
-      {/* Center Admin List */}
-      {activeTab === 'center-admin' && (
-      <div className="bg-white rounded-xl shadow-sm border">
-        <div className="p-6 border-b"><h2 className="text-lg font-semibold">Center Admins ({filteredCenterAdmins.length})</h2></div>
-        
-        {!canViewUsers ? (
-          <div className="p-12 text-center">
-            <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Permission</h3>
-            <p className="text-gray-600">You don&apos;t have permission to view users</p>
-          </div>
-        ) : filteredCenterAdmins.length === 0 ? (
-          <div className="p-12 text-center">
-            <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Center Admins Found</h3>
-            <p className="text-gray-600 mb-4">Create your first center admin to manage a branch</p>
-            {canCreateUsers && (
-              <Button onClick={() => setShowCreateCenterAdminModal(true)} className="bg-green-600 hover:bg-green-700">
-                <Plus className="w-4 h-4 mr-2" />Create Center Admin
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y">
-            {paginatedCenterAdmins.map(ca => (
-              <div key={ca._id} className="p-6 hover:bg-gray-50">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-start space-x-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${ca.isActive ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-400'}`}>
-                      <span className="text-white font-semibold">{ca.name?.split(' ').map(n => n[0]).join('')}</span>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-800">{ca.name}</h3>
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">Center Admin</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${ca.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{ca.isActive ? 'Active' : 'Inactive'}</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
-                        <div className="flex items-center"><Mail className="w-4 h-4 mr-1" />{ca.email}</div>
-                        <div className="flex items-center"><Phone className="w-4 h-4 mr-1" />{ca.phone}</div>
-                        <div className="flex items-center"><Calendar className="w-4 h-4 mr-1" />Joined {new Date(ca.createdAt).toLocaleDateString()}</div>
-                        {ca.assignedBranch && <div className="flex items-center"><Building2 className="w-4 h-4 mr-1" />{ca.assignedBranch.name}</div>}
-                      </div>
-                      <div className="mt-2">
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded"><Users className="w-3 h-3 inline mr-1" />{ca.staffCount || 0} staff</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {(ca.isActive ? canDeleteUsers : canUpdateUsers) && (
-                      <Button variant="outline" size="sm" onClick={() => handleToggleCenterAdminStatus(ca)} disabled={loadingAction === ca._id}
-                        className={ca.isActive ? "text-red-600 border-red-600 hover:bg-red-50" : "text-green-600 border-green-600 hover:bg-green-50"}>
-                        {loadingAction === ca._id ? <Loader2 className="w-4 h-4 animate-spin" /> : ca.isActive ? <><UserX className="w-4 h-4 mr-1" />Deactivate</> : <><UserCheck className="w-4 h-4 mr-1" />Activate</>}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* Pagination */}
-        {filteredCenterAdmins.length > ITEMS_PER_PAGE && (
-          <Pagination
-            current={currentPage}
-            pages={totalPages}
-            total={filteredCenterAdmins.length}
-            limit={ITEMS_PER_PAGE}
-            onPageChange={handlePageChange}
-            itemName="center admins"
-          />
-        )}
-      </div>
-      )}
-
-      {/* Create Staff Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Create New Staff</h3>
-              <button onClick={() => setShowCreateModal(false)}><X className="w-5 h-5 text-gray-400" /></button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><input type="text" value={newStaff.name} onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Full name" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Email *</label><input type="email" value={newStaff.email} onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Email" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label><input type="tel" value={newStaff.phone} onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="10-digit" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Password *</label><input type="password" value={newStaff.password} onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Min 6 chars" /></div>
-              </div>
-              
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800"><Shield className="w-4 h-4 inline mr-1" />Staff can only have permissions that you have. Disabled options are permissions you don't have.</p>
-              </div>
-
-              <div>
-                <button type="button" onClick={() => setShowPermissions(!showPermissions)} className="flex items-center gap-2 text-blue-600 font-medium mb-3">
-                  {showPermissions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  {showPermissions ? 'Hide' : 'Show'} Permissions
-                </button>
-                {showPermissions && adminProfile && (
-                  <PermissionMatrix 
-                    permissions={newStaffPermissions} 
-                    onChange={setNewStaffPermissions}
-                    maxPermissions={adminProfile.permissions}
-                  />
-                )}
-              </div>
-            </div>
-            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex gap-3">
-              <Button onClick={handleCreateStaff} disabled={creating} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                {creating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                {creating ? 'Creating...' : 'Create Staff'}
-              </Button>
-              <Button variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1">Cancel</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Staff Modal */}
-      {showEditModal && selectedStaff && adminProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-              <div><h3 className="text-lg font-semibold">Edit Staff Permissions</h3><p className="text-sm text-gray-500">{selectedStaff.name} ({selectedStaff.email})</p></div>
-              <button onClick={() => setShowEditModal(false)}><X className="w-5 h-5 text-gray-400" /></button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800"><Shield className="w-4 h-4 inline mr-1" />Staff can only have permissions that you have.</p>
-              </div>
-              <PermissionMatrix 
-                permissions={editPermissions} 
-                onChange={setEditPermissions}
-                maxPermissions={adminProfile.permissions}
-              />
-            </div>
-            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex gap-3">
-              <Button onClick={handleUpdateStaff} disabled={updating} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                {updating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-                {updating ? 'Saving...' : 'Save Permissions'}
-              </Button>
-              <Button variant="outline" onClick={() => setShowEditModal(false)} className="flex-1">Cancel</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Center Admin Modal */}
-      {showCreateCenterAdminModal && (
+      {/* View Details Modal */}
+      {showDetailsModal && selectedStaff && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Create Center Admin</h3>
-              <button onClick={() => setShowCreateCenterAdminModal(false)}><X className="w-5 h-5 text-gray-400" /></button>
+              <h3 className="text-lg font-semibold">User Details</h3>
+              <button onClick={() => setShowDetailsModal(false)} className="text-gray-400 hover:text-gray-600">
+                <span className="text-2xl">&times;</span>
+              </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <h4 className="font-medium text-green-800 mb-2">Center Admin Capabilities</h4>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Manage orders for assigned branch</li>
-                  <li>• Manage staff within the branch</li>
-                  <li>• View branch performance & analytics</li>
-                  <li>• Handle inventory management</li>
-                </ul>
+            <div className="p-6 space-y-6">
+              {/* User Info */}
+              <div className="flex items-center gap-4">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${selectedStaff.isActive ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gray-400'}`}>
+                  <span className="text-white font-bold text-xl">{selectedStaff.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                </div>
+                <div>
+                  <h4 className="text-xl font-semibold text-gray-800">{selectedStaff.name}</h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getRoleBadge(selectedStaff.role)}
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${selectedStaff.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                      {selectedStaff.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><input type="text" value={newCenterAdmin.name} onChange={(e) => setNewCenterAdmin({ ...newCenterAdmin, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Full name" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Email *</label><input type="email" value={newCenterAdmin.email} onChange={(e) => setNewCenterAdmin({ ...newCenterAdmin, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Email" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label><input type="tel" value={newCenterAdmin.phone} onChange={(e) => setNewCenterAdmin({ ...newCenterAdmin, phone: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="10-digit" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Password *</label><input type="password" value={newCenterAdmin.password} onChange={(e) => setNewCenterAdmin({ ...newCenterAdmin, password: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Min 6 chars" /></div>
+
+              {/* Contact Info */}
+              <div className="space-y-3">
+                <h5 className="font-medium text-gray-700">Contact Information</h5>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center text-sm">
+                    <Mail className="w-4 h-4 mr-3 text-gray-400" />
+                    <span>{selectedStaff.email}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Phone className="w-4 h-4 mr-3 text-gray-400" />
+                    <span>{selectedStaff.phone || 'Not provided'}</span>
+                  </div>
+                  {selectedStaff.assignedBranch && (
+                    <div className="flex items-center text-sm">
+                      <Building2 className="w-4 h-4 mr-3 text-gray-400" />
+                      <span>{selectedStaff.assignedBranch.name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center text-sm">
+                    <Calendar className="w-4 h-4 mr-3 text-gray-400" />
+                    <span>Joined {new Date(selectedStaff.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Branch *</label>
-                <select 
-                  value={newCenterAdmin.assignedBranch} 
-                  onChange={(e) => setNewCenterAdmin({ ...newCenterAdmin, assignedBranch: e.target.value })} 
-                  className={`w-full px-3 py-2 border rounded-lg ${!newCenterAdmin.assignedBranch ? 'border-red-300' : ''}`}
-                >
-                  <option value="">Select a branch (required)</option>
-                  {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Center Admin will manage this branch</p>
+
+              {/* Permissions Summary */}
+              <div className="space-y-3">
+                <h5 className="font-medium text-gray-700">Permissions ({countPermissions(selectedStaff.permissions)})</h5>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {selectedStaff.permissions && Object.keys(selectedStaff.permissions).length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(selectedStaff.permissions).map(([module, perms]) => {
+                        const activePerms = Object.entries(perms).filter(([, v]) => v).map(([k]) => k)
+                        if (activePerms.length === 0) return null
+                        return (
+                          <div key={module} className="text-sm">
+                            <span className="font-medium capitalize">{module}:</span>
+                            <span className="text-gray-600 ml-1">{activePerms.join(', ')}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No specific permissions assigned</p>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex gap-3">
-              <Button onClick={handleCreateCenterAdmin} disabled={creatingCenterAdmin} className="flex-1 bg-green-600 hover:bg-green-700">
-                {creatingCenterAdmin ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                {creatingCenterAdmin ? 'Creating...' : 'Create Center Admin'}
+            <div className="sticky bottom-0 bg-gray-50 border-t p-4">
+              <Button variant="outline" onClick={() => setShowDetailsModal(false)} className="w-full">
+                Close
               </Button>
-              <Button variant="outline" onClick={() => setShowCreateCenterAdminModal(false)} className="flex-1">Cancel</Button>
             </div>
           </div>
         </div>

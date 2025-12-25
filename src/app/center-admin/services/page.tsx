@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
+import { useCenterAdminPermissions } from '@/hooks/useCenterAdminPermissions'
 import { 
   Sparkles, 
   Search, 
@@ -77,6 +78,7 @@ const itemCategoryOptions = [
 ]
 
 export default function BranchServicesPage() {
+  const { canCreate, canUpdate, canDelete } = useCenterAdminPermissions('services')
   const [services, setServices] = useState<BranchService[]>([])
   const [stats, setStats] = useState<Stats>({ total: 0, adminAssigned: 0, branchCreated: 0, enabled: 0 })
   const [branch, setBranch] = useState<{ _id: string; name: string; code: string } | null>(null)
@@ -299,13 +301,15 @@ export default function BranchServicesPage() {
             Manage services for {branch?.name || 'your branch'}
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Create Service
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Create Service
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -404,7 +408,7 @@ export default function BranchServicesPage() {
                     </button>
 
                     {/* Delete button for branch-created services */}
-                    {service.canDelete && (
+                    {canDelete && service.canDelete && (
                       <button
                         onClick={() => handleDeleteService(service._id)}
                         disabled={deletingService === service._id}
@@ -420,19 +424,21 @@ export default function BranchServicesPage() {
                     )}
                     
                     {/* Toggle button */}
-                    <button
-                      onClick={() => handleToggleService(service._id)}
-                      disabled={togglingService === service._id}
-                      className="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {togglingService === service._id ? (
-                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                      ) : service.isActiveForBranch ? (
-                        <ToggleRight className="w-10 h-10 text-green-500" />
-                      ) : (
-                        <ToggleLeft className="w-10 h-10 text-gray-300" />
-                      )}
-                    </button>
+                    {canUpdate && (
+                      <button
+                        onClick={() => handleToggleService(service._id)}
+                        disabled={togglingService === service._id}
+                        className="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {togglingService === service._id ? (
+                          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                        ) : service.isActiveForBranch ? (
+                          <ToggleRight className="w-10 h-10 text-green-500" />
+                        ) : (
+                          <ToggleLeft className="w-10 h-10 text-gray-300" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

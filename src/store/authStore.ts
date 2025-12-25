@@ -17,7 +17,7 @@ interface User {
 
 interface AuthState {
   user: User | null
-  token: string | null
+  token: string | null  // Keep for backward compatibility, but cookie is primary
   isAuthenticated: boolean
   _hasHydrated: boolean
   setAuth: (user: User, token: string) => void
@@ -34,17 +34,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       _hasHydrated: false,
       setAuth: (user, token) => {
-        console.log('🔥 Setting auth in store:', { user, token })
-        // Also save token separately for API compatibility
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', token)
-        }
+        console.log('🔥 Setting auth in store:', { user, token: token ? 'present' : 'none' })
+        // Token is now stored in HTTP-only cookie by backend
+        // We keep token in state for backward compatibility but cookie is primary
         set({ user, token, isAuthenticated: true })
       },
       logout: () => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token')
-        }
+        // Cookie will be cleared by backend on logout API call
         set({ user: null, token: null, isAuthenticated: false })
       },
       updateUser: (userData) => set((state) => ({

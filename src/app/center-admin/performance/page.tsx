@@ -14,7 +14,7 @@ import {
   Calendar,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 import {
   BarChart,

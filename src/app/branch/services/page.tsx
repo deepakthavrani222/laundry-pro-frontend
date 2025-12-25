@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import { 
   Sparkles, 
   Search, 
@@ -117,7 +117,7 @@ export default function BranchServicesPage() {
   const fetchServices = async () => {
     try {
       setLoading(true)
-      const response = await branchApi.getServices()
+      const response = await centerAdminApi.getServices()
       setServices(response.data.services || [])
       setStats(response.data.stats || { total: 0, adminAssigned: 0, branchCreated: 0, enabled: 0 })
       setBranch(response.data.branch || null)
@@ -131,7 +131,7 @@ export default function BranchServicesPage() {
   const handleToggleService = async (serviceId: string) => {
     try {
       setTogglingService(serviceId)
-      const response = await branchApi.toggleService(serviceId)
+      const response = await centerAdminApi.toggleService(serviceId)
       
       setServices(prev => prev.map(service => 
         service._id === serviceId 
@@ -152,7 +152,7 @@ export default function BranchServicesPage() {
     
     try {
       setDeletingService(serviceId)
-      await branchApi.deleteService(serviceId)
+      await centerAdminApi.deleteService(serviceId)
       setServices(prev => prev.filter(s => s._id !== serviceId))
       toast.success('Service deleted successfully')
     } catch (err: any) {
@@ -170,7 +170,7 @@ export default function BranchServicesPage() {
 
     try {
       setCreating(true)
-      const response = await branchApi.createService(newService)
+      const response = await centerAdminApi.createService(newService)
       setServices(prev => [...prev, response.data.service])
       setShowCreateModal(false)
       setNewService({
@@ -195,7 +195,7 @@ export default function BranchServicesPage() {
     setShowItemsModal(true)
     setItemsLoading(true)
     try {
-      const response = await branchApi.getServiceItems(service._id)
+      const response = await centerAdminApi.getServiceItems(service._id)
       setServiceItems(response.data.items || [])
     } catch (err: any) {
       toast.error(err.message || 'Failed to load items')
@@ -212,7 +212,7 @@ export default function BranchServicesPage() {
 
     try {
       setAddingItem(true)
-      const response = await branchApi.addServiceItem(selectedService!._id, newItem)
+      const response = await centerAdminApi.addServiceItem(selectedService!._id, newItem)
       setServiceItems(prev => [...prev, response.data.item])
       setShowAddItemForm(false)
       setNewItem({ name: '', category: 'men', basePrice: 0, description: '' })
@@ -229,7 +229,7 @@ export default function BranchServicesPage() {
 
     try {
       setDeletingItem(itemId)
-      await branchApi.deleteServiceItem(selectedService!._id, itemId)
+      await centerAdminApi.deleteServiceItem(selectedService!._id, itemId)
       setServiceItems(prev => prev.filter(i => i._id !== itemId))
       toast.success('Item deleted successfully')
     } catch (err: any) {

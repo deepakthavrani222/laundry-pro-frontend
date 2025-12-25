@@ -17,6 +17,14 @@ export default function CustomerLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
+  const handleMenuClick = () => {
+    setMobileMenuOpen(true)
+  }
+
+  const handleMobileClose = () => {
+    setMobileMenuOpen(false)
+  }
+
   useEffect(() => {
     // Wait a bit for store to initialize
     const timer = setTimeout(() => {
@@ -52,7 +60,7 @@ export default function CustomerLayout({
       {/* Sidebar */}
       <CustomerSidebar 
         mobileOpen={mobileMenuOpen} 
-        onMobileClose={() => setMobileMenuOpen(false)}
+        onMobileClose={handleMobileClose}
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
@@ -60,10 +68,10 @@ export default function CustomerLayout({
       {/* Main Content */}
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
         {/* Header */}
-        <CustomerHeader onMenuClick={() => setMobileMenuOpen(true)} />
+        <CustomerHeader onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
         
-        {/* Page Content */}
-        <main className="p-4 lg:p-6">
+        {/* Page Content - Add pt-16 for fixed header */}
+        <main className="p-4 lg:p-6 pt-20">
           {children}
         </main>
       </div>

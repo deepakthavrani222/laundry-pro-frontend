@@ -20,7 +20,7 @@ import {
   Zap,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 interface Order {
@@ -66,7 +66,7 @@ export default function BranchOrdersPage() {
       if (statusFilter !== 'all') params.status = statusFilter
       if (searchTerm) params.search = searchTerm
       
-      const response = await branchApi.getOrders(params)
+      const response = await centerAdminApi.getOrders(params)
       if (response.success) {
         const ordersData = response.data.data || response.data.orders || []
         setOrders(ordersData)
@@ -77,7 +77,7 @@ export default function BranchOrdersPage() {
         })
         
         // Calculate stats from all orders
-        const allOrdersRes = await branchApi.getOrders({ limit: 1000 })
+        const allOrdersRes = await centerAdminApi.getOrders({ limit: 1000 })
         if (allOrdersRes.success) {
           const allOrders = allOrdersRes.data.data || allOrdersRes.data.orders || []
           setStats({
@@ -97,7 +97,7 @@ export default function BranchOrdersPage() {
 
   const fetchStaff = async () => {
     try {
-      const response = await branchApi.getStaff()
+      const response = await centerAdminApi.getStaff()
       if (response.success) {
         setStaff(response.data.staff || [])
       }
@@ -160,7 +160,7 @@ export default function BranchOrdersPage() {
     
     try {
       setActionLoading('assign')
-      const response = await branchApi.assignStaffToOrder(selectedOrder._id, selectedStaffId, `${estimatedTime} hours`)
+      const response = await centerAdminApi.assignStaffToOrder(selectedOrder._id, selectedStaffId, `${estimatedTime} hours`)
       if (response.success) {
         toast.success('Staff assigned successfully')
         setShowAssignModal(false)
@@ -176,7 +176,7 @@ export default function BranchOrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       setActionLoading(orderId)
-      const response = await branchApi.updateOrderStatus(orderId, newStatus)
+      const response = await centerAdminApi.updateOrderStatus(orderId, newStatus)
       if (response.success) {
         toast.success(`Order marked as ${getStatusText(newStatus)}`)
         fetchOrders()

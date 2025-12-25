@@ -31,9 +31,10 @@ interface Notification {
 
 interface CustomerHeaderProps {
   onMenuClick?: () => void
+  sidebarCollapsed?: boolean
 }
 
-export default function CustomerHeader({ onMenuClick }: CustomerHeaderProps) {
+export default function CustomerHeader({ onMenuClick, sidebarCollapsed = false }: CustomerHeaderProps) {
   const { user, _hasHydrated, logout } = useAuthStore()
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -155,12 +156,16 @@ export default function CustomerHeader({ onMenuClick }: CustomerHeaderProps) {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="flex items-center justify-between h-16 px-4 lg:px-6">
+    <header className={`bg-white border-b border-gray-200 fixed top-0 right-0 z-30 transition-all duration-300 ${sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64'}`}>
+      <div className="flex items-center h-16 px-3 sm:px-4 lg:px-6">
         {/* Mobile Menu Button */}
         <button
-          onClick={onMenuClick}
-          className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          type="button"
+          onClick={() => {
+            if (onMenuClick) onMenuClick()
+          }}
+          className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 mr-2"
+          aria-label="Open menu"
         >
           <Menu className="w-6 h-6" />
         </button>
@@ -169,12 +174,12 @@ export default function CustomerHeader({ onMenuClick }: CustomerHeaderProps) {
         <div className="flex-1" />
 
         {/* Right Side */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-1 sm:space-x-3 flex-shrink-0">
           {/* New Order Button */}
           <Link href="/customer/orders/new">
-            <Button className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/30">
-              <Plus className="w-4 h-4 mr-2" />
-              New Order
+            <Button className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/30 text-xs sm:text-sm px-2 sm:px-4">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Order</span>
             </Button>
           </Link>
 

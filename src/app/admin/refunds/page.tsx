@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   DollarSign, 
   Search, 
@@ -35,6 +36,8 @@ const statusOptions = [
 ]
 
 export default function AdminRefundsPage() {
+  const { canRefund, hasPermission } = usePermissions('orders')
+  const canApprove = hasPermission('financial', 'approve')
   const [filters, setFilters] = useState({
     page: 1,
     limit: ITEMS_PER_PAGE,
@@ -364,7 +367,7 @@ export default function AdminRefundsPage() {
                         View
                       </Button>
                       
-                      {refund.status === 'requested' && !refund.isEscalated && (
+                      {refund.status === 'requested' && !refund.isEscalated && canRefund && (
                         <>
                           {!isOverLimit ? (
                             <Button 
@@ -407,7 +410,7 @@ export default function AdminRefundsPage() {
                         </>
                       )}
                       
-                      {refund.status === 'approved' && (
+                      {refund.status === 'approved' && canApprove && (
                         <Button 
                           size="sm" 
                           className="bg-purple-500 hover:bg-purple-600 text-white"

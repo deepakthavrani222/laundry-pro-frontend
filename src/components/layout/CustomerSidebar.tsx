@@ -79,6 +79,16 @@ export default function CustomerSidebar({
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
       
+      {/* Mobile Close Button */}
+      {mobileOpen && (
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg z-50"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      )}
+      
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between h-16 px-4 border-b border-gray-200">
         {!collapsed && (
@@ -92,9 +102,10 @@ export default function CustomerSidebar({
           </Link>
         )}
         
+        {/* Only show collapse button on desktop */}
         <button
           onClick={toggleCollapsed}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="hidden lg:block p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
         >
           {collapsed ? (
             <ChevronRight className="w-5 h-5 text-gray-500" />

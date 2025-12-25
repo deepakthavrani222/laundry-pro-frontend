@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   CreditCard, 
   Search, 
@@ -50,6 +51,8 @@ interface PaymentStats {
 }
 
 export default function AdminPaymentsPage() {
+  const { hasPermission } = usePermissions('financial')
+  const canExport = hasPermission('reports', 'export')
   const [payments, setPayments] = useState<Payment[]>([])
   const [stats, setStats] = useState<PaymentStats | null>(null)
   const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0, limit: ITEMS_PER_PAGE })
@@ -177,10 +180,12 @@ export default function AdminPaymentsPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {canExport && (
+            <Button variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          )}
         </div>
       </div>
 

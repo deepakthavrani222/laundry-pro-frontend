@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 import {
   BarChart,
@@ -78,7 +78,7 @@ export default function BranchDashboard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await branchApi.getDashboard()
+      const response = await centerAdminApi.getDashboard()
       if (response.success) {
         setData(response.data)
         
@@ -103,7 +103,7 @@ export default function BranchDashboard() {
   const fetchAnalytics = async () => {
     try {
       setAnalyticsLoading(true)
-      const response = await branchApi.getAnalytics('7d')
+      const response = await centerAdminApi.getAnalytics('7d')
       if (response.success) {
         // Format daily stats for chart
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

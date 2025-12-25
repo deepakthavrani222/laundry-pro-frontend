@@ -18,7 +18,7 @@ import {
   Trash2,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 interface StaffMember {
@@ -81,7 +81,7 @@ export default function BranchStaffPage() {
   const fetchStaff = async () => {
     try {
       setLoading(true)
-      const response = await branchApi.getStaff()
+      const response = await centerAdminApi.getStaff()
       if (response.success) {
         setStaff(response.data.staff || [])
         setBranchInfo(response.data.branch)
@@ -95,7 +95,7 @@ export default function BranchStaffPage() {
 
   const fetchWorkerTypes = async () => {
     try {
-      const response = await branchApi.getWorkerTypes()
+      const response = await centerAdminApi.getWorkerTypes()
       if (response.success) {
         setWorkerTypes(response.data.workerTypes || [])
       }
@@ -112,7 +112,7 @@ export default function BranchStaffPage() {
   const handleToggleAvailability = async (staffId: string) => {
     try {
       setActionLoading(staffId)
-      const response = await branchApi.toggleStaffAvailability(staffId)
+      const response = await centerAdminApi.toggleStaffAvailability(staffId)
       if (response.success) {
         toast.success(`Worker ${response.data.staff.isActive ? 'activated' : 'deactivated'} successfully`)
         fetchStaff()
@@ -132,7 +132,7 @@ export default function BranchStaffPage() {
 
     try {
       setSaving(true)
-      const response = await branchApi.addWorker({
+      const response = await centerAdminApi.addWorker({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -157,7 +157,7 @@ export default function BranchStaffPage() {
 
     try {
       setSaving(true)
-      const response = await branchApi.updateWorker(selectedWorker._id, {
+      const response = await centerAdminApi.updateWorker(selectedWorker._id, {
         name: formData.name,
         phone: formData.phone,
         workerType: formData.workerType
@@ -180,7 +180,7 @@ export default function BranchStaffPage() {
 
     try {
       setSaving(true)
-      const response = await branchApi.deleteWorker(selectedWorker._id)
+      const response = await centerAdminApi.deleteWorker(selectedWorker._id)
       if (response.success) {
         toast.success('Worker deleted successfully')
         setShowDeleteModal(false)

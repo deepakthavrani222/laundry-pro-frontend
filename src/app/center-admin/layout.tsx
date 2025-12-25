@@ -18,6 +18,7 @@ export default function CenterAdminLayout({
   const router = useRouter()
   const [isReady, setIsReady] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Refresh user permissions from backend
   useEffect(() => {
@@ -84,9 +85,14 @@ export default function CenterAdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CenterAdminNavbar />
+      <CenterAdminNavbar onMenuClick={() => setMobileMenuOpen(true)} />
       <div className="flex pt-16">
-        <CenterAdminSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
+        <CenterAdminSidebar 
+          collapsed={sidebarCollapsed} 
+          onCollapsedChange={setSidebarCollapsed}
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
         <main className={`flex-1 p-4 lg:p-6 overflow-x-auto transition-all duration-300 ${
           sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
         }`}>

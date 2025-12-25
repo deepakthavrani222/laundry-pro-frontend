@@ -25,7 +25,8 @@ export default function SuperAdminLogin() {
     email: '',
     password: '',
     otp: '',
-    backupCode: ''
+    backupCode: '',
+    rememberMe: false
   })
   const [mfaToken, setMfaToken] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -46,9 +47,11 @@ export default function SuperAdminLogin() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          rememberMe: formData.rememberMe
         })
       })
 
@@ -94,6 +97,7 @@ export default function SuperAdminLogin() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           mfaToken,
           otp: useBackupCode ? undefined : formData.otp,
@@ -207,6 +211,25 @@ export default function SuperAdminLogin() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
+                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500 focus:ring-offset-0"
+                  />
+                  <span className="text-sm text-gray-300">Remember me</span>
+                </label>
+                
+                <Link 
+                  href="/superadmin/auth/forgot-password"
+                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               <Button

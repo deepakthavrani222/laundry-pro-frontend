@@ -17,7 +17,8 @@ import {
   Package
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
+import { useCenterAdminPermissions } from '@/hooks/useCenterAdminPermissions'
 import toast from 'react-hot-toast'
 
 interface InventoryItem {
@@ -55,6 +56,7 @@ const INVENTORY_ITEMS = [
 ]
 
 export default function InventoryPage() {
+  const { canCreate, canUpdate, canDelete } = useCenterAdminPermissions('inventory')
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [stats, setStats] = useState<InventoryStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -226,13 +228,15 @@ export default function InventoryPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button 
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Item
-          </Button>
+          {canCreate && (
+            <Button 
+              onClick={() => setShowAddModal(true)}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Item
+            </Button>
+          )}
         </div>
       </div>
 
@@ -319,10 +323,12 @@ export default function InventoryPage() {
           <p className="text-gray-600 mb-4">
             {searchTerm || filter !== 'all' ? 'Try adjusting your filters' : 'Add your first inventory item'}
           </p>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Item
-          </Button>
+          {canCreate && (
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Item
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -387,32 +393,38 @@ export default function InventoryPage() {
 
               {/* Actions */}
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="flex-1 text-green-600 border-green-300 hover:bg-green-50"
-                  onClick={() => openStockModal(item, 'add')}
-                >
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  Restock
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="flex-1 text-orange-600 border-orange-300 hover:bg-orange-50"
-                  onClick={() => openStockModal(item, 'consume')}
-                >
-                  <TrendingDown className="w-3 h-3 mr-1" />
-                  Use
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                  onClick={() => openDeleteModal(item._id)}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                {canUpdate && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="flex-1 text-green-600 border-green-300 hover:bg-green-50"
+                    onClick={() => openStockModal(item, 'add')}
+                  >
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    Restock
+                  </Button>
+                )}
+                {canUpdate && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="flex-1 text-orange-600 border-orange-300 hover:bg-orange-50"
+                    onClick={() => openStockModal(item, 'consume')}
+                  >
+                    <TrendingDown className="w-3 h-3 mr-1" />
+                    Use
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                    onClick={() => openDeleteModal(item._id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             </div>
           ))}

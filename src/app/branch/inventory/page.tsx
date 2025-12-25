@@ -17,7 +17,7 @@ import {
   Package
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 interface InventoryItem {
@@ -88,7 +88,7 @@ export default function InventoryPage() {
   const fetchInventory = async () => {
     try {
       setLoading(true)
-      const response = await branchApi.getInventory()
+      const response = await centerAdminApi.getInventory()
       if (response.success) {
         setInventory(response.data.inventory || [])
         setStats(response.data.stats)
@@ -112,7 +112,7 @@ export default function InventoryPage() {
 
     try {
       setSaving(true)
-      await branchApi.addInventoryItem(newItem)
+      await centerAdminApi.addInventoryItem(newItem)
       toast.success('Item added successfully')
       setShowAddModal(false)
       setNewItem({
@@ -140,7 +140,7 @@ export default function InventoryPage() {
 
     try {
       setSaving(true)
-      await branchApi.updateInventoryStock(
+      await centerAdminApi.updateInventoryStock(
         selectedItem._id,
         stockUpdate.quantity,
         stockUpdate.action,
@@ -161,7 +161,7 @@ export default function InventoryPage() {
   const handleDeleteItem = async (itemId: string) => {
     try {
       setSaving(true)
-      await branchApi.deleteInventoryItem(itemId)
+      await centerAdminApi.deleteInventoryItem(itemId)
       toast.success('Item deleted')
       setShowDeleteModal(false)
       setDeleteItemId(null)

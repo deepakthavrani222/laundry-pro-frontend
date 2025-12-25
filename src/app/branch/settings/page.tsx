@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
-import { branchApi } from '@/lib/branchApi'
+import { branchApi } from '@/lib/centerAdminApi'
 import { 
   Settings, 
   Clock,
@@ -97,7 +97,7 @@ export default function BranchSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true)
-      const response = await branchApi.getSettings()
+      const response = await centerAdminApi.getSettings()
       if (response.success) {
         setData(response.data)
         if (response.data.operatingHours) {
@@ -121,7 +121,7 @@ export default function BranchSettingsPage() {
   const handleSaveSettings = async () => {
     try {
       setSaving(true)
-      await branchApi.updateSettings({ operatingHours, settings })
+      await centerAdminApi.updateSettings({ operatingHours, settings })
       toast.success('Settings saved successfully')
     } catch (err: any) {
       toast.error(err.message || 'Failed to save settings')
