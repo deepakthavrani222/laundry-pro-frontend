@@ -20,14 +20,14 @@ import {
   Zap,
   Download
 } from 'lucide-react'
-import { branchApi } from '@/lib/centerAdminApi'
+import { branchApi, centerAdminApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 interface Order {
   _id: string
   orderNumber: string
   customer: { name: string; phone: string; email?: string; isVIP?: boolean }
-  items: Array<{ serviceType: string; quantity: number; totalPrice: number }>
+  items: Array<{ serviceType: string; quantity: number; totalPrice: number; name?: string; category?: string }>
   status: string
   pricing: { total: number; subtotal: number }
   isExpress: boolean

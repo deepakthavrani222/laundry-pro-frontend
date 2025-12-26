@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { branchApi } from '@/lib/centerAdminApi'
+import { branchApi, centerAdminApi } from '@/lib/centerAdminApi'
 import { 
   Sparkles, 
   Search, 

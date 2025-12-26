@@ -25,7 +25,17 @@ export default function AddressesPage() {
   const { addresses, loading, addAddress, updateAddress, deleteAddress, setDefaultAddress } = useAddresses()
   const [showForm, setShowForm] = useState(false)
   const [editingAddress, setEditingAddress] = useState<any>(null)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    phone: string
+    addressLine1: string
+    addressLine2: string
+    landmark: string
+    city: string
+    pincode: string
+    addressType: 'home' | 'office'
+    isDefault: boolean
+  }>({
     name: '',
     phone: '',
     addressLine1: '',

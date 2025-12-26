@@ -976,7 +976,7 @@ export default function AdminServicesPage() {
               <div className="space-y-3">
                 {branches.map((branch) => {
                   const branchConfig = selectedService.branches?.find(
-                    b => b.branch?._id === branch._id || b.branch === branch._id
+                    b => b.branch?._id === branch._id || (b.branch as unknown as string) === branch._id
                   )
                   const isAssigned = !!branchConfig
                   const isActive = branchConfig?.isActive ?? false

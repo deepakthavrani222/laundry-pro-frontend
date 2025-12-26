@@ -12,6 +12,7 @@ interface Address {
   city: string
   pincode: string
   isDefault: boolean
+  addressType?: 'home' | 'office'
 }
 
 export function useAddresses() {

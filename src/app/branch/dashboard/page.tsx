@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { branchApi } from '@/lib/centerAdminApi'
+import { branchApi, centerAdminApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 import {
   BarChart,

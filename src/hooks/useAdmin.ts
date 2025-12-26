@@ -42,6 +42,13 @@ export interface Order {
   pickupDate: string
   estimatedDeliveryDate?: string
   items: any[]
+  pickupType?: 'self' | 'logistics'
+  deliveryType?: 'self' | 'logistics'
+  serviceType?: string
+  selectedBranch?: {
+    _id: string
+    name: string
+  }
   pickupAddress: {
     addressLine1: string
     city: string

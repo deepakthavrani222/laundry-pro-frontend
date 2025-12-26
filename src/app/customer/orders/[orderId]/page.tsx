@@ -409,7 +409,7 @@ export default function OrderDetailsPage() {
                   const words = rawName.split(' ')
                   
                   // Filter out words that look like IDs (contain both letters and numbers)
-                  const cleanWords = words.filter(word => {
+                  const cleanWords = words.filter((word: string) => {
                     // Keep word if it's purely alphabetic (no numbers mixed in)
                     const hasLetters = /[a-zA-Z]/.test(word)
                     const hasNumbers = /\d/.test(word)
@@ -418,7 +418,7 @@ export default function OrderDetailsPage() {
                   })
                   
                   const cleanItemName = cleanWords.length > 0 
-                    ? cleanWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+                    ? cleanWords.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
                     : rawName.replace(/_/g, ' ')
                   
                   return (
