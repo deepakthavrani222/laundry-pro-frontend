@@ -167,7 +167,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
   const fetchBranches = async () => {
     try {
       setLoading(true)
-      const response = await fetch('${API_URL}/services/branches')
+      const response = await fetch(`${API_URL}/services/branches`)
       const data = await response.json()
       if (data.success) setBranches(data.data.branches || [])
     } catch (error) {
@@ -202,7 +202,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
 
   const fetchAddresses = async () => {
     try {
-      const response = await fetch('${API_URL}/customer/addresses', {
+      const response = await fetch(`${API_URL}/customer/addresses`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
@@ -219,7 +219,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
 
   const fetchTimeSlots = async () => {
     try {
-      const response = await fetch('${API_URL}/services/time-slots')
+      const response = await fetch(`${API_URL}/services/time-slots`)
       const data = await response.json()
       if (data.success) setTimeSlots(data.data.timeSlots || [])
     } catch (error) {
@@ -240,7 +240,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
     if (orderItems.length === 0) return
     
     try {
-      const response = await fetch('${API_URL}/services/calculate-pricing', {
+      const response = await fetch(`${API_URL}/services/calculate-pricing`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: orderItems, isExpress })
@@ -257,7 +257,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
     if (!selectedAddress || !selectedBranch) return
     
     try {
-      const response = await fetch('${API_URL}/delivery/calculate-distance', {
+      const response = await fetch(`${API_URL}/delivery/calculate-distance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -280,7 +280,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch('${API_URL}/customer/addresses', {
+      const response = await fetch(`${API_URL}/customer/addresses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -340,7 +340,7 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
     
     try {
       setSubmitting(true)
-      const response = await fetch('${API_URL}/customer/orders', {
+      const response = await fetch(`${API_URL}/customer/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

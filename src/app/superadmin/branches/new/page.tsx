@@ -99,7 +99,7 @@ export default function NewBranchPage() {
     setGeocodingLoading(true)
     try {
       // Use backend API for geocoding (more secure - API key stays on server)
-      const response = await fetch('${API_URL}/delivery/geocode', {
+      const response = await fetch(`${API_URL}/delivery/geocode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: fullAddress })

@@ -204,7 +204,7 @@ export default function AdminServicesPage() {
     try {
       setLoading(true)
       const token = getAuthToken()
-      const response = await fetch('${API_URL}/admin/services', {
+      const response = await fetch(`${API_URL}/admin/services`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -227,7 +227,7 @@ export default function AdminServicesPage() {
   const fetchBranches = async () => {
     try {
       const token = getAuthToken()
-      const response = await fetch('${API_URL}/admin/branches', {
+      const response = await fetch(`${API_URL}/admin/branches`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -249,7 +249,7 @@ export default function AdminServicesPage() {
       const token = getAuthToken()
       const url = isEditing 
         ? `${API_URL}/admin/services/${selectedService?._id}`
-        : '${API_URL}/admin/services'
+        : `${API_URL}/admin/services`
       
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
@@ -492,7 +492,7 @@ export default function AdminServicesPage() {
       const token = getAuthToken()
       const itemId = `${selectedService.code}_${newItem.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString(36)}`
       
-      const response = await fetch('${API_URL}/service-items', {
+      const response = await fetch(`${API_URL}/service-items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

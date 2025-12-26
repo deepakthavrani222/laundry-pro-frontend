@@ -206,7 +206,7 @@ export default function NewOrderPage() {
         // Fetch only global items if no branch selected
         try {
           setItemsLoading(true)
-          const response = await fetch('${API_URL}/service-items')
+          const response = await fetch(`${API_URL}/service-items`)
           const data = await response.json()
           if (data.success) {
             setServiceItems(data.data)
@@ -241,7 +241,7 @@ export default function NewOrderPage() {
     const fetchBranches = async () => {
       try {
         setBranchesLoading(true)
-        const response = await fetch('${API_URL}/services/branches')
+        const response = await fetch(`${API_URL}/services/branches`)
         const data = await response.json()
         if (data.success) {
           setBranches(data.data.branches || [])
@@ -322,7 +322,7 @@ export default function NewOrderPage() {
 
       setDeliveryLoading(true)
       try {
-        const response = await fetch('${API_URL}/delivery/calculate-distance', {
+        const response = await fetch(`${API_URL}/delivery/calculate-distance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -76,7 +76,7 @@ export default function AdminPricingPage() {
   const fetchPrices = async () => {
     try {
       setLoading(true)
-      const response = await fetch('${API_URL}/service-prices/all', {
+      const response = await fetch(`${API_URL}/service-prices/all`, {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -101,7 +101,7 @@ export default function AdminPricingPage() {
       setSaving(true)
       const url = editingId 
         ? `${API_URL}/service-prices/${editingId}`
-        : '${API_URL}/service-prices'
+        : `${API_URL}/service-prices`
       
       const response = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',

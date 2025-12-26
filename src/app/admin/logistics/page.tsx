@@ -87,7 +87,7 @@ export default function AdminLogisticsPage() {
         token = parsed.state?.token || parsed.token
       }
 
-      const response = await fetch('${API_URL}/admin/logistics-partners', {
+      const response = await fetch(`${API_URL}/admin/logistics-partners`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })

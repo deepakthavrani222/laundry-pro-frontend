@@ -87,7 +87,7 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
   const fetchPrices = async () => {
     try {
       setLoading(true)
-      const response = await fetch('${API_URL}/service-items')
+      const response = await fetch(`${API_URL}/service-items`)
       const data = await response.json()
       console.log('Service items data:', data)
       if (data.success && data.items) {
