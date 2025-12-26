@@ -287,4 +287,4 @@ This project is licensed under the ISC License.
 
 ---
 
-**Note**: This frontend is designed to work seamlessly with the backend API. Ensure the backend server is running before starting the frontend development server.
+**Note**: This frontend is designed to work seamlessly with the backend API. Ensure the backend server is running before starting the frontend development server. 
