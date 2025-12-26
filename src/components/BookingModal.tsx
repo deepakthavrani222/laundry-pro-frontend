@@ -1,7 +1,7 @@
 'use client'
 
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 import { useState, useEffect, useCallback } from 'react'
 import { X, MapPin, Sparkles, Package, Calendar, Clock, ChevronRight, ChevronLeft, Loader2, Check, Minus, Plus, Phone, CreditCard, Truck, CheckCircle, Building2, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'

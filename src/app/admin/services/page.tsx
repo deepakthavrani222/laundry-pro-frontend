@@ -1,7 +1,7 @@
 'use client'
 
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'

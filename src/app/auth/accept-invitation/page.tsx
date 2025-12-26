@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, CheckCircle, XCircle, Loader2, Shield, User, Phone, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
 interface InvitationData {
   email: string

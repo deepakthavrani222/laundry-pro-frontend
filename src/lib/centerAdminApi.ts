@@ -3,8 +3,23 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 // Center Admin API (previously Branch Manager)
 class CenterAdminAPI {
   private getAuthHeaders() {
+    // Get token from laundry-auth localStorage (zustand persist format)
+    let token = null
+    if (typeof window !== 'undefined') {
+      const authData = localStorage.getItem('laundry-auth')
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          token = parsed.state?.token || parsed.token
+        } catch (e) {
+          console.error('Error parsing auth data:', e)
+        }
+      }
+    }
+    
     return {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` })
     }
   }
 
