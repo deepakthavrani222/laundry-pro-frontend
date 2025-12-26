@@ -155,4 +155,20 @@ export const adminAPI = {
     api.patch(`/admin/customers/${customerId}/vip`),
 }
 
+// Barcode API
+export const barcodeAPI = {
+  // Scan barcode and get order details
+  scanBarcode: (barcode: string) => api.get(`/barcode/scan/${barcode}`),
+  
+  // Get barcode for a specific order
+  getOrderBarcode: (orderId: string) => api.get(`/barcode/order/${orderId}`),
+  
+  // Update order status via barcode scan
+  updateStatusViaScan: (barcode: string, status: string, notes?: string) =>
+    api.put(`/barcode/scan/${barcode}/status`, { status, notes }),
+  
+  // Bulk scan multiple barcodes
+  bulkScan: (barcodes: string[]) => api.post('/barcode/bulk-scan', { barcodes }),
+}
+
 export default api

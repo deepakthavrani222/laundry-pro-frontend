@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Building2,
   Sparkles,
-  X
+  X,
+  QrCode
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
@@ -22,6 +23,7 @@ import { useAuthStore } from '@/store/authStore'
 const navigation = [
   { name: 'Dashboard', href: '/center-admin/dashboard', icon: Home, module: null },
   { name: 'Orders', href: '/center-admin/orders', icon: ShoppingBag, module: 'orders' },
+  { name: 'Barcode Scanner', href: '/center-admin/scanner', icon: QrCode, module: 'orders' },
   { name: 'Services', href: '/center-admin/services', icon: Sparkles, module: 'services' },
   { name: 'Staff Management', href: '/center-admin/staff', icon: Users, module: 'staff' },
   { name: 'Inventory', href: '/center-admin/inventory', icon: Package2, module: 'inventory' },
