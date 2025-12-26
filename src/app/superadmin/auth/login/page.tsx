@@ -17,6 +17,8 @@ import {
   KeyRound
 } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+
 export default function SuperAdminLogin() {
   const router = useRouter()
   const { setAdmin, setToken, setSession } = useSuperAdminStore()
@@ -42,7 +44,7 @@ export default function SuperAdminLogin() {
     setSuccess('')
 
     try {
-      const response = await fetch('http://localhost:5000/api/superadmin/auth/login', {
+      const response = await fetch(`${API_URL}/superadmin/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +94,7 @@ export default function SuperAdminLogin() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/api/superadmin/auth/verify-mfa', {
+      const response = await fetch(`${API_URL}/superadmin/auth/verify-mfa`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

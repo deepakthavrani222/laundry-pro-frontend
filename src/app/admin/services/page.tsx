@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
@@ -202,7 +204,7 @@ export default function AdminServicesPage() {
     try {
       setLoading(true)
       const token = getAuthToken()
-      const response = await fetch('http://localhost:5000/api/admin/services', {
+      const response = await fetch('${API_URL}/admin/services', {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -225,7 +227,7 @@ export default function AdminServicesPage() {
   const fetchBranches = async () => {
     try {
       const token = getAuthToken()
-      const response = await fetch('http://localhost:5000/api/admin/branches', {
+      const response = await fetch('${API_URL}/admin/branches', {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -246,8 +248,8 @@ export default function AdminServicesPage() {
     try {
       const token = getAuthToken()
       const url = isEditing 
-        ? `http://localhost:5000/api/admin/services/${selectedService?._id}`
-        : 'http://localhost:5000/api/admin/services'
+        ? `${API_URL}/admin/services/${selectedService?._id}`
+        : '${API_URL}/admin/services'
       
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
@@ -297,7 +299,7 @@ export default function AdminServicesPage() {
     
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/admin/services/${deleteServiceId}`, {
+      const response = await fetch(`${API_URL}/admin/services/${deleteServiceId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -324,7 +326,7 @@ export default function AdminServicesPage() {
   const handleToggleStatus = async (service: Service) => {
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/admin/services/${service._id}`, {
+      const response = await fetch(`${API_URL}/admin/services/${service._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -351,7 +353,7 @@ export default function AdminServicesPage() {
     const branch = branches.find(b => b._id === branchId)
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/admin/services/${serviceId}/branches`, {
+      const response = await fetch(`${API_URL}/admin/services/${serviceId}/branches`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -458,7 +460,7 @@ export default function AdminServicesPage() {
     setItemsLoading(true)
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/service-items?service=${service.code}`, {
+      const response = await fetch(`${API_URL}/service-items?service=${service.code}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -490,7 +492,7 @@ export default function AdminServicesPage() {
       const token = getAuthToken()
       const itemId = `${selectedService.code}_${newItem.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString(36)}`
       
-      const response = await fetch('http://localhost:5000/api/service-items', {
+      const response = await fetch('${API_URL}/service-items', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -527,7 +529,7 @@ export default function AdminServicesPage() {
     try {
       setDeletingItem(itemId)
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/service-items/${itemId}`, {
+      const response = await fetch(`${API_URL}/service-items/${itemId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

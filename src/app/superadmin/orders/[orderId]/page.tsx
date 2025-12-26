@@ -1,5 +1,7 @@
 'use client'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -127,7 +129,7 @@ export default function OrderDetailPage() {
     try {
       setLoading(true)
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/superadmin/orders/${orderId}`, {
+      const response = await fetch(`${API_URL}/superadmin/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

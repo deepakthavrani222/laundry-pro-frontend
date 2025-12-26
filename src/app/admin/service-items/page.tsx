@@ -1,12 +1,14 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
 import { Plus, Edit2, Trash2, Loader2, Search, X, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = '${API_URL}'
 const ITEMS_PER_PAGE = 8
 
 const SERVICES = [

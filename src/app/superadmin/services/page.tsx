@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
 import { 
@@ -213,7 +216,7 @@ export default function SuperAdminServicesPage() {
     try {
       setLoading(true)
       const token = getAuthToken()
-      const response = await fetch('http://localhost:5000/api/superadmin/services', {
+      const response = await fetch('${API_URL}/superadmin/services', {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -236,7 +239,7 @@ export default function SuperAdminServicesPage() {
   const fetchBranches = async () => {
     try {
       const token = getAuthToken()
-      const response = await fetch('http://localhost:5000/api/superadmin/branches', {
+      const response = await fetch('${API_URL}/superadmin/branches', {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -257,8 +260,8 @@ export default function SuperAdminServicesPage() {
     try {
       const token = getAuthToken()
       const url = isEditing 
-        ? `http://localhost:5000/api/superadmin/services/${selectedService?._id}`
-        : 'http://localhost:5000/api/superadmin/services'
+        ? `${API_URL}/superadmin/services/${selectedService?._id}`
+        : '${API_URL}/superadmin/services'
       
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
@@ -308,7 +311,7 @@ export default function SuperAdminServicesPage() {
     
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/superadmin/services/${deleteServiceId}`, {
+      const response = await fetch(`${API_URL}/superadmin/services/${deleteServiceId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -335,7 +338,7 @@ export default function SuperAdminServicesPage() {
   const handleToggleStatus = async (service: Service) => {
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/superadmin/services/${service._id}`, {
+      const response = await fetch(`${API_URL}/superadmin/services/${service._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +365,7 @@ export default function SuperAdminServicesPage() {
     const branch = branches.find(b => b._id === branchId)
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/superadmin/services/${serviceId}/branches`, {
+      const response = await fetch(`${API_URL}/superadmin/services/${serviceId}/branches`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -468,7 +471,7 @@ export default function SuperAdminServicesPage() {
     setItemsLoading(true)
     try {
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/service-items?service=${service.code}`, {
+      const response = await fetch(`${API_URL}/service-items?service=${service.code}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -497,7 +500,7 @@ export default function SuperAdminServicesPage() {
       const token = getAuthToken()
       const itemId = `${selectedService.code}_${newItem.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString(36)}`
       
-      const response = await fetch('http://localhost:5000/api/service-items', {
+      const response = await fetch('${API_URL}/service-items', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -534,7 +537,7 @@ export default function SuperAdminServicesPage() {
     try {
       setDeletingItem(itemId)
       const token = getAuthToken()
-      const response = await fetch(`http://localhost:5000/api/service-items/${itemId}`, {
+      const response = await fetch(`${API_URL}/service-items/${itemId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

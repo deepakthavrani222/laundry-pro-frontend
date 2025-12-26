@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/Pagination'
@@ -85,7 +87,7 @@ export default function AdminLogisticsPage() {
         token = parsed.state?.token || parsed.token
       }
 
-      const response = await fetch('http://localhost:5000/api/admin/logistics-partners', {
+      const response = await fetch('${API_URL}/admin/logistics-partners', {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })

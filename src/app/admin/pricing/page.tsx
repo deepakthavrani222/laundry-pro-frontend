@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState, useEffect } from 'react'
 import { 
   Plus, 
@@ -74,7 +76,7 @@ export default function AdminPricingPage() {
   const fetchPrices = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/service-prices/all', {
+      const response = await fetch('${API_URL}/service-prices/all', {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -98,8 +100,8 @@ export default function AdminPricingPage() {
     try {
       setSaving(true)
       const url = editingId 
-        ? `http://localhost:5000/api/service-prices/${editingId}`
-        : 'http://localhost:5000/api/service-prices'
+        ? `${API_URL}/service-prices/${editingId}`
+        : '${API_URL}/service-prices'
       
       const response = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
@@ -132,7 +134,7 @@ export default function AdminPricingPage() {
     if (!confirm('Are you sure you want to delete this price?')) return
 
     try {
-      const response = await fetch(`http://localhost:5000/api/service-prices/${id}`, {
+      const response = await fetch(`${API_URL}/service-prices/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       })

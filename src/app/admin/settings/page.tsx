@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
@@ -101,7 +103,7 @@ export default function AdminSettingsPage() {
   const fetchDeliveryPricing = async () => {
     setDeliveryPricingLoading(true)
     try {
-      const response = await fetch('http://localhost:5000/api/admin/delivery-pricing', {
+      const response = await fetch('${API_URL}/admin/delivery-pricing', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -121,7 +123,7 @@ export default function AdminSettingsPage() {
   const fetchBranchesStatus = async () => {
     setBranchesLoading(true)
     try {
-      const response = await fetch('http://localhost:5000/api/admin/branches/coordinates-status', {
+      const response = await fetch('${API_URL}/admin/branches/coordinates-status', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -140,7 +142,7 @@ export default function AdminSettingsPage() {
   const handleSaveDeliveryPricing = async () => {
     setSaving(true)
     try {
-      const response = await fetch('http://localhost:5000/api/admin/delivery-pricing', {
+      const response = await fetch('${API_URL}/admin/delivery-pricing', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

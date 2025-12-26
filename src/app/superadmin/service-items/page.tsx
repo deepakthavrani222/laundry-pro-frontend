@@ -7,7 +7,7 @@ import { Plus, Edit2, Trash2, Loader2, Search, X, Save, Package } from 'lucide-r
 import toast from 'react-hot-toast'
 import { useSuperAdminStore } from '@/store/superAdminStore'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 const ITEMS_PER_PAGE = 8
 
 const SERVICES = [

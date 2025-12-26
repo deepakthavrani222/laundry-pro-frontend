@@ -12,6 +12,8 @@ import {
   ArrowLeft
 } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,7 +26,7 @@ export default function ForgotPassword() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/api/superadmin/auth/forgot-password', {
+      const response = await fetch(`${API_URL}/superadmin/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

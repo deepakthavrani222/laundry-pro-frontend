@@ -16,6 +16,8 @@ import {
   XCircle
 } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
+
 export default function ResetPassword() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -66,7 +68,7 @@ export default function ResetPassword() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/api/superadmin/auth/reset-password', {
+      const response = await fetch(`${API_URL}/superadmin/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

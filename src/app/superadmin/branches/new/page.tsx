@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useBranches } from '@/hooks/useBranches'
@@ -97,7 +99,7 @@ export default function NewBranchPage() {
     setGeocodingLoading(true)
     try {
       // Use backend API for geocoding (more secure - API key stays on server)
-      const response = await fetch('http://localhost:5000/api/delivery/geocode', {
+      const response = await fetch('${API_URL}/delivery/geocode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: fullAddress })

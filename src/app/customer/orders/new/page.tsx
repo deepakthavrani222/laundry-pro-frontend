@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -204,7 +206,7 @@ export default function NewOrderPage() {
         // Fetch only global items if no branch selected
         try {
           setItemsLoading(true)
-          const response = await fetch('http://localhost:5000/api/service-items')
+          const response = await fetch('${API_URL}/service-items')
           const data = await response.json()
           if (data.success) {
             setServiceItems(data.data)
@@ -220,7 +222,7 @@ export default function NewOrderPage() {
       // Fetch items including branch-specific ones
       try {
         setItemsLoading(true)
-        const response = await fetch(`http://localhost:5000/api/service-items/branch/${selectedBranchId}`)
+        const response = await fetch(`${API_URL}/service-items/branch/${selectedBranchId}`)
         const data = await response.json()
         if (data.success) {
           setServiceItems(data.data)
@@ -239,7 +241,7 @@ export default function NewOrderPage() {
     const fetchBranches = async () => {
       try {
         setBranchesLoading(true)
-        const response = await fetch('http://localhost:5000/api/services/branches')
+        const response = await fetch('${API_URL}/services/branches')
         const data = await response.json()
         if (data.success) {
           setBranches(data.data.branches || [])
@@ -263,7 +265,7 @@ export default function NewOrderPage() {
       
       try {
         setBranchServicesLoading(true)
-        const response = await fetch(`http://localhost:5000/api/services/branch/${selectedBranchId}`)
+        const response = await fetch(`${API_URL}/services/branch/${selectedBranchId}`)
         const data = await response.json()
         if (data.success) {
           setBranchServices(data.data.services || [])
@@ -320,7 +322,7 @@ export default function NewOrderPage() {
 
       setDeliveryLoading(true)
       try {
-        const response = await fetch('http://localhost:5000/api/delivery/calculate-distance', {
+        const response = await fetch('${API_URL}/delivery/calculate-distance', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

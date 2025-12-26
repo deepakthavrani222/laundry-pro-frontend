@@ -1,5 +1,7 @@
 'use client'
 
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { 
@@ -85,7 +87,7 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
   const fetchPrices = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/service-items')
+      const response = await fetch('${API_URL}/service-items')
       const data = await response.json()
       console.log('Service items data:', data)
       if (data.success && data.items) {

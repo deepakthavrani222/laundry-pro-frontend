@@ -94,7 +94,7 @@ export function useSessionTimeout(options: UseSessionTimeoutOptions = {}) {
   // Refresh session on backend
   const refreshSession = async () => {
     try {
-      await fetch('http://localhost:5000/api/superadmin/auth/refresh-session', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/auth/refresh-session`, {
         method: 'POST',
         credentials: 'include',
         headers: {

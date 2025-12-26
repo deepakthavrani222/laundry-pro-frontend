@@ -145,7 +145,7 @@ export function useAudit(filters?: {
         }
       }
 
-      const response = await fetch(`http://localhost:5000/api/superadmin/audit/export?${params}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/audit/export?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
