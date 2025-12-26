@@ -400,7 +400,7 @@ export default function AdminDashboard() {
                       borderRadius: '12px',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
                   />
                   <Bar dataKey="revenue" fill="url(#colorRevenueBar)" radius={[8, 8, 0, 0]} />
                   <defs>
@@ -422,7 +422,7 @@ export default function AdminDashboard() {
                       borderRadius: '12px',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
                   />
                   <Line
                     type="monotone"
@@ -445,7 +445,7 @@ export default function AdminDashboard() {
                       borderRadius: '12px',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
                   />
                   <Area
                     type="monotone"

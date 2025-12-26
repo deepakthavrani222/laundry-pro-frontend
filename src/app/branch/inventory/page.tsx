@@ -17,7 +17,7 @@ import {
   Package
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { branchApi } from '@/lib/centerAdminApi'
+import { branchApi, centerAdminApi } from '@/lib/centerAdminApi'
 import toast from 'react-hot-toast'
 
 interface InventoryItem {

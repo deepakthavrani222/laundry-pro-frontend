@@ -65,11 +65,15 @@ const hasPermission = (user: any, permission: { module: string; action: string }
 interface SidebarContextType {
   isCollapsed: boolean
   setIsCollapsed: (value: boolean) => void
+  mobileOpen: boolean
+  setMobileOpen: (value: boolean) => void
 }
 
 const SidebarContext = createContext<SidebarContextType>({
   isCollapsed: false,
   setIsCollapsed: () => {},
+  mobileOpen: false,
+  setMobileOpen: () => {},
 })
 
 export const useAdminSidebar = () => useContext(SidebarContext)
@@ -80,6 +84,7 @@ export function AdminSidebarProvider({
   children: React.ReactNode
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed')
@@ -95,7 +100,7 @@ export function AdminSidebarProvider({
 
   return (
     <SidebarContext.Provider
-      value={{ isCollapsed, setIsCollapsed: handleSetCollapsed }}
+      value={{ isCollapsed, setIsCollapsed: handleSetCollapsed, mobileOpen, setMobileOpen }}
     >
       {children}
     </SidebarContext.Provider>

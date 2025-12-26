@@ -287,7 +287,7 @@ export default function BranchPerformancePage() {
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
-                    formatter={(value: number) => [value, 'Orders']}
+                    formatter={(value) => [Number(value), 'Orders']}
                   />
                   <Bar 
                     dataKey="orders" 
@@ -322,7 +322,7 @@ export default function BranchPerformancePage() {
                     outerRadius={80}
                     paddingAngle={3}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                     labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                   >
                     {serviceChartData.map((entry, index) => (
@@ -335,7 +335,7 @@ export default function BranchPerformancePage() {
                       border: '1px solid #E5E7EB',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: number, name: string, props: any) => [
+                    formatter={(value, name, props: any) => [
                       `${value} orders (₹${props.payload.revenue.toLocaleString()})`,
                       props.payload.name
                     ]}
@@ -427,8 +427,8 @@ export default function BranchPerformancePage() {
                       border: '1px solid #E5E7EB',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: number, name: string) => [
-                      name === 'ordersProcessed' ? value : `₹${value.toLocaleString()}`,
+                    formatter={(value, name) => [
+                      name === 'ordersProcessed' ? Number(value) : `₹${Number(value).toLocaleString()}`,
                       name === 'ordersProcessed' ? 'Orders' : 'Revenue'
                     ]}
                   />
@@ -498,7 +498,7 @@ export default function BranchPerformancePage() {
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
                   />
                   <Bar 
                     dataKey="revenue" 
@@ -526,7 +526,7 @@ export default function BranchPerformancePage() {
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
                   />
                   <Line 
                     type="monotone" 

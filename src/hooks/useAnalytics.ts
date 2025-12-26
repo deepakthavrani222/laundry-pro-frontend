@@ -13,6 +13,7 @@ interface OrderStatusData {
   value: number
   color: string
   status: string
+  [key: string]: string | number
 }
 
 interface RevenueData {

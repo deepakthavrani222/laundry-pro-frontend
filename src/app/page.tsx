@@ -56,7 +56,18 @@ function HeroCarousel({
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
   const [isAnimating, setIsAnimating] = useState(false)
 
-  const slides = [
+  const slides: Array<{
+    id: number
+    title: string
+    subtitle: string
+    description: string
+    features: Array<{ icon: any; text: string }>
+    image: string
+    video?: string
+    discount: string
+    primaryButton: { text: string; icon: any; action: string }
+    secondaryButton: { text: string; icon: any; href: string }
+  }> = [
     {
       id: 1,
       title: isAuthenticated

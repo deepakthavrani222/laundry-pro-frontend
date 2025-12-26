@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
-import { branchApi } from '@/lib/centerAdminApi'
+import { branchApi, centerAdminApi } from '@/lib/centerAdminApi'
 import { 
   Settings, 
   Clock,
