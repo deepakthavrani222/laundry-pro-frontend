@@ -27,6 +27,7 @@ import {
 import { customerAPI } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
+import QRCodeDisplay from '@/components/QRCodeDisplay'
 
 interface OrderDetails {
   _id: string
@@ -334,13 +335,29 @@ export default function OrderDetailsPage() {
             {/* Success Message */}
             {isSuccess && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 mb-4">
                   <CheckCircle className="w-8 h-8 text-green-600" />
                   <div>
                     <h3 className="text-lg font-semibold text-green-800">Order Placed Successfully!</h3>
                     <p className="text-green-700">
                       Your order has been placed and you will receive updates via email and SMS.
                     </p>
+                  </div>
+                </div>
+                
+                {/* QR Code in Success Banner */}
+                <div className="mt-4 pt-4 border-t border-green-200">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <QRCodeDisplay 
+                      data={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/barcode/scan/${order.orderNumber}`}
+                      orderNumber={order.orderNumber}
+                      size={120}
+                      showPrint={false}
+                    />
+                    <div className="text-center sm:text-left">
+                      <p className="text-sm font-medium text-green-800">Save this QR Code</p>
+                      <p className="text-xs text-green-600">Scan anytime to track your order</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -631,6 +648,18 @@ export default function OrderDetailsPage() {
                     <span className="font-medium text-orange-600">Express</span>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* QR Code for Order */}
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Order QR Code</h3>
+              <div className="flex justify-center">
+                <QRCodeDisplay 
+                  data={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/barcode/scan/${order.orderNumber}`}
+                  orderNumber={order.orderNumber}
+                  size={160}
+                />
               </div>
             </div>
 
