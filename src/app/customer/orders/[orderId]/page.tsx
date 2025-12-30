@@ -473,39 +473,53 @@ export default function OrderDetailsPage() {
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Addresses</h2>
               
               <div className="grid md:grid-cols-2 gap-6">
+                {order.pickupAddress && (
                 <div>
                   <h4 className="font-medium text-gray-800 mb-3 flex items-center">
                     <Home className="w-4 h-4 mr-2" />
                     Pickup Address
                   </h4>
                   <div className="text-gray-600">
-                    <p className="font-medium">{order.pickupAddress.name}</p>
-                    <p>{order.pickupAddress.addressLine1}</p>
-                    {order.pickupAddress.addressLine2 && <p>{order.pickupAddress.addressLine2}</p>}
-                    <p>{order.pickupAddress.city}, {order.pickupAddress.pincode}</p>
+                    <p className="font-medium">{order.pickupAddress?.name || 'N/A'}</p>
+                    <p>{order.pickupAddress?.addressLine1 || ''}</p>
+                    {order.pickupAddress?.addressLine2 && <p>{order.pickupAddress.addressLine2}</p>}
+                    <p>{order.pickupAddress?.city || ''}{order.pickupAddress?.pincode ? `, ${order.pickupAddress.pincode}` : ''}</p>
+                    {order.pickupAddress?.phone && (
                     <p className="flex items-center mt-2">
                       <Phone className="w-4 h-4 mr-1" />
                       {order.pickupAddress.phone}
                     </p>
+                    )}
                   </div>
                 </div>
+                )}
                 
+                {order.deliveryAddress && (
                 <div>
                   <h4 className="font-medium text-gray-800 mb-3 flex items-center">
                     <Truck className="w-4 h-4 mr-2" />
                     Delivery Address
                   </h4>
                   <div className="text-gray-600">
-                    <p className="font-medium">{order.deliveryAddress.name}</p>
-                    <p>{order.deliveryAddress.addressLine1}</p>
-                    {order.deliveryAddress.addressLine2 && <p>{order.deliveryAddress.addressLine2}</p>}
-                    <p>{order.deliveryAddress.city}, {order.deliveryAddress.pincode}</p>
+                    <p className="font-medium">{order.deliveryAddress?.name || 'N/A'}</p>
+                    <p>{order.deliveryAddress?.addressLine1 || ''}</p>
+                    {order.deliveryAddress?.addressLine2 && <p>{order.deliveryAddress.addressLine2}</p>}
+                    <p>{order.deliveryAddress?.city || ''}{order.deliveryAddress?.pincode ? `, ${order.deliveryAddress.pincode}` : ''}</p>
+                    {order.deliveryAddress?.phone && (
                     <p className="flex items-center mt-2">
                       <Phone className="w-4 h-4 mr-1" />
                       {order.deliveryAddress.phone}
                     </p>
+                    )}
                   </div>
                 </div>
+                )}
+
+                {!order.pickupAddress && !order.deliveryAddress && (
+                  <div className="col-span-2 text-center text-gray-500 py-4">
+                    <p>Self drop-off / Self pickup order - No address required</p>
+                  </div>
+                )}
               </div>
             </div>
 
