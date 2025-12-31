@@ -7,6 +7,7 @@ import { X, MapPin, Sparkles, Package, Calendar, Clock, ChevronRight, ChevronLef
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
+import QRCodeDisplay from '@/components/QRCodeDisplay'
 
 interface Branch {
   _id: string
@@ -436,9 +437,12 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
 
   // Success Screen
   if (orderSuccess) {
+    const orderNumber = createdOrder?.orderNumber || createdOrder?._id || ''
+    const qrData = `${typeof window !== 'undefined' ? window.location.origin : ''}/customer/orders/${createdOrder?._id}`
+    
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
           <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-6 text-center">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-10 h-10 text-white" />
@@ -448,6 +452,18 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
           </div>
           
           <div className="p-6 space-y-4">
+            {/* QR Code Section */}
+            {createdOrder && (
+              <div className="flex flex-col items-center py-2">
+                <QRCodeDisplay 
+                  data={qrData}
+                  orderNumber={orderNumber}
+                  size={140}
+                  showPrint={false}
+                />
+              </div>
+            )}
+            
             <div className="bg-gray-50 rounded-xl p-4 space-y-3">
               <div className="flex items-center text-gray-700">
                 <Calendar className="w-5 h-5 mr-3 text-teal-500" />
@@ -459,16 +475,18 @@ export default function BookingModal({ isOpen, onClose, onLoginRequired }: Booki
                 <Clock className="w-5 h-5 mr-3 text-teal-500" />
                 <span>{selectedTimeSlot}</span>
               </div>
+              {getSelectedAddress() && (
               <div className="flex items-center text-gray-700">
                 <MapPin className="w-5 h-5 mr-3 text-teal-500" />
                 <span className="text-sm">{getSelectedAddress()?.addressLine1}, {getSelectedAddress()?.city}</span>
               </div>
+              )}
             </div>
             
             {createdOrder && (
               <div className="text-center">
                 <p className="text-sm text-gray-500">Order ID</p>
-                <p className="font-mono font-bold text-teal-600">{createdOrder.orderNumber || createdOrder._id}</p>
+                <p className="font-mono font-bold text-teal-600">{orderNumber}</p>
               </div>
             )}
             

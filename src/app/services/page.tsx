@@ -255,12 +255,29 @@ export default function ServicesPage() {
   const router = useRouter()
 
   const handleBookNow = () => {
+    // If not logged in, redirect to login, then come back with modal
+    if (!isAuthenticated) {
+      router.push('/auth/login?redirect=/services?openBooking=true')
+      return
+    }
     setShowBookingModal(true)
   }
 
+  // Check URL params to auto-open booking modal after login
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('openBooking') === 'true' && isAuthenticated) {
+        setShowBookingModal(true)
+        // Clean up URL
+        window.history.replaceState({}, '', '/services')
+      }
+    }
+  }, [isAuthenticated])
+
   const handleLoginRequired = () => {
     setShowBookingModal(false)
-    router.push('/auth/login?redirect=/services')
+    router.push('/auth/login?redirect=/services?openBooking=true')
   }
 
   return (

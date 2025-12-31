@@ -751,12 +751,29 @@ export default function HomePage() {
   const router = useRouter()
 
   const handleBookNow = () => {
+    // If not logged in, redirect to login, then come back to home with modal
+    if (!isAuthenticated) {
+      router.push('/auth/login?redirect=/?openBooking=true')
+      return
+    }
     setShowBookingModal(true)
   }
 
+  // Check URL params to auto-open booking modal after login
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('openBooking') === 'true' && isAuthenticated) {
+        setShowBookingModal(true)
+        // Clean up URL
+        window.history.replaceState({}, '', '/')
+      }
+    }
+  }, [isAuthenticated])
+
   const handleLoginRequired = () => {
     setShowBookingModal(false)
-    router.push('/auth/login?redirect=/')
+    router.push('/auth/login?redirect=/?openBooking=true')
   }
 
   const handleGalleryVisible = (visible: boolean) => {

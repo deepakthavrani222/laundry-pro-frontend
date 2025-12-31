@@ -225,9 +225,9 @@ export default function UsersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-medium">
-                          {user.name?.charAt(0).toUpperCase()}
+                          {user.name?.charAt(0)?.toUpperCase() || 'U'}
                         </div>
-                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <div className="font-medium text-gray-900">{user.name || 'Unknown'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -326,11 +326,11 @@ export default function UsersPage() {
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-medium text-lg">
-                  {selectedUser.name?.charAt(0).toUpperCase()}
+                  {selectedUser.name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">{selectedUser.name}</div>
-                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                  <div className="font-medium text-gray-900">{selectedUser.name || 'Unknown'}</div>
+                  <div className="text-sm text-gray-500">{selectedUser.email || ''}</div>
                 </div>
               </div>
               
