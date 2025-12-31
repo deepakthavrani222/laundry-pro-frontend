@@ -218,7 +218,7 @@ export default function AdminSettingsPage() {
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-2xl font-bold">
-                      {profile.name.split(' ').map(n => n[0]).join('')}
+                      {(profile.name || 'A').split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>
                   <div>

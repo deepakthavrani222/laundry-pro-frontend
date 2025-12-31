@@ -160,14 +160,14 @@ export function AdminSidebar() {
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
               <span className="text-white font-medium text-sm">
-                {user.name?.charAt(0).toUpperCase()}
+                {user.name?.charAt(0)?.toUpperCase() || 'A'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {user.name}
+                {user.name || 'Admin'}
               </p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email || ''}</p>
             </div>
           </div>
         </div>

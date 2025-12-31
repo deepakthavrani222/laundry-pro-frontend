@@ -349,12 +349,12 @@ export default function AdminCustomersPage() {
                   <div className="flex items-start space-x-4 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-semibold">
-                        {customer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        {(customer.name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="text-lg font-semibold text-gray-800">{customer.name}</h3>
+                        <h3 className="text-lg font-semibold text-gray-800">{customer.name || 'Unknown'}</h3>
                         {customer.isVIP && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             <Crown className="w-3 h-3 mr-1" />
@@ -569,12 +569,12 @@ export default function AdminCustomersPage() {
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-2xl font-bold">
-                    {selectedCustomer.name.split(' ').map(n => n[0]).join('')}
+                    {(selectedCustomer.name || 'U').split(' ').map(n => n[0]).join('')}
                   </span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-2xl font-bold text-gray-800">{selectedCustomer.name}</h4>
+                    <h4 className="text-2xl font-bold text-gray-800">{selectedCustomer.name || 'Unknown'}</h4>
                     {selectedCustomer.isVIP && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         <Crown className="w-3 h-3 mr-1" />
