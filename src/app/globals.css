@@ -103,6 +103,16 @@
     animation: float 3s ease-in-out infinite 1.5s;
   }
 
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Responsive layout utilities */
   .dashboard-container {
     max-width: 100%;

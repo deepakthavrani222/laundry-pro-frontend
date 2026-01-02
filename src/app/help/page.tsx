@@ -30,24 +30,25 @@ import {
   Zap,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { useState } from 'react'
-import PublicHeader from '@/components/layout/PublicHeader'
+import { useState, useEffect } from 'react'
+import TemplateHeader from '@/components/layout/TemplateHeader'
+import PageThemeCustomizer from '@/components/layout/PageThemeCustomizer'
+import SettingsPanel, { ThemeColor, SchemeMode, Language, getThemeColors } from '@/components/layout/SettingsPanel'
+import { translations } from '@/lib/translations'
 
-function FAQItem({ question, answer, isOpen, onToggle }: {
+function FAQItem({ question, answer, isOpen, onToggle, primaryColor }: {
   question: string
   answer: string
   isOpen: boolean
   onToggle: () => void
+  primaryColor: string
 }) {
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-gray-200">
       <button
         onClick={onToggle}
-        className={`w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200 ${
-          isOpen 
-            ? 'bg-teal-500 hover:bg-teal-500' 
-            : 'bg-slate-700 hover:bg-slate-600'
-        }`}
+        className="w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200"
+        style={{ backgroundColor: isOpen ? primaryColor : '#334155' }}
       >
         <h4 className="text-base font-medium text-white pr-4">{question}</h4>
         <div className="flex-shrink-0">
@@ -67,6 +68,53 @@ export default function HelpPage() {
   const { isAuthenticated, user } = useAuthStore()
   const [openFAQ, setOpenFAQ] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState('general')
+  const [themeColor, setThemeColor] = useState<ThemeColor>('teal')
+  const [scheme, setScheme] = useState<SchemeMode>('light')
+  const [language, setLanguage] = useState<Language>('en')
+
+  // Get computed theme colors based on scheme
+  const theme = getThemeColors(themeColor, scheme)
+
+  // Translation helper
+  const t = (key: string) => translations[language]?.[key] || translations['en'][key] || key
+
+  // Load theme color, scheme and language from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedColor = localStorage.getItem('landing_color') as ThemeColor
+      const savedScheme = localStorage.getItem('landing_scheme') as SchemeMode
+      const savedLanguage = localStorage.getItem('landing_language') as Language
+      if (savedColor && ['teal', 'blue', 'purple', 'orange'].includes(savedColor)) {
+        setThemeColor(savedColor)
+      }
+      if (savedScheme && ['light', 'dark', 'auto'].includes(savedScheme)) {
+        setScheme(savedScheme)
+      }
+      if (savedLanguage && ['en', 'es', 'hi'].includes(savedLanguage)) {
+        setLanguage(savedLanguage)
+      }
+    }
+  }, [])
+
+  // Handle color change
+  const handleColorChange = (color: ThemeColor) => {
+    setThemeColor(color)
+    localStorage.setItem('landing_color', color)
+    window.dispatchEvent(new CustomEvent('themeColorChange', { detail: { color } }))
+  }
+
+  // Handle scheme change
+  const handleSchemeChange = (newScheme: SchemeMode) => {
+    setScheme(newScheme)
+    localStorage.setItem('landing_scheme', newScheme)
+  }
+
+  // Handle language change
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang)
+    localStorage.setItem('landing_language', lang)
+    window.dispatchEvent(new CustomEvent('languageChange', { detail: { language: lang } }))
+  }
 
 
   const faqCategories = {
@@ -153,47 +201,47 @@ export default function HelpPage() {
   const quickHelpCards = [
     {
       icon: Package,
-      title: "Track Order",
-      description: "Check real-time status of your laundry",
+      title: t('help.quickHelp.trackOrder'),
+      description: t('help.quickHelp.trackOrderDesc'),
       link: isAuthenticated ? "/customer/orders" : "/auth/login",
-      color: "bg-blue-500"
     },
     {
       icon: Ticket,
-      title: "Raise Ticket",
-      description: "Report an issue or get help",
+      title: t('help.quickHelp.raiseTicket'),
+      description: t('help.quickHelp.raiseTicketDesc'),
       link: isAuthenticated ? "/customer/support/new" : "/auth/login",
-      color: "bg-purple-500"
     },
     {
       icon: RefreshCw,
-      title: "Request Refund",
-      description: "Initiate refund for any order",
+      title: t('help.quickHelp.requestRefund'),
+      description: t('help.quickHelp.requestRefundDesc'),
       link: isAuthenticated ? "/customer/support/new?category=payment" : "/auth/login",
-      color: "bg-orange-500"
     },
     {
       icon: Headphones,
-      title: "Live Support",
-      description: "Chat with our support team",
+      title: t('help.quickHelp.liveSupport'),
+      description: t('help.quickHelp.liveSupportDesc'),
       link: isAuthenticated ? "/customer/support" : "/auth/login",
-      color: "bg-teal-500"
     }
   ]
 
   const categoryTabs = [
-    { id: 'general', label: 'General', icon: HelpCircle },
-    { id: 'orders', label: 'Orders', icon: Package },
-    { id: 'payment', label: 'Payment', icon: CreditCard },
-    { id: 'services', label: 'Services', icon: Sparkles }
+    { id: 'general', label: t('help.faq.general'), icon: HelpCircle },
+    { id: 'orders', label: t('help.faq.orders'), icon: Package },
+    { id: 'payment', label: t('help.faq.payment'), icon: CreditCard },
+    { id: 'services', label: t('help.faq.services'), icon: Sparkles }
   ]
+
+  // Calculate top padding based on template
+  const topPadding = 'pt-8'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <PublicHeader />
+      <TemplateHeader />
+      <PageThemeCustomizer />
       
       {/* Hero Section */}
-      <section className="relative pt-20 pb-20 overflow-hidden min-h-[400px]">
+      <section className={`relative ${topPadding} pb-20 overflow-hidden min-h-[400px]`}>
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -204,32 +252,35 @@ export default function HelpPage() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-xl pt-8">
-            <div className="inline-flex items-center gap-2 bg-teal-500/20 backdrop-blur-sm px-4 py-2 rounded-full text-teal-300 text-sm mb-4">
+            <div 
+              className="inline-flex items-center gap-2 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-4"
+              style={{ backgroundColor: `${theme.primaryHex}33`, color: theme.primaryHex }}
+            >
               <Headphones className="w-4 h-4" />
-              <span>24/7 Support</span>
+              <span>{t('help.hero.badge')}</span>
             </div>
             
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              How Can We Help?
+              {t('help.hero.title')}
             </h1>
             
             <p className="text-lg text-gray-300 mb-6">
-              Find answers, track orders, or contact our support team.
+              {t('help.hero.subtitle')}
             </p>
 
             {/* Quick Stats */}
             <div className="flex gap-8 mt-6">
               <div>
                 <div className="text-2xl font-bold text-white">50K+</div>
-                <div className="text-gray-400 text-sm">Customers</div>
+                <div className="text-gray-400 text-sm">{t('help.stats.customers')}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-white">24/7</div>
-                <div className="text-gray-400 text-sm">Support</div>
+                <div className="text-gray-400 text-sm">{t('help.stats.support')}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-white">98%</div>
-                <div className="text-gray-400 text-sm">Resolution</div>
+                <div className="text-gray-400 text-sm">{t('help.stats.resolution')}</div>
               </div>
             </div>
           </div>
@@ -243,13 +294,19 @@ export default function HelpPage() {
             {quickHelpCards.map((card, index) => (
               <Link key={index} href={card.link}>
                 <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 group cursor-pointer h-full flex flex-col">
-                  <div className={`w-14 h-14 ${card.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <div 
+                    className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+                    style={{ backgroundColor: theme.primaryHex }}
+                  >
                     <card.icon className="w-7 h-7 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">{card.title}</h3>
                   <p className="text-gray-500 text-sm mb-3 flex-grow">{card.description}</p>
-                  <div className="flex items-center text-teal-600 text-sm font-medium group-hover:gap-2 transition-all">
-                    <span>Get Started</span>
+                  <div 
+                    className="flex items-center text-sm font-medium group-hover:gap-2 transition-all"
+                    style={{ color: theme.primaryHex }}
+                  >
+                    <span>{t('help.quickHelp.getStarted')}</span>
                     <ArrowRight className="w-4 h-4 ml-1" />
                   </div>
                 </div>
@@ -263,52 +320,73 @@ export default function HelpPage() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+              style={{ backgroundColor: theme.light, color: theme.primaryHex }}
+            >
               <MessageCircle className="w-4 h-4" />
-              <span>Get In Touch</span>
+              <span>{t('help.contact.badge')}</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Still Need Help?
+              {t('help.contact.title')}
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Our support team is always ready to assist you. Choose your preferred way to reach us.
+              {t('help.contact.subtitle')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Phone */}
-            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-8 text-center border border-teal-100 hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div 
+              className="rounded-2xl p-8 text-center border hover:shadow-lg transition-all"
+              style={{ background: `linear-gradient(to bottom right, ${theme.light}, white)` }}
+            >
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                style={{ backgroundColor: theme.primaryHex }}
+              >
                 <Phone className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Call Us</h3>
-              <p className="text-gray-500 mb-4">Available 24/7 for urgent queries</p>
-              <a href="tel:+911234567890" className="text-teal-600 font-semibold text-lg hover:text-teal-700">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('help.contact.callUs')}</h3>
+              <p className="text-gray-500 mb-4">{t('help.contact.callUsDesc')}</p>
+              <a href="tel:+911234567890" className="font-semibold text-lg hover:opacity-80" style={{ color: theme.primaryHex }}>
                 +91 123 456 7890
               </a>
             </div>
 
             {/* Email */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 text-center border border-purple-100 hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div 
+              className="rounded-2xl p-8 text-center border hover:shadow-lg transition-all"
+              style={{ background: `linear-gradient(to bottom right, ${theme.light}, white)` }}
+            >
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                style={{ backgroundColor: theme.primaryHex }}
+              >
                 <Mail className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Email Us</h3>
-              <p className="text-gray-500 mb-4">We reply within 2 hours</p>
-              <a href="mailto:support@laundrypro.com" className="text-purple-600 font-semibold text-lg hover:text-purple-700">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('help.contact.emailUs')}</h3>
+              <p className="text-gray-500 mb-4">{t('help.contact.emailUsDesc')}</p>
+              <a href="mailto:support@laundrypro.com" className="font-semibold text-lg hover:opacity-80" style={{ color: theme.primaryHex }}>
                 support@laundrypro.com
               </a>
             </div>
 
             {/* WhatsApp */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 text-center border border-green-100 hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div 
+              className="rounded-2xl p-8 text-center border hover:shadow-lg transition-all"
+              style={{ background: `linear-gradient(to bottom right, ${theme.light}, white)` }}
+            >
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                style={{ backgroundColor: theme.primaryHex }}
+              >
                 <MessageCircle className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">WhatsApp</h3>
-              <p className="text-gray-500 mb-4">Quick chat support</p>
-              <a href="https://wa.me/911234567890" target="_blank" rel="noopener noreferrer" className="text-green-600 font-semibold text-lg hover:text-green-700">
-                Chat Now
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('help.contact.whatsapp')}</h3>
+              <p className="text-gray-500 mb-4">{t('help.contact.whatsappDesc')}</p>
+              <a href="https://wa.me/911234567890" target="_blank" rel="noopener noreferrer" className="font-semibold text-lg hover:opacity-80" style={{ color: theme.primaryHex }}>
+                {t('help.contact.chatNow')}
               </a>
             </div>
           </div>
@@ -319,15 +397,18 @@ export default function HelpPage() {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+              style={{ backgroundColor: theme.light, color: theme.primaryHex }}
+            >
               <HelpCircle className="w-4 h-4" />
-              <span>Frequently Asked Questions</span>
+              <span>{t('help.faq.badge')}</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Find Quick Answers
+              {t('help.faq.title')}
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Browse through our most commonly asked questions to find the information you need.
+              {t('help.faq.subtitle')}
             </p>
           </div>
 
@@ -342,9 +423,10 @@ export default function HelpPage() {
                 }}
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
                   activeCategory === tab.id
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200'
+                    ? 'text-white shadow-lg'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}
+                style={activeCategory === tab.id ? { backgroundColor: theme.primaryHex } : {}}
               >
                 <tab.icon className="w-5 h-5" />
                 <span>{tab.label}</span>
@@ -353,7 +435,7 @@ export default function HelpPage() {
           </div>
 
           {/* FAQ List */}
-          <div className="max-w-6xl mx-auto space-y-2">
+          <div className="max-w-6xl mx-auto space-y-4">
             {currentFAQs.map((faq, index) => (
               <FAQItem
                 key={index}
@@ -361,6 +443,7 @@ export default function HelpPage() {
                 answer={faq.answer}
                 isOpen={openFAQ === index}
                 onToggle={() => toggleFAQ(index)}
+                primaryColor={theme.primaryHex}
               />
             ))}
           </div>
@@ -372,19 +455,21 @@ export default function HelpPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center">
+              <div 
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `linear-gradient(to bottom right, ${theme.primaryHex}, ${theme.secondaryHex})` }}
+              >
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">LaundryPro</span>
             </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
-              <Link href="/services" className="hover:text-white transition-colors">Services</Link>
-              <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link href="/help" className="hover:text-white transition-colors">Help</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
+              <Link href="/" className="hover:text-white transition-colors">{t('nav.home')}</Link>
+              <Link href="/services" className="hover:text-white transition-colors">{t('nav.services')}</Link>
+              <Link href="/pricing" className="hover:text-white transition-colors">{t('nav.pricing')}</Link>
+              <Link href="/help" className="hover:text-white transition-colors">{t('nav.help')}</Link>
             </div>
-            <p className="text-sm">© 2024 LaundryPro. All rights reserved.</p>
+            <p className="text-sm">{t('help.footer.copyright')}</p>
           </div>
         </div>
       </footer>

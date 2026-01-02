@@ -2,16 +2,58 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Truck, ChevronDown, ShoppingBag, MapPin, User, LogOut, Menu, X } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
+
+const colorClasses = {
+  teal: { 
+    primary: 'bg-teal-500', hover: 'hover:bg-teal-600', text: 'text-teal-500', 
+    border: 'border-teal-500', hoverText: 'hover:text-teal-500', lightBg: 'hover:bg-teal-50'
+  },
+  blue: { 
+    primary: 'bg-blue-500', hover: 'hover:bg-blue-600', text: 'text-blue-500', 
+    border: 'border-blue-500', hoverText: 'hover:text-blue-500', lightBg: 'hover:bg-blue-50'
+  },
+  purple: { 
+    primary: 'bg-purple-500', hover: 'hover:bg-purple-600', text: 'text-purple-500', 
+    border: 'border-purple-500', hoverText: 'hover:text-purple-500', lightBg: 'hover:bg-purple-50'
+  },
+  orange: { 
+    primary: 'bg-orange-500', hover: 'hover:bg-orange-600', text: 'text-orange-500', 
+    border: 'border-orange-500', hoverText: 'hover:text-orange-500', lightBg: 'hover:bg-orange-50'
+  },
+}
+
+type ThemeColor = 'teal' | 'blue' | 'purple' | 'orange'
 
 export default function PublicHeader() {
   const { user, isAuthenticated } = useAuthStore()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [themeColor, setThemeColor] = useState<ThemeColor>('teal')
 
+  // Load theme color from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedColor = localStorage.getItem('landing_color') as ThemeColor
+      if (savedColor && ['teal', 'blue', 'purple', 'orange'].includes(savedColor)) {
+        setThemeColor(savedColor)
+      }
+    }
+  }, [])
+
+  // Listen for theme color changes
+  useEffect(() => {
+    const handleThemeChange = (e: CustomEvent<{ color: ThemeColor }>) => {
+      setThemeColor(e.detail.color)
+    }
+    window.addEventListener('themeColorChange', handleThemeChange as EventListener)
+    return () => window.removeEventListener('themeColorChange', handleThemeChange as EventListener)
+  }, [])
+
+  const colors = colorClasses[themeColor]
   const isActive = (path: string) => pathname === path
 
   return (
@@ -19,7 +61,7 @@ export default function PublicHeader() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
+            <div className={`w-10 h-10 ${colors.primary} rounded-full flex items-center justify-center`}>
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-800">LaundryPro</span>
@@ -36,25 +78,25 @@ export default function PublicHeader() {
           <div className="hidden md:flex items-center space-x-8">
             <Link 
               href="/" 
-              className={`${isActive('/') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 transition-colors`}
+              className={`${isActive('/') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} transition-colors`}
             >
               Home
             </Link>
             <Link 
               href="/services" 
-              className={`${isActive('/services') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 transition-colors`}
+              className={`${isActive('/services') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} transition-colors`}
             >
               Services
             </Link>
             <Link 
               href="/pricing" 
-              className={`${isActive('/pricing') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 transition-colors`}
+              className={`${isActive('/pricing') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} transition-colors`}
             >
               Pricing
             </Link>
             <Link 
               href="/help" 
-              className={`${isActive('/help') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 transition-colors`}
+              className={`${isActive('/help') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} transition-colors`}
             >
               Help
             </Link>
@@ -63,14 +105,14 @@ export default function PublicHeader() {
               <div className="flex items-center space-x-4">
                 {/* Dashboard Button */}
                 <Link href="/customer/dashboard">
-                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
+                  <Button className={`${colors.primary} ${colors.hover} text-white`}>
                     <User className="w-4 h-4 mr-2" />
                     Dashboard
                   </Button>
                 </Link>
                 <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-700 hover:text-teal-500 py-2">
-                    <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+                  <button className={`flex items-center space-x-2 text-gray-700 ${colors.hoverText} py-2`}>
+                    <div className={`w-8 h-8 ${colors.primary} rounded-full flex items-center justify-center`}>
                       <span className="text-white text-sm font-medium">
                         {user?.name?.charAt(0).toUpperCase()}
                       </span>
@@ -114,12 +156,12 @@ export default function PublicHeader() {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link href="/auth/login">
-                  <Button variant="outline" className="border-teal-500 text-teal-500 hover:bg-teal-50">
+                  <Button variant="outline" className={`${colors.border} ${colors.text} ${colors.lightBg}`}>
                     Login
                   </Button>
                 </Link>
                 <Link href="/auth/register">
-                  <Button className="bg-teal-500 hover:bg-teal-600 text-white">
+                  <Button className={`${colors.primary} ${colors.hover} text-white`}>
                     Sign Up
                   </Button>
                 </Link>
@@ -134,28 +176,28 @@ export default function PublicHeader() {
             <div className="flex flex-col space-y-3">
               <Link 
                 href="/" 
-                className={`${isActive('/') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 py-2`}
+                className={`${isActive('/') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} py-2`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
               <Link 
                 href="/services" 
-                className={`${isActive('/services') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 py-2`}
+                className={`${isActive('/services') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} py-2`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Services
               </Link>
               <Link 
                 href="/pricing" 
-                className={`${isActive('/pricing') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 py-2`}
+                className={`${isActive('/pricing') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} py-2`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
               </Link>
               <Link 
                 href="/help" 
-                className={`${isActive('/help') ? 'text-teal-500 font-medium' : 'text-gray-600'} hover:text-teal-500 py-2`}
+                className={`${isActive('/help') ? `${colors.text} font-medium` : 'text-gray-600'} ${colors.hoverText} py-2`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Help
@@ -166,28 +208,28 @@ export default function PublicHeader() {
                   <hr className="my-2" />
                   <Link 
                     href="/customer/dashboard" 
-                    className="text-gray-600 hover:text-teal-500 py-2"
+                    className={`text-gray-600 ${colors.hoverText} py-2`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Dashboard
                   </Link>
                   <Link 
                     href="/customer/orders" 
-                    className="text-gray-600 hover:text-teal-500 py-2"
+                    className={`text-gray-600 ${colors.hoverText} py-2`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     My Orders
                   </Link>
                   <Link 
                     href="/customer/addresses" 
-                    className="text-gray-600 hover:text-teal-500 py-2"
+                    className={`text-gray-600 ${colors.hoverText} py-2`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Addresses
                   </Link>
                   <Link 
                     href="/customer/profile" 
-                    className="text-gray-600 hover:text-teal-500 py-2"
+                    className={`text-gray-600 ${colors.hoverText} py-2`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
@@ -206,12 +248,12 @@ export default function PublicHeader() {
               ) : (
                 <div className="flex flex-col space-y-2 pt-2">
                   <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full border-teal-500 text-teal-500 hover:bg-teal-50">
+                    <Button variant="outline" className={`w-full ${colors.border} ${colors.text} ${colors.lightBg}`}>
                       Login
                     </Button>
                   </Link>
                   <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-teal-500 hover:bg-teal-600 text-white">
+                    <Button className={`w-full ${colors.primary} ${colors.hover} text-white`}>
                       Sign Up
                     </Button>
                   </Link>

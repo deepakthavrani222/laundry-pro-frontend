@@ -13,7 +13,9 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useState, useEffect } from 'react'
-import PublicHeader from '@/components/layout/PublicHeader'
+import TemplateHeader from '@/components/layout/TemplateHeader'
+import SettingsPanel, { ThemeColor, SchemeMode, Language, getThemeColors } from '@/components/layout/SettingsPanel'
+import { translations } from '@/lib/translations'
 
 interface ServiceItem {
   id: string
@@ -35,21 +37,19 @@ interface PriceItem {
 }
 
 // FAQ Component
-function FAQItem({ question, answer, isOpen, onToggle }: {
+function FAQItem({ question, answer, isOpen, onToggle, accentColor }: {
   question: string
   answer: string
   isOpen: boolean
   onToggle: () => void
+  accentColor: string
 }) {
   return (
     <div className="overflow-hidden">
       <button
         onClick={onToggle}
-        className={`w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200 ${
-          isOpen 
-            ? 'bg-teal-500 hover:bg-teal-500' 
-            : 'bg-slate-700 hover:bg-slate-600'
-        }`}
+        className="w-full px-8 py-5 text-left flex items-center justify-between transition-colors duration-200"
+        style={{ backgroundColor: isOpen ? accentColor : '#334155' }}
       >
         <h4 className="text-base font-medium text-white pr-4">{question}</h4>
         <div className="flex-shrink-0">
@@ -66,18 +66,18 @@ function FAQItem({ question, answer, isOpen, onToggle }: {
 }
 
 // Pricing Table Component with Category Tabs
-function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
+function PricingTable({ isAuthenticated, theme, t }: { isAuthenticated: boolean; theme: ReturnType<typeof getThemeColors>; t: (key: string) => string }) {
   const [activeCategory, setActiveCategory] = useState('men')
   const [pricingData, setPricingData] = useState<Record<string, PriceItem[]>>({})
   const [loading, setLoading] = useState(true)
 
   const categories = [
-    { id: 'men', label: 'Men' },
-    { id: 'women', label: 'Women' },
-    { id: 'kids', label: 'Kids' },
-    { id: 'household', label: 'Household' },
-    { id: 'institutional', label: 'Institutional' },
-    { id: 'others', label: 'Others' },
+    { id: 'men', label: t('pricing.categories.men') },
+    { id: 'women', label: t('pricing.categories.women') },
+    { id: 'kids', label: t('pricing.categories.kids') },
+    { id: 'household', label: t('pricing.categories.household') },
+    { id: 'institutional', label: t('pricing.categories.institutional') },
+    { id: 'others', label: t('pricing.categories.others') },
   ]
 
   useEffect(() => {
@@ -147,7 +147,7 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
       </div>
     )
   }
@@ -155,9 +155,9 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <div className="mb-16">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">Our Pricing</h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Transparent pricing for all our services. Select a category to view detailed pricing.
+        <h2 className="text-3xl font-bold mb-4" style={{ color: theme.textPrimary }}>{t('pricing.table.title')}</h2>
+        <p className="max-w-2xl mx-auto" style={{ color: theme.textSecondary }}>
+          {t('pricing.table.subtitle')}
         </p>
       </div>
 
@@ -169,11 +169,11 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                  activeCategory === category.id
-                    ? 'bg-teal-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className="px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200"
+                style={{
+                  backgroundColor: activeCategory === category.id ? theme.accent : theme.sectionBg,
+                  color: activeCategory === category.id ? '#ffffff' : theme.textSecondary,
+                }}
               >
                 {category.label}
               </button>
@@ -183,14 +183,14 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {/* Pricing Table - Right Side */}
         <div className="flex-1 overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse" style={{ backgroundColor: theme.cardBg }}>
             <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left py-4 px-6 font-semibold text-gray-700 border-b">Garment</th>
-                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Wash & Fold</th>
-                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Wash & Iron</th>
-                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Dry Clean</th>
-                <th className="text-center py-4 px-4 font-semibold text-gray-700 border-b">Steam Press</th>
+              <tr style={{ backgroundColor: theme.sectionBg }}>
+                <th className="text-left py-4 px-6 font-semibold border-b" style={{ color: theme.textPrimary, borderColor: theme.border }}>{t('pricing.table.garment')}</th>
+                <th className="text-center py-4 px-4 font-semibold border-b" style={{ color: theme.textPrimary, borderColor: theme.border }}>{t('pricing.table.washFold')}</th>
+                <th className="text-center py-4 px-4 font-semibold border-b" style={{ color: theme.textPrimary, borderColor: theme.border }}>{t('pricing.table.washIron')}</th>
+                <th className="text-center py-4 px-4 font-semibold border-b" style={{ color: theme.textPrimary, borderColor: theme.border }}>{t('pricing.table.dryClean')}</th>
+                <th className="text-center py-4 px-4 font-semibold border-b" style={{ color: theme.textPrimary, borderColor: theme.border }}>{t('pricing.table.steamPress')}</th>
               </tr>
             </thead>
             <tbody>
@@ -198,19 +198,23 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
                 pricingData[activeCategory].map((item, index) => (
                   <tr 
                     key={item._id || index} 
-                    className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                    className="border-b hover:opacity-80 transition-colors"
+                    style={{ 
+                      backgroundColor: index % 2 === 0 ? theme.cardBg : theme.sectionBg,
+                      borderColor: theme.border
+                    }}
                   >
-                    <td className="py-4 px-6 text-gray-800">{item.garment}</td>
-                    <td className="py-4 px-4 text-center text-gray-600">{item.washFold > 0 ? `₹${item.washFold}` : '-'}</td>
-                    <td className="py-4 px-4 text-center text-gray-600">{item.washIron > 0 ? `₹${item.washIron}` : '-'}</td>
-                    <td className="py-4 px-4 text-center text-gray-600">{item.dryClean > 0 ? `₹${item.dryClean}` : '-'}</td>
-                    <td className="py-4 px-4 text-center text-gray-600">{item.steamPress > 0 ? `₹${item.steamPress}` : '-'}</td>
+                    <td className="py-4 px-6" style={{ color: theme.textPrimary }}>{item.garment}</td>
+                    <td className="py-4 px-4 text-center" style={{ color: theme.textSecondary }}>{item.washFold > 0 ? `₹${item.washFold}` : '-'}</td>
+                    <td className="py-4 px-4 text-center" style={{ color: theme.textSecondary }}>{item.washIron > 0 ? `₹${item.washIron}` : '-'}</td>
+                    <td className="py-4 px-4 text-center" style={{ color: theme.textSecondary }}>{item.dryClean > 0 ? `₹${item.dryClean}` : '-'}</td>
+                    <td className="py-4 px-4 text-center" style={{ color: theme.textSecondary }}>{item.steamPress > 0 ? `₹${item.steamPress}` : '-'}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-500">
-                    No items available for this category
+                  <td colSpan={5} className="py-8 text-center" style={{ color: theme.textMuted }}>
+                    {t('pricing.table.noItems')}
                   </td>
                 </tr>
               )}
@@ -222,9 +226,9 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
       {/* Book Now Button */}
       <div className="text-center mt-8">
         <Link href={isAuthenticated ? "/customer/orders/new" : "/auth/register"}>
-          <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-8">
+          <Button size="lg" className="text-white px-8 hover:opacity-90" style={{ backgroundColor: theme.accent }}>
             <Truck className="w-5 h-5 mr-2" />
-            Book Service Now
+            {t('pricing.table.bookNow')}
           </Button>
         </Link>
       </div>
@@ -235,6 +239,53 @@ function PricingTable({ isAuthenticated }: { isAuthenticated: boolean }) {
 export default function PricingPage() {
   const { isAuthenticated } = useAuthStore()
   const [openFAQ, setOpenFAQ] = useState<number | null>(null)
+  const [themeColor, setThemeColor] = useState<ThemeColor>('teal')
+  const [scheme, setScheme] = useState<SchemeMode>('light')
+  const [language, setLanguage] = useState<Language>('en')
+
+  // Get computed theme colors based on scheme
+  const theme = getThemeColors(themeColor, scheme)
+
+  // Translation helper
+  const t = (key: string) => translations[language]?.[key] || translations['en'][key] || key
+
+  // Load theme color, scheme and language from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedColor = localStorage.getItem('landing_color') as ThemeColor
+      const savedScheme = localStorage.getItem('landing_scheme') as SchemeMode
+      const savedLanguage = localStorage.getItem('landing_language') as Language
+      if (savedColor && ['teal', 'blue', 'purple', 'orange'].includes(savedColor)) {
+        setThemeColor(savedColor)
+      }
+      if (savedScheme && ['light', 'dark', 'auto'].includes(savedScheme)) {
+        setScheme(savedScheme)
+      }
+      if (savedLanguage && ['en', 'es', 'hi'].includes(savedLanguage)) {
+        setLanguage(savedLanguage)
+      }
+    }
+  }, [])
+
+  // Handle color change
+  const handleColorChange = (color: ThemeColor) => {
+    setThemeColor(color)
+    localStorage.setItem('landing_color', color)
+    window.dispatchEvent(new CustomEvent('themeColorChange', { detail: { color } }))
+  }
+
+  // Handle scheme change
+  const handleSchemeChange = (newScheme: SchemeMode) => {
+    setScheme(newScheme)
+    localStorage.setItem('landing_scheme', newScheme)
+  }
+
+  // Handle language change
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang)
+    localStorage.setItem('landing_language', lang)
+    window.dispatchEvent(new CustomEvent('languageChange', { detail: { language: lang } }))
+  }
 
   const faqData = [
     {
@@ -263,12 +314,23 @@ export default function PricingPage() {
     setOpenFAQ(openFAQ === index ? null : index)
   }
 
+  // Calculate top padding based on template
+  const topPadding = 'pt-28'
+
   return (
-    <div className="min-h-screen bg-white">
-      <PublicHeader />
+    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: theme.pageBg }}>
+      <TemplateHeader />
+      <SettingsPanel
+        themeColor={themeColor}
+        currentLanguage={language}
+        currentScheme={scheme}
+        onColorChange={handleColorChange}
+        onLanguageChange={handleLanguageChange}
+        onSchemeChange={handleSchemeChange}
+      />
 
       {/* Hero Section */}
-      <section className="relative py-16 overflow-hidden">
+      <section className={`relative py-16 overflow-hidden ${topPadding}`}>
         <video
           autoPlay
           loop
@@ -279,18 +341,18 @@ export default function PricingPage() {
           <source src="/images/pricing.mp4" type="video/mp4" />
         </video>
         
-        <div className="absolute inset-0 bg-teal-900/70"></div>
+        <div className="absolute inset-0 bg-gray-900/70"></div>
         
         <div className="relative container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Simple & Transparent Pricing
+            {t('pricing.hero.title')}
           </h1>
-          <p className="text-xl text-teal-100 mb-8 max-w-2xl mx-auto">
-            Quality laundry services at affordable prices. No hidden charges.
+          <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+            {t('pricing.hero.subtitle')}
           </p>
           <Link href="https://wa.me/919876543210" target="_blank">
             <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white">
-              Chat on WhatsApp
+              {t('pricing.hero.whatsapp')}
             </Button>
           </Link>
         </div>
@@ -298,21 +360,21 @@ export default function PricingPage() {
 
       {/* Pricing Table Section */}
       <section className="py-16 container mx-auto px-4">
-        <PricingTable isAuthenticated={isAuthenticated} />
+        <PricingTable isAuthenticated={isAuthenticated} theme={theme} t={t} />
         
         {/* Disclaimer */}
-        <p className="text-center text-lg text-gray-700 font-medium mt-8">
-          * Prices may vary based on fabric type and condition. Final price confirmed after inspection.
+        <p className="text-center text-lg font-medium mt-8" style={{ color: theme.textSecondary }}>
+          {t('pricing.disclaimer')}
         </p>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 transition-colors duration-300" style={{ backgroundColor: theme.sectionBg }}>
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Frequently Asked Questions</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Got questions? We've got answers.
+            <h2 className="text-3xl font-bold mb-4" style={{ color: theme.textPrimary }}>{t('pricing.faq.title')}</h2>
+            <p className="max-w-2xl mx-auto" style={{ color: theme.textSecondary }}>
+              {t('pricing.faq.subtitle')}
             </p>
           </div>
 
@@ -324,6 +386,7 @@ export default function PricingPage() {
                 answer={faq.answer}
                 isOpen={openFAQ === index}
                 onToggle={() => toggleFAQ(index)}
+                accentColor={theme.accent}
               />
             ))}
           </div>
@@ -331,32 +394,35 @@ export default function PricingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-teal-500 to-cyan-600">
+      <section 
+        className="py-16 transition-colors duration-300"
+        style={{ background: `linear-gradient(to right, ${theme.accent}, ${theme.accentSecondary})` }}
+      >
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
-          <p className="text-teal-100 mb-8 max-w-xl mx-auto">
-            Schedule your first pickup today and experience the convenience of professional laundry service.
+          <h2 className="text-3xl font-bold text-white mb-4">{t('pricing.cta.title')}</h2>
+          <p className="text-white/80 mb-8 max-w-xl mx-auto">
+            {t('pricing.cta.subtitle')}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             {isAuthenticated ? (
               <Link href="/customer/orders/new">
-                <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
+                <Button size="lg" className="bg-white hover:bg-gray-100" style={{ color: theme.accent }}>
                   <Truck className="w-5 h-5 mr-2" />
-                  Book Now
+                  {t('pricing.cta.bookNow')}
                 </Button>
               </Link>
             ) : (
               <Link href="/auth/login?redirect=/customer/orders/new">
-                <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100">
+                <Button size="lg" className="bg-white hover:bg-gray-100" style={{ color: theme.accent }}>
                   <Truck className="w-5 h-5 mr-2" />
-                  Get Started
+                  {t('pricing.cta.getStarted')}
                 </Button>
               </Link>
             )}
             <Link href="tel:+919876543210">
-              <Button size="lg" className="bg-white/20 border-2 border-white text-white hover:bg-white hover:text-teal-600">
+              <Button size="lg" className="bg-white/20 border-2 border-white text-white hover:bg-white/30">
                 <Phone className="w-5 h-5 mr-2" />
-                Call Us
+                {t('pricing.cta.callUs')}
               </Button>
             </Link>
           </div>
